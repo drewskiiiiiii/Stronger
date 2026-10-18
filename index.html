@@ -267,7 +267,8 @@
         }
 
         // ---- Start program sheet ----
-        const StartProgramSheet = ({ program, onCancel, onConfirm }) => {
+        const StartProgramSheet = ({ program, owned, onCancel, onConfirm }) => {
+            const missing = missingEquipment(program, owned);
             const need = program.metadata.daysPerWeek || 0;
             const [startDate, setStartDate] = useState(todayStr());
             const [weekdays, setWeekdays] = useState(defaultWeekdays(need));
@@ -295,6 +296,13 @@
                             </div>
                             {!valid && <div className="text-[11px] text-[#F59E0B] mt-1.5">Select exactly {need} days ({weekdays.length} selected).</div>}
                         </div>
+                        {missing.length > 0 && (
+                            <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-3 space-y-1">
+                                <div className="text-[11px] font-bold text-[#F59E0B]">Equipment you haven't marked as available (estimated from exercise names)</div>
+                                {missing.map(m => <div key={m.equipment} className="text-[11px] text-white"><span className="font-bold">{m.equipment}:</span> {m.exercises.join(', ')}</div>)}
+                                <div className="text-[10px] text-[#8FA2B8]">You can substitute individual exercises during the workout. Update “My equipment” in Settings if this is wrong.</div>
+                            </div>
+                        )}
                         {valid && (
                             <div className="space-y-1.5">
                                 <div className="text-xs font-bold text-white">Calendar preview · ends {fmtShort(lastDate)}</div>
@@ -448,6 +456,106 @@
             );
         };
 
+        // ---- Equipment (estimated from exercise names; never a claim of equivalence) ----
+        const EQUIPMENT_OPTIONS = ['Barbell', 'Dumbbells', 'Bench', 'Pull-Up Bar', 'Cable Machine', 'Machines', 'Swiss Ball', 'Box/Step', 'Kettlebell'];
+        const DEFAULT_EQUIPMENT = ['Dumbbells', 'Bench', 'Pull-Up Bar'];
+        const equipmentFor = (name) => {
+            const n = (name || '').toLowerCase();
+            if (/dumbbell|\bdb\b/.test(n)) return 'Dumbbells';
+            if (/cable|rope|pushdown|crossover|face ?pull|lat pull/.test(n)) return 'Cable Machine';
+            if (/machine|leg press|leg extension|leg curl|pec deck|t-bar|smith|hack/.test(n)) return 'Machines';
+            if (/pull[- ]?up|chin[- ]?up/.test(n)) return 'Pull-Up Bar';
+            if (/swiss ball/.test(n)) return 'Swiss Ball';
+            if (/step up/.test(n)) return 'Box/Step';
+            if (/barbell|squat|deadlift|ez bar|overhead press|bench press|\brow\b/.test(n)) return 'Barbell';
+            return null;
+        };
+        const missingEquipment = (program, owned) => {
+            const found = {};
+            program.weeks.forEach(w => w.days.forEach(d => d.exercises.forEach(e => {
+                const eq = equipmentFor(e.name);
+                if (eq && !owned.includes(eq)) (found[eq] = found[eq] || new Set()).add(e.name);
+            })));
+            return Object.entries(found).map(([eq, set]) => ({ equipment: eq, exercises: [...set] }));
+        };
+
+        // ---- Program progress ----
+        const ProgramProgress = ({ library, workoutLogs, unit }) => {
+            const ids = Object.keys(library.progress).filter(id => library.progress[id].status !== 'not_started');
+            const [sel, setSel] = useState(library.activeProgramId || ids[0] || 'all');
+            const [exName, setExName] = useState('');
+            const program = sel !== 'all' ? library.programs[sel] : null;
+            const prog = sel !== 'all' ? library.progress[sel] : null;
+            const logs = sel === 'all' ? workoutLogs : workoutLogs.filter(l => l.programId === sel);
+            const sessions = program && prog ? buildSessions(program, prog) : [];
+            const done = sessions.filter(x => x.status === 'completed').length;
+            const skipped = sessions.filter(x => x.status === 'skipped').length;
+            const toUnit = (lb) => unit === 'kg' ? lb / 2.20462 : lb;
+            const byWeek = {};
+            logs.forEach(l => { const k = l.week ? `W${l.week}` : l.date.slice(0, 7); byWeek[k] = (byWeek[k] || 0) + (l.totalVolumeLb || 0); });
+            const weekKeys = Object.keys(byWeek);
+            const maxVol = Math.max(1, ...Object.values(byWeek));
+            const perf = {}; // exercise -> [{date, best}]
+            logs.slice().reverse().forEach(l => l.exercises.forEach(e => {
+                const work = e.sets.filter(x => x.type !== 'warmup' && x.reps > 0);
+                if (!work.length) return;
+                const best = work.reduce((a, b) => (b.weight || 0) > (a.weight || 0) || ((b.weight || 0) === (a.weight || 0) && b.reps > a.reps) ? b : a);
+                (perf[e.name] = perf[e.name] || []).push({ date: l.date, weight: best.weight || 0, reps: best.reps, unit: best.unit || 'lb' });
+            }));
+            const exNames = Object.keys(perf).sort();
+            const chosen = perf[exName] ? exName : exNames[0];
+            const series = chosen ? perf[chosen] : [];
+            const prWeight = series.length ? Math.max(...series.map(x => x.weight)) : 0;
+            const deloadLines = program ? program.instructions.flatMap(sec => sec.lines.filter(l => /deload/i.test(l)).map(l => `p.${sec.page}: ${l}`)) : [];
+            return (
+                <div className="space-y-4">
+                    <h2 className="text-lg font-black text-white">Progress</h2>
+                    <select value={sel} onChange={e => setSel(e.target.value)} className="w-full min-h-[44px] bg-[#101C2B] border border-[#203147] rounded-xl px-3 text-white">
+                        <option value="all">All workouts (overall history)</option>
+                        {ids.map(id => <option key={id} value={id}>{library.programs[id] ? library.programs[id].name : id}</option>)}
+                    </select>
+                    {program && (
+                        <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2">
+                            <div className="flex items-center justify-between"><div className="text-sm font-black text-white">{program.name}</div><StatusBadge status={prog.status} /></div>
+                            <div className="text-[11px] text-[#8FA2B8]">Week {(sessions.find(x => x.status === 'planned') || { week: program.weeks.length }).week} of {program.weeks.length} · {done} of {sessions.length} workouts completed{skipped ? ` · ${skipped} skipped` : ''}</div>
+                            <div className="w-full bg-[#080E16] h-2 rounded-full overflow-hidden"><div className="bg-[#31D583] h-full" style={{ width: `${sessions.length ? (done / sessions.length) * 100 : 0}%` }}></div></div>
+                            <div className="text-[11px] text-[#8FA2B8]">{sessions.length ? Math.round((done / sessions.length) * 100) : 0}% complete</div>
+                            <div className="text-[11px] text-[#8FA2B8]">Deload / progression: {deloadLines.length ? deloadLines.join(' · ') : 'no deload instructions found in the imported text; weekly changes follow the prescriptions in the program detail.'}</div>
+                        </div>
+                    )}
+                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2">
+                        <div className="text-xs font-bold text-white">Training volume (working sets you logged)</div>
+                        {weekKeys.length === 0 ? <div className="text-[11px] text-[#8FA2B8]">No logged workouts yet.</div> : (
+                            <div className="h-32 flex items-end gap-2">
+                                {weekKeys.map(k => <div key={k} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
+                                    <div className="w-full bg-[#1685F8] rounded-t-sm" style={{ height: `${Math.max(4, (byWeek[k] / maxVol) * 80)}%` }}></div>
+                                    <div className="text-[9px] text-[#8FA2B8]">{k}</div></div>)}
+                            </div>
+                        )}
+                        {weekKeys.length > 0 && <div className="text-[10px] text-[#8FA2B8]">Total {Math.round(toUnit(Object.values(byWeek).reduce((a, b) => a + b, 0))).toLocaleString()} {unit}</div>}
+                    </div>
+                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2">
+                        <div className="text-xs font-bold text-white">Exercise performance</div>
+                        {exNames.length === 0 ? <div className="text-[11px] text-[#8FA2B8]">Log a workout to see exercise trends.</div> : (<>
+                            <select value={chosen} onChange={e => setExName(e.target.value)} className="w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white">{exNames.map(n => <option key={n} value={n}>{n}</option>)}</select>
+                            {series.map((x, i) => <div key={i} className="flex justify-between text-[11px]"><span className="text-[#8FA2B8]">{x.date}</span><span className="text-white tabular-nums">{x.weight} {x.unit} × {x.reps}{x.weight === prWeight && prWeight > 0 && series.length > 1 ? ' · best logged' : ''}</span></div>)}
+                            <div className="text-[10px] text-[#8FA2B8]">Best set per session, from your logged working sets only.</div>
+                        </>)}
+                    </div>
+                    <div className="space-y-2">
+                        <div className="text-xs font-bold text-white">Recent workouts</div>
+                        {logs.length === 0 && <div className="text-[11px] text-[#8FA2B8]">Nothing logged yet.</div>}
+                        {logs.slice(0, 10).map(l => (
+                            <div key={l.id} className="bg-[#101C2B] border border-[#203147] rounded-xl p-3 flex justify-between gap-2">
+                                <div><div className="text-xs font-bold text-white">{l.workoutName}</div><div className="text-[10px] text-[#8FA2B8]">{l.date}{l.week ? ` · Week ${l.week} Day ${l.day}` : ''}{l.programName && sel === 'all' ? ` · ${l.programName}` : ''}</div></div>
+                                <div className="text-[11px] text-[#8FA2B8] text-right tabular-nums">{l.durationMin} min<br />{Math.round(toUnit(l.totalVolumeLb || 0)).toLocaleString()} {unit}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
         // ---- Local persistence (browser localStorage only; no cloud sync) ----
         const STORE_KEY = 'stronger.state';
         const SCHEMA_VERSION = 1;
@@ -481,7 +589,7 @@
             const todaysWorkout = program.days.find(d => d.id === selectedDayId) || program.days[0];
 
             const [workoutLogs, setWorkoutLogs] = useState(STORED.workoutLogs || INITIAL_WORKOUT_LOGS);
-            const [userSettings, setUserSettings] = useState(STORED.userSettings || { name: 'John', unit: 'lb', targetCalories: 2400, targetProtein: 180 });
+            const [userSettings, setUserSettings] = useState(STORED.userSettings || { name: 'John', unit: 'lb', targetCalories: 2400, targetProtein: 180, equipment: DEFAULT_EQUIPMENT });
 
             const [activeSession, setActiveSession] = useState(STORED.activeSession || null);
             // Workout view is a layer over the app; the session itself lives here regardless of the page shown.
@@ -504,6 +612,7 @@
             const pdfInputRef = useRef(null);
             const progressOf = (id) => library.progress[id] || { status: 'not_started' };
 
+            const ownedEquipment = userSettings.equipment || DEFAULT_EQUIPMENT;
             const [startSheetId, setStartSheetId] = useState(null);
             const [subModalIdx, setSubModalIdx] = useState(null);
             const [confirmDialog, setConfirmDialog] = useState(null);
@@ -897,6 +1006,7 @@
                             <div className="text-[#8FA2B8] uppercase text-[9px] font-bold tracking-wide">Prescribed by program</div>
                             <div className="text-white font-bold">{pr.workingSets ?? '?'} × {pr.reps ?? '?'}{pr.warmupSets ? ` · ${pr.warmupSets} warm-up` : ''} · {intensityLabel(pr.intensity)}</div>
                             {pr.notes && <div className="text-[#C7D3E0] leading-snug">{pr.notes}</div>}
+                            {!item.substitution && equipmentFor(item.name) && !ownedEquipment.includes(equipmentFor(item.name)) && <div className="text-[#F59E0B]">⚠ May need {equipmentFor(item.name)} (not in your equipment list) — tap ⇄ to substitute</div>}
                             {pr.flags.length > 0 && <div className="text-[#F59E0B]">⚠ Uncertain extraction — check PDF p.{pr.page}</div>}
                         </div>
                         {prev && <div className="text-[11px] text-[#8FA2B8]">Last time · {prev}</div>}
@@ -1252,19 +1362,7 @@
                             </div>
                         )}
 
-                        {activeNav === 'Progress' && (
-                            <div className="space-y-4">
-                                <h2 className="text-base font-black text-white">Analytics</h2>
-                                <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3">
-                                    <div className="text-xs font-bold text-white">Total Volume Trend</div>
-                                    <div className="h-40 w-full bg-[#080E16] rounded-lg border border-[#203147] p-3 flex items-end gap-2">
-                                        {[35, 48, 62, 70, 75, 88].map((h, idx) => (
-                                            <div key={idx} className="flex-1 bg-[#1685F8] rounded-t-sm" style={{ height: `${h}%` }}></div>
-                                        ))}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
+                        {activeNav === 'Progress' && <ProgramProgress key={library.activeProgramId || 'none'} library={library} workoutLogs={workoutLogs} unit={userSettings.unit} />}
 
                         {activeNav === 'Nutrition' && (
                             <div className="space-y-4">
@@ -1325,6 +1423,14 @@
                                             <option value="lb">Pounds (lb)</option>
                                             <option value="kg">Kilograms (kg)</option>
                                         </select>
+                                    </div>
+                                    <div className="pt-3 border-t border-[#203147] space-y-2">
+                                        <div className="text-xs font-bold text-white">My equipment</div>
+                                        <p className="text-[11px] text-[#8FA2B8]">Used to flag program exercises you may not be able to do. You choose any substitutions; nothing is changed automatically.</p>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            {EQUIPMENT_OPTIONS.map(eq => { const on = ownedEquipment.includes(eq); return (
+                                                <button key={eq} onClick={() => setUserSettings({ ...userSettings, equipment: on ? ownedEquipment.filter(x => x !== eq) : [...ownedEquipment, eq] })} className={`min-h-[44px] rounded-xl border text-xs font-bold ${on ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]'}`}>{on ? '✓ ' : ''}{eq}</button>); })}
+                                        </div>
                                     </div>
                                     <div className="pt-3 border-t border-[#203147] space-y-2">
                                         <div className="text-xs font-bold text-white">Backup</div>
@@ -1394,7 +1500,7 @@
                         </div>
                     )}
 
-                    {startSheetId && library.programs[startSheetId] && <StartProgramSheet program={library.programs[startSheetId]} onCancel={() => setStartSheetId(null)} onConfirm={(cfg) => activateProgram(startSheetId, cfg)} />}
+                    {startSheetId && library.programs[startSheetId] && <StartProgramSheet program={library.programs[startSheetId]} owned={ownedEquipment} onCancel={() => setStartSheetId(null)} onConfirm={(cfg) => activateProgram(startSheetId, cfg)} />}
                     {subModalIdx !== null && activeSession && activeSession.exercises[subModalIdx] && (
                         <SubstituteModal item={activeSession.exercises[subModalIdx]} library={exercises} onClose={() => setSubModalIdx(null)}
                             onPick={(sub) => setSubstitution(subModalIdx, sub)} onRestore={() => setSubstitution(subModalIdx, null)} />
