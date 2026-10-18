@@ -430,22 +430,19 @@
     }
 
     // ---- Browser glue ----
-    const PDFJS_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+    // Libraries are bundled in /vendor (same origin) so importing works offline.
+    const scriptBase = (() => { const cs = typeof document !== 'undefined' ? document.currentScript : null; return cs && cs.src ? cs.src.replace(/[^/]*$/, '') : ''; })();
+    const loadScript = (src, label) => new Promise((res, rej) => {
+        const sc = document.createElement('script');
+        sc.src = src; sc.onload = () => res(); sc.onerror = () => rej(new Error(`Could not load the ${label} library.`));
+        document.head.appendChild(sc);
+    });
     let pdfjsReady = null;
     function loadPdfJs() {
         if (root.pdfjsLib) return Promise.resolve(root.pdfjsLib);
-        if (!pdfjsReady) pdfjsReady = new Promise((res, rej) => {
-            const s = document.createElement('script');
-            s.src = PDFJS_BASE + 'pdf.min.js';
-            s.onload = async () => {
-                try { // Cross-origin workers are blocked, so wrap the worker source in a same-origin blob.
-                    const code = await (await fetch(PDFJS_BASE + 'pdf.worker.min.js')).text();
-                    root.pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([code], { type: 'application/javascript' }));
-                } catch (e) { root.pdfjsLib.GlobalWorkerOptions.workerSrc = PDFJS_BASE + 'pdf.worker.min.js'; }
-                res(root.pdfjsLib);
-            };
-            s.onerror = () => rej(new Error('Could not load the PDF reader library (needs an internet connection).'));
-            document.head.appendChild(s);
+        if (!pdfjsReady) pdfjsReady = loadScript(scriptBase + 'vendor/pdf.min.js', 'PDF reader').then(() => {
+            root.pdfjsLib.GlobalWorkerOptions.workerSrc = scriptBase + 'vendor/pdf.worker.min.js';
+            return root.pdfjsLib;
         });
         return pdfjsReady;
     }
@@ -472,16 +469,10 @@
         return parseProgramPdf(pages, { fileName: file.name, sha256 });
     }
 
-    const SHEETJS = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
     let sheetjsReady = null;
     function loadSheetJs() {
         if (root.XLSX) return Promise.resolve(root.XLSX);
-        if (!sheetjsReady) sheetjsReady = new Promise((res, rej) => {
-            const sc = document.createElement('script');
-            sc.src = SHEETJS; sc.onload = () => res(root.XLSX);
-            sc.onerror = () => rej(new Error('Could not load the spreadsheet reader library (needs an internet connection).'));
-            document.head.appendChild(sc);
-        });
+        if (!sheetjsReady) sheetjsReady = loadScript(scriptBase + 'vendor/xlsx.full.min.js', 'spreadsheet reader').then(() => root.XLSX);
         return sheetjsReady;
     }
     async function importXlsxFile(file) {

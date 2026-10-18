@@ -1,0 +1,23 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* App base styles (previously inline in index.html) */
+@layer base {
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+            -webkit-touch-callout: none;
+        }
+        html, body { overflow-x: hidden; max-width: 100%; }
+        .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+        input[type=date] { color-scheme: dark; }
+        input, select, textarea { font-size: 16px; } /* prevents iOS Safari zoom-on-focus */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+        @supports(padding: max(0px)) {
+            .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom), 16px); }
+            .safe-top { padding-top: max(env(safe-area-inset-top), 12px); }
+        }
+    }

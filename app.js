@@ -1,0 +1,2895 @@
+const {
+  useState,
+  useEffect,
+  useRef,
+  useMemo
+} = React;
+const ICONS = {
+  'bar-chart-3': '<line x1="12" x2="12" y1="20" y2="10" /> <line x1="18" x2="18" y1="20" y2="4" /> <line x1="6" x2="6" y1="20" y2="16" />',
+  'calendar': '<path d="M8 2v4" /> <path d="M16 2v4" /> <rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M3 10h18" />',
+  'check': '<path d="M20 6 9 17l-5-5" />',
+  'check-circle-2': '<path d="M21.801 10A10 10 0 1 1 17 3.335" /> <path d="m9 11 3 3L22 4" />',
+  'chevron-right': '<path d="m9 18 6-6-6-6" />',
+  'dumbbell': '<path d="M14.4 14.4 9.6 9.6" /> <path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z" /> <path d="m21.5 21.5-1.4-1.4" /> <path d="M3.9 3.9 2.5 2.5" /> <path d="M6.404 12.768a2 2 0 1 1-2.829-2.829l1.768-1.767a2 2 0 1 1-2.828-2.829l2.828-2.828a2 2 0 1 1 2.829 2.828l1.767-1.768a2 2 0 1 1 2.829 2.829z" />',
+  'home': '<path d="M15 21v-8a1 1 0 0 0-1-1h-4a1 1 0 0 0-1 1v8" /> <path d="M3 10a2 2 0 0 1 .709-1.528l7-5.999a2 2 0 0 1 2.582 0l7 5.999A2 2 0 0 1 21 10v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />',
+  'layers': '<path d="m12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83Z" /> <path d="m22 17.65-9.17 4.16a2 2 0 0 1-1.66 0L2 17.65" /> <path d="m22 12.65-9.17 4.16a2 2 0 0 1-1.66 0L2 12.65" />',
+  'play': '<polygon points="6 3 20 12 6 21 6 3" />',
+  'refresh-cw': '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /> <path d="M21 3v5h-5" /> <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /> <path d="M8 16H3v5" />',
+  'sparkles': '<path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z" /> <path d="M20 3v4" /> <path d="M22 5h-4" /> <path d="M4 17v2" /> <path d="M5 18H3" />',
+  'utensils': '<path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 0 0 2-2V2" /> <path d="M7 2v20" /> <path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3Zm0 0v7" />',
+  'x': '<path d="M18 6 6 18" /> <path d="m6 6 12 12" />'
+};
+const Icon = ({
+  name,
+  className
+}) => React.createElement("svg", {
+  viewBox: "0 0 24 24",
+  fill: "none",
+  stroke: "currentColor",
+  strokeWidth: "2",
+  strokeLinecap: "round",
+  strokeLinejoin: "round",
+  className: className,
+  "aria-hidden": "true",
+  dangerouslySetInnerHTML: {
+    __html: ICONS[name] || ''
+  }
+});
+const IMAGES = {
+  benchPress: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=300&q=80',
+  pullUps: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=300&q=80',
+  overheadPress: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=300&q=80',
+  barbellRow: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=300&q=80',
+  heroDeadlift: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
+  squat: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=300&q=80',
+  inclineDumbbell: 'https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?auto=format&fit=crop&w=300&q=80',
+  romanianDeadlift: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=300&q=80',
+  legRaises: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=300&q=80'
+};
+const INITIAL_EXERCISES = [{
+  id: 'ex-bench',
+  name: 'Barbell Bench Press',
+  shortName: 'Bench Press',
+  primaryMuscle: 'Chest',
+  equipment: 'Barbell',
+  pattern: 'Horizontal Push',
+  thumbnail: IMAGES.benchPress
+}, {
+  id: 'ex-pullup',
+  name: 'Weighted Pull-Ups',
+  shortName: 'Pull-Up',
+  primaryMuscle: 'Back',
+  equipment: 'Pull-Up Bar',
+  pattern: 'Vertical Pull',
+  thumbnail: IMAGES.pullUps
+}, {
+  id: 'ex-db-ohp',
+  name: 'DB Overhead Press',
+  shortName: 'DB OHP',
+  primaryMuscle: 'Shoulders',
+  equipment: 'Dumbbells',
+  pattern: 'Vertical Push',
+  thumbnail: IMAGES.overheadPress
+}, {
+  id: 'ex-row',
+  name: 'Barbell Row',
+  shortName: 'Barbell Row',
+  primaryMuscle: 'Back',
+  equipment: 'Barbell',
+  pattern: 'Horizontal Pull',
+  thumbnail: IMAGES.barbellRow
+}, {
+  id: 'ex-leg-raise',
+  name: 'Hanging Leg Raises',
+  shortName: 'Leg Raises',
+  primaryMuscle: 'Core',
+  equipment: 'Pull-Up Bar',
+  pattern: 'Core Flexion',
+  thumbnail: IMAGES.legRaises
+}, {
+  id: 'ex-deadlift',
+  name: 'Deadlift',
+  shortName: 'Deadlift',
+  primaryMuscle: 'Posterior Chain',
+  equipment: 'Barbell',
+  pattern: 'Hip Hinge',
+  thumbnail: IMAGES.heroDeadlift
+}, {
+  id: 'ex-ohp',
+  name: 'Overhead Press',
+  shortName: 'OHP',
+  primaryMuscle: 'Shoulders',
+  equipment: 'Barbell',
+  pattern: 'Vertical Push',
+  thumbnail: IMAGES.overheadPress
+}, {
+  id: 'ex-squat',
+  name: 'Barbell Back Squat',
+  shortName: 'Squat',
+  primaryMuscle: 'Quadriceps',
+  equipment: 'Barbell',
+  pattern: 'Squat',
+  thumbnail: IMAGES.squat
+}, {
+  id: 'ex-incline-db',
+  name: 'Incline Dumbbell Press',
+  shortName: 'Incline DB Press',
+  primaryMuscle: 'Chest',
+  equipment: 'Dumbbells',
+  pattern: 'Horizontal Push',
+  thumbnail: IMAGES.inclineDumbbell
+}, {
+  id: 'ex-rdl',
+  name: 'Romanian Deadlift',
+  shortName: 'RDL',
+  primaryMuscle: 'Hamstrings',
+  equipment: 'Barbell',
+  pattern: 'Hip Hinge',
+  thumbnail: IMAGES.romanianDeadlift
+}, {
+  id: 'ex-db-row',
+  name: 'Single-Arm DB Row',
+  shortName: 'DB Row',
+  primaryMuscle: 'Back',
+  equipment: 'Dumbbells',
+  pattern: 'Horizontal Pull',
+  thumbnail: IMAGES.barbellRow
+}, {
+  id: 'ex-goblet-squat',
+  name: 'Goblet Squat',
+  shortName: 'Goblet Squat',
+  primaryMuscle: 'Quadriceps',
+  equipment: 'Dumbbells',
+  pattern: 'Squat',
+  thumbnail: IMAGES.squat
+}, {
+  id: 'ex-db-rdl',
+  name: 'Dumbbell RDL',
+  shortName: 'DB RDL',
+  primaryMuscle: 'Hamstrings',
+  equipment: 'Dumbbells',
+  pattern: 'Hip Hinge',
+  thumbnail: IMAGES.romanianDeadlift
+}, {
+  id: 'ex-pushup',
+  name: 'Deficit Tempo Push-Ups',
+  shortName: 'Push-Up',
+  primaryMuscle: 'Chest',
+  equipment: 'Bodyweight',
+  pattern: 'Horizontal Push',
+  thumbnail: IMAGES.benchPress
+}, {
+  id: 'ex-split-squat',
+  name: 'Bulgarian Split Squat',
+  shortName: 'Split Squat',
+  primaryMuscle: 'Quadriceps',
+  equipment: 'Dumbbells',
+  pattern: 'Squat',
+  thumbnail: IMAGES.squat
+}, {
+  id: 'ex-plank-reach',
+  name: 'Hollow Body Hold',
+  shortName: 'Core Hold',
+  primaryMuscle: 'Core',
+  equipment: 'Bodyweight',
+  pattern: 'Core Flexion',
+  thumbnail: IMAGES.legRaises
+}];
+const THEMES = {
+  blue: {
+    name: 'Athletic Blue',
+    bgPrimary: '#080E16',
+    bgSecondary: '#0D1622',
+    bgCard: '#101C2B',
+    bgElevated: '#142235',
+    border: '#203147',
+    accent: '#1685F8',
+    accentHover: '#2992FF',
+    textPrimary: '#F3F6FA',
+    textSecondary: '#A4B3C5',
+    success: '#31D583'
+  },
+  emerald: {
+    name: 'Volt Emerald',
+    bgPrimary: '#090E14',
+    bgSecondary: '#0F1722',
+    bgCard: '#12202E',
+    bgElevated: '#182A3D',
+    border: '#22384D',
+    accent: '#10B981',
+    accentHover: '#059669',
+    textPrimary: '#F0FDF4',
+    textSecondary: '#94A3B8',
+    success: '#34D399'
+  },
+  crimson: {
+    name: 'Crimson Force',
+    bgPrimary: '#0B0A0C',
+    bgSecondary: '#141217',
+    bgCard: '#1E1B22',
+    bgElevated: '#28242E',
+    border: '#3B3542',
+    accent: '#F43F5E',
+    accentHover: '#E11D48',
+    textPrimary: '#FFF1F2',
+    textSecondary: '#A1A1AA',
+    success: '#31D583'
+  },
+  gold: {
+    name: 'Titan Gold',
+    bgPrimary: '#0D0C0A',
+    bgSecondary: '#161410',
+    bgCard: '#211E18',
+    bgElevated: '#2C2821',
+    border: '#3F3930',
+    accent: '#F59E0B',
+    accentHover: '#D97706',
+    textPrimary: '#FFFBEB',
+    textSecondary: '#A8A29E',
+    success: '#31D583'
+  },
+  violet: {
+    name: 'Cyber Violet',
+    bgPrimary: '#0A0812',
+    bgSecondary: '#120F1D',
+    bgCard: '#1A162B',
+    bgElevated: '#241F3B',
+    border: '#362F54',
+    accent: '#8B5CF6',
+    accentHover: '#7C3AED',
+    textPrimary: '#F5F3FF',
+    textSecondary: '#A78BFA',
+    success: '#31D583'
+  }
+};
+const INITIAL_PROGRAM = {
+  name: '12 Week Strength Builder',
+  totalWeeks: 12,
+  currentWeek: 4,
+  phase: 'Phase 2 · Intensification',
+  days: [{
+    id: 'day-1',
+    name: 'Upper Body Strength',
+    emphasis: 'Push · Pull · Core',
+    durationMin: 60,
+    location: 'Gym',
+    exercises: [{
+      exerciseId: 'ex-bench',
+      sets: 4,
+      reps: 5,
+      targetWeightLb: 225,
+      restSeconds: 180,
+      completed: false
+    }, {
+      exerciseId: 'ex-pullup',
+      sets: 4,
+      reps: 6,
+      targetWeightLb: 10,
+      restSeconds: 120,
+      completed: false,
+      isWeightedAddition: true
+    }, {
+      exerciseId: 'ex-db-ohp',
+      sets: 3,
+      reps: 8,
+      targetWeightLb: 65,
+      restSeconds: 90,
+      completed: false
+    }, {
+      exerciseId: 'ex-row',
+      sets: 3,
+      reps: 8,
+      targetWeightLb: 185,
+      restSeconds: 90,
+      completed: false
+    }, {
+      exerciseId: 'ex-leg-raise',
+      sets: 3,
+      reps: 12,
+      targetWeightLb: 0,
+      restSeconds: 60,
+      completed: false
+    }]
+  }, {
+    id: 'day-2',
+    name: 'Lower Body Power',
+    emphasis: 'Squat · Hinge · Posterior',
+    durationMin: 65,
+    location: 'Gym',
+    exercises: [{
+      exerciseId: 'ex-squat',
+      sets: 4,
+      reps: 5,
+      targetWeightLb: 315,
+      restSeconds: 180,
+      completed: false
+    }, {
+      exerciseId: 'ex-rdl',
+      sets: 3,
+      reps: 8,
+      targetWeightLb: 245,
+      restSeconds: 120,
+      completed: false
+    }, {
+      exerciseId: 'ex-db-row',
+      sets: 3,
+      reps: 10,
+      targetWeightLb: 80,
+      restSeconds: 90,
+      completed: false
+    }]
+  }, {
+    id: 'day-3',
+    name: 'Hypertrophy & Accessories',
+    emphasis: 'Shoulders · Arms · Back',
+    durationMin: 55,
+    location: 'Gym',
+    exercises: [{
+      exerciseId: 'ex-ohp',
+      sets: 4,
+      reps: 6,
+      targetWeightLb: 145,
+      restSeconds: 120,
+      completed: false
+    }, {
+      exerciseId: 'ex-incline-db',
+      sets: 3,
+      reps: 10,
+      targetWeightLb: 75,
+      restSeconds: 90,
+      completed: false
+    }, {
+      exerciseId: 'ex-pullup',
+      sets: 3,
+      reps: 8,
+      targetWeightLb: 0,
+      restSeconds: 90,
+      completed: false
+    }]
+  }]
+};
+const INITIAL_WORKOUT_LOGS = [{
+  id: 'log-1',
+  date: '2026-09-20',
+  workoutName: 'Upper Body Strength',
+  durationMin: 58,
+  totalVolumeLb: 18450,
+  exercises: [{
+    exerciseId: 'ex-bench',
+    name: 'Barbell Bench Press',
+    sets: [{
+      setNumber: 1,
+      weight: 225,
+      reps: 5,
+      rpe: 8
+    }, {
+      setNumber: 2,
+      weight: 225,
+      reps: 5,
+      rpe: 8.5
+    }, {
+      setNumber: 3,
+      weight: 225,
+      reps: 5,
+      rpe: 9
+    }, {
+      setNumber: 4,
+      weight: 225,
+      reps: 5,
+      rpe: 9.5
+    }]
+  }]
+}];
+const restLabel = r => r ? r.raw.replace(/MIN$/i, ' min').toLowerCase().replace(/\s+/g, ' ') : 'unspecified';
+const intensityLabel = i => i ? i.type === 'RPE' ? `RPE ${i.raw}` : i.type === 'RIR' ? `RIR ${i.raw}` : i.type === '%1RM' ? `${i.raw} 1RM` : i.raw : 'unspecified';
+const STATUS_META = {
+  not_started: {
+    label: 'Not Started',
+    cls: 'bg-[#142235] text-[#8FA2B8]'
+  },
+  in_progress: {
+    label: 'In Progress',
+    cls: 'bg-[#1685F8]/20 text-[#1685F8]'
+  },
+  paused: {
+    label: 'Paused',
+    cls: 'bg-[#F59E0B]/20 text-[#F59E0B]'
+  },
+  completed: {
+    label: 'Completed',
+    cls: 'bg-[#31D583]/20 text-[#31D583]'
+  }
+};
+const StatusBadge = ({
+  status
+}) => {
+  const m = STATUS_META[status] || STATUS_META.not_started;
+  return React.createElement("span", {
+    className: `px-2 py-0.5 rounded-md text-[10px] font-bold uppercase tracking-wide ${m.cls}`
+  }, m.label);
+};
+const ProgramCard = ({
+  program,
+  state,
+  isActive,
+  onOpen
+}) => {
+  const m = program.metadata;
+  const flagged = program.flags.length;
+  return React.createElement("button", {
+    onClick: onOpen,
+    className: "w-full text-left bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2.5 active:bg-[#142235]"
+  }, React.createElement("div", {
+    className: "flex items-start justify-between gap-2"
+  }, React.createElement("h3", {
+    className: "text-sm font-black text-white leading-snug"
+  }, program.name), React.createElement(StatusBadge, {
+    status: state.status
+  })), React.createElement("div", {
+    className: "flex flex-wrap gap-1.5 text-[11px] text-[#8FA2B8]"
+  }, m.totalWeeks && React.createElement("span", {
+    className: "px-2 py-0.5 rounded-md bg-[#080E16] border border-[#203147]"
+  }, m.totalWeeks, " weeks"), m.daysPerWeek && React.createElement("span", {
+    className: "px-2 py-0.5 rounded-md bg-[#080E16] border border-[#203147]"
+  }, m.daysPerWeek, " days/week"), m.split && React.createElement("span", {
+    className: "px-2 py-0.5 rounded-md bg-[#080E16] border border-[#203147]"
+  }, m.split), m.level && React.createElement("span", {
+    className: "px-2 py-0.5 rounded-md bg-[#080E16] border border-[#203147]"
+  }, m.level)), React.createElement("div", {
+    className: "flex items-center justify-between text-[11px]"
+  }, isActive ? React.createElement("span", {
+    className: "font-bold text-[#31D583]"
+  }, "\u25CF Active program") : React.createElement("span", {
+    className: "text-[#8FA2B8]"
+  }, "Level, focus & equipment: unspecified in source"), flagged > 0 && React.createElement("span", {
+    className: "text-[#F59E0B] font-semibold"
+  }, "\u26A0 ", flagged, " to review")));
+};
+const ProgramDetail = ({
+  program,
+  state,
+  isActive,
+  unit,
+  onBack,
+  onRemove,
+  children
+}) => {
+  const [week, setWeek] = useState(program.weeks[0] ? program.weeks[0].week : 1);
+  const [showFlags, setShowFlags] = useState(false);
+  const [showInstr, setShowInstr] = useState(false);
+  const [openSection, setOpenSection] = useState(null);
+  const wk = program.weeks.find(w => w.week === week);
+  const m = program.metadata;
+  return React.createElement("div", {
+    className: "space-y-4"
+  }, React.createElement("button", {
+    onClick: onBack,
+    className: "min-h-[44px] text-xs font-bold text-[#1685F8]"
+  }, "\u2039 Program Library"), React.createElement("div", {
+    className: "space-y-1.5"
+  }, React.createElement("div", {
+    className: "flex items-start justify-between gap-2"
+  }, React.createElement("h2", {
+    className: "text-lg font-black text-white leading-snug"
+  }, program.name), React.createElement(StatusBadge, {
+    status: state.status
+  })), React.createElement("p", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, [m.totalWeeks && `${m.totalWeeks} weeks`, m.daysPerWeek && `${m.daysPerWeek} training days/week`, m.split].filter(Boolean).join(' · ')), React.createElement("p", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "Source: ", program.source.fileName, " \xB7 imported ", program.source.importedAt.split('T')[0], " \xB7 level, focus & equipment are not stated in a structured form in the PDF")), m.suggestedSchedule && React.createElement("div", {
+    className: "text-[11px] text-[#C7D3E0] bg-[#101C2B] border border-[#203147] rounded-xl p-3"
+  }, React.createElement("span", {
+    className: "font-bold text-white"
+  }, "Weekly layout in the PDF:"), " ", m.suggestedSchedule), m.restNote && React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, m.restNote), children, program.flags.length > 0 && React.createElement("div", {
+    className: "bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-3 space-y-2"
+  }, React.createElement("button", {
+    onClick: () => setShowFlags(!showFlags),
+    className: "w-full min-h-[36px] flex items-center justify-between text-xs font-bold text-[#F59E0B]"
+  }, React.createElement("span", null, "\u26A0 ", program.flags.length, " item(s) flagged for review"), React.createElement("span", null, showFlags ? '▲' : '▼')), showFlags && program.flags.map((f, i) => React.createElement("div", {
+    key: i,
+    className: "text-[11px] text-[#F3F6FA] leading-snug"
+  }, f.page ? React.createElement("span", {
+    className: "text-[#8FA2B8]"
+  }, "p.", f.page, " \xB7 ") : f.ref ? React.createElement("span", {
+    className: "text-[#8FA2B8]"
+  }, f.ref, " \xB7 ") : null, f.msg))), React.createElement("div", {
+    className: "flex gap-2 overflow-x-auto pb-1"
+  }, program.weeks.map(w => React.createElement("button", {
+    key: w.week,
+    onClick: () => setWeek(w.week),
+    className: `min-h-[40px] px-4 rounded-xl text-xs font-bold shrink-0 border ${w.week === week ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#101C2B] border-[#203147] text-[#8FA2B8]'}`
+  }, "Week ", w.week, w.deload ? ' ↓' : ''))), wk && (wk.phase || wk.deload) && React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, wk.phase, wk.deload ? ' · deload week (from the source)' : ''), wk && wk.note && React.createElement("div", {
+    className: "text-[11px] text-[#C7D3E0] bg-[#101C2B] border border-[#203147] rounded-xl p-3"
+  }, wk.note), wk && wk.days.map(d => React.createElement("div", {
+    key: d.day,
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, React.createElement("div", null, React.createElement("div", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#1685F8]"
+  }, "Day ", d.day), React.createElement("h3", {
+    className: "text-sm font-black text-white"
+  }, d.label)), React.createElement("span", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, d.page ? `PDF p.${d.page}` : d.ref)), d.exercises.map(e => React.createElement("div", {
+    key: e.order,
+    className: "border-t border-[#203147] pt-2.5 space-y-1"
+  }, React.createElement("div", {
+    className: "flex items-start justify-between gap-2"
+  }, React.createElement("div", {
+    className: "text-[13px] font-bold text-white"
+  }, React.createElement("span", {
+    className: "text-[#8FA2B8] mr-1.5"
+  }, e.order, "."), e.name, e.flags.length > 0 && React.createElement("span", {
+    className: "ml-1.5 text-[#F59E0B]"
+  }, "\u26A0")), React.createElement("div", {
+    className: "text-[12px] font-bold text-white tabular-nums shrink-0"
+  }, e.workingSets ?? '?', " \xD7 ", e.reps ?? '?')), React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, e.warmupText ? `${e.warmupText} warm-up set(s) · ` : e.warmupSets != null ? `${e.warmupSets} warm-up set(s) · ` : '', "Intensity ", intensityLabel(e.intensity), " \xB7 Rest: ", restLabel(e.rest)), e.technique && React.createElement("div", {
+    className: "text-[11px] font-semibold text-[#F59E0B]"
+  }, "Last-set technique: ", e.technique), e.notes && React.createElement("div", {
+    className: "text-[11px] text-[#C7D3E0] leading-snug"
+  }, e.notes), e.sourceSubstitutions && e.sourceSubstitutions.length > 0 && !e.sourceGuidance && React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "Substitutes in source: ", e.sourceSubstitutions.join(' · ')), e.videoUrl && React.createElement("a", {
+    href: e.videoUrl,
+    target: "_blank",
+    rel: "noopener noreferrer",
+    className: "inline-block text-[11px] font-semibold text-[#1685F8]"
+  }, "\u25B6 Technique video (from the source)"))))), program.instructions.length > 0 && React.createElement("div", {
+    className: "space-y-2"
+  }, React.createElement("button", {
+    onClick: () => setShowInstr(!showInstr),
+    className: "w-full min-h-[44px] flex items-center justify-between text-xs font-bold text-white"
+  }, React.createElement("span", null, "Instructions from the source (", program.instructions.length, " ", program.source.kind === 'spreadsheet' ? 'notes' : 'pages', ")"), React.createElement("span", {
+    className: "text-[#8FA2B8]"
+  }, showInstr ? '▲' : '▼')), showInstr && program.instructions.map((sec, si) => React.createElement("div", {
+    key: si,
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl"
+  }, React.createElement("button", {
+    onClick: () => setOpenSection(openSection === si ? null : si),
+    className: "w-full min-h-[44px] px-3 flex items-center justify-between text-left text-xs font-semibold text-white"
+  }, React.createElement("span", {
+    className: "truncate"
+  }, sec.title || sec.lines[0]), React.createElement("span", {
+    className: "text-[#8FA2B8] ml-2 shrink-0"
+  }, sec.page ? `p.${sec.page} ` : '', openSection === si ? '▲' : '▼')), openSection === si && React.createElement("div", {
+    className: "px-3 pb-3 text-[11px] text-[#C7D3E0] leading-relaxed whitespace-pre-line"
+  }, sec.lines.join('\n'))))), React.createElement("button", {
+    onClick: onRemove,
+    className: "w-full min-h-[44px] rounded-xl bg-[#142235] border border-[#203147] text-[#F43F5E] text-xs font-bold"
+  }, "Archive program (workout history is kept)"));
+};
+const pad2 = n => String(n).padStart(2, '0');
+const toDateStr = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const parseDate = s => {
+  const [y, m, d] = s.split('-').map(Number);
+  return new Date(y, m - 1, d);
+};
+const addDays = (s, n) => {
+  const d = parseDate(s);
+  d.setDate(d.getDate() + n);
+  return toDateStr(d);
+};
+const todayStr = () => toDateStr(new Date());
+const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const fmtShort = s => {
+  const d = parseDate(s);
+  return `${WEEKDAYS[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()}`;
+};
+const normName = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const sessionKeyOf = (week, day) => `w${week}d${day}`;
+const defaultWeekdays = n => ({
+  1: [1],
+  2: [1, 4],
+  3: [1, 3, 5],
+  4: [1, 2, 4, 5],
+  5: [1, 2, 3, 4, 5],
+  6: [1, 2, 3, 4, 5, 6],
+  7: [0, 1, 2, 3, 4, 5, 6]
+})[n] || [1, 2, 3, 4, 5, 6].slice(0, n);
+function buildSessions(program, prog) {
+  const out = [];
+  const today = todayStr();
+  const weekdays = (prog.weekdays || []).slice().sort((a, b) => a - b);
+  program.weeks.forEach((w, wi) => {
+    const windowDates = [];
+    if (prog.startDate) for (let i = 0; i < 7; i++) {
+      const ds = addDays(prog.startDate, wi * 7 + i);
+      if (weekdays.includes(parseDate(ds).getDay())) windowDates.push(ds);
+    }
+    w.days.forEach((d, k) => {
+      const key = sessionKeyOf(w.week, d.day);
+      const rec = (prog.sessions || {})[key] || {};
+      const status = rec.status || 'planned';
+      const basePlanned = windowDates[k] || windowDates[windowDates.length - 1] || null;
+      const plannedDate = rec.plannedDate || basePlanned;
+      out.push({
+        key,
+        week: w.week,
+        deload: !!w.deload,
+        day: d.day,
+        label: d.label,
+        page: d.page,
+        exercises: d.exercises,
+        status,
+        plannedDate,
+        rescheduled: !!rec.plannedDate && rec.plannedDate !== basePlanned,
+        completedDate: rec.completedDate || null,
+        logId: rec.logId || null,
+        missed: status === 'planned' && !!plannedDate && plannedDate < today
+      });
+    });
+  });
+  return out;
+}
+const StartProgramSheet = ({
+  program,
+  owned,
+  onCancel,
+  onConfirm
+}) => {
+  const missing = missingEquipment(program, owned);
+  const need = program.metadata.daysPerWeek || 0;
+  const [startDate, setStartDate] = useState(todayStr());
+  const fromPdf = program.metadata.suggestedWeekdays && program.metadata.suggestedWeekdays.length === need ? program.metadata.suggestedWeekdays : null;
+  const [weekdays, setWeekdays] = useState(fromPdf || defaultWeekdays(need));
+  const toggle = d => setWeekdays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
+  const valid = weekdays.length === need && !!startDate;
+  const preview = valid ? buildSessions(program, {
+    startDate,
+    weekdays,
+    sessions: {}
+  }) : [];
+  const lastDate = preview.length ? preview[preview.length - 1].plannedDate : null;
+  return React.createElement("div", {
+    className: "fixed inset-0 z-[60] bg-black/80 flex items-end justify-center"
+  }, React.createElement("div", {
+    className: "bg-[#101C2B] border-t border-[#203147] rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, React.createElement("h3", {
+    className: "text-sm font-bold text-white"
+  }, "Start: ", program.name), React.createElement("button", {
+    onClick: onCancel,
+    "aria-label": "Close",
+    className: "min-w-[44px] min-h-[44px] text-[#8FA2B8]"
+  }, "\u2715")), React.createElement("div", null, React.createElement("label", {
+    className: "text-[11px] text-[#8FA2B8] block mb-1"
+  }, "Start date"), React.createElement("input", {
+    type: "date",
+    value: startDate,
+    onChange: e => setStartDate(e.target.value),
+    className: "w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white"
+  })), React.createElement("div", null, React.createElement("label", {
+    className: "text-[11px] text-[#8FA2B8] block mb-1"
+  }, "Training weekdays \u2014 choose ", need, fromPdf ? ` (pre-selected from the PDF's example week: ${program.metadata.suggestedSchedule})` : ' (the PDF does not say which days)'), React.createElement("div", {
+    className: "grid grid-cols-7 gap-1.5"
+  }, WEEKDAYS.map((n, d) => React.createElement("button", {
+    key: d,
+    onClick: () => toggle(d),
+    className: `min-h-[44px] rounded-lg text-[11px] font-bold border ${weekdays.includes(d) ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]'}`
+  }, n))), !valid && React.createElement("div", {
+    className: "text-[11px] text-[#F59E0B] mt-1.5"
+  }, "Select exactly ", need, " days (", weekdays.length, " selected).")), missing.length > 0 && React.createElement("div", {
+    className: "bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-3 space-y-1"
+  }, React.createElement("div", {
+    className: "text-[11px] font-bold text-[#F59E0B]"
+  }, "Equipment you haven't marked as available (estimated from exercise names)"), missing.map(m => React.createElement("div", {
+    key: m.equipment,
+    className: "text-[11px] text-white"
+  }, React.createElement("span", {
+    className: "font-bold"
+  }, m.equipment, ":"), " ", m.exercises.join(', '))), React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "You can substitute individual exercises during the workout. Update \u201CMy equipment\u201D in Settings if this is wrong.")), valid && React.createElement("div", {
+    className: "space-y-1.5"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, "Calendar preview \xB7 ends ", fmtShort(lastDate)), React.createElement("div", {
+    className: "bg-[#080E16] border border-[#203147] rounded-xl p-3 max-h-48 overflow-y-auto space-y-1"
+  }, preview.map(s => React.createElement("div", {
+    key: s.key,
+    className: "flex justify-between text-[11px]"
+  }, React.createElement("span", {
+    className: "text-[#8FA2B8]"
+  }, fmtShort(s.plannedDate)), React.createElement("span", {
+    className: "text-white"
+  }, "W", s.week, " D", s.day, " \xB7 ", s.label)))), React.createElement("p", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "Other days are rest days. Workouts never advance or complete just because a date passes.")), React.createElement("button", {
+    disabled: !valid,
+    onClick: () => onConfirm({
+      startDate,
+      weekdays: weekdays.slice().sort((a, b) => a - b)
+    }),
+    className: "w-full min-h-[48px] rounded-xl bg-[#1685F8] text-white text-sm font-black disabled:opacity-40"
+  }, "Start Program")));
+};
+const CalendarView = ({
+  program,
+  prog,
+  sessions,
+  logs,
+  hasActiveWorkout,
+  onStart,
+  onReschedule,
+  onSkip,
+  onUnskip,
+  onOpenProgram
+}) => {
+  const firstPending = sessions.find(x => x.status === 'planned' && x.plannedDate);
+  const initialDate = firstPending ? firstPending.plannedDate : todayStr();
+  const [month, setMonth] = useState(() => {
+    const t = parseDate(initialDate);
+    return new Date(t.getFullYear(), t.getMonth(), 1);
+  });
+  const [selected, setSelected] = useState(initialDate);
+  const today = todayStr();
+  const first = month.getDay();
+  const dim = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const cells = [];
+  for (let i = 0; i < first; i++) cells.push(null);
+  for (let d = 1; d <= dim; d++) cells.push(`${month.getFullYear()}-${pad2(month.getMonth() + 1)}-${pad2(d)}`);
+  const byDate = {};
+  sessions.forEach(s => {
+    const k = s.status === 'completed' && s.completedDate ? s.completedDate : s.plannedDate;
+    if (k) (byDate[k] = byDate[k] || []).push(s);
+  });
+  const logDates = new Set(logs.map(l => l.date));
+  const nextKey = (sessions.find(s => s.status === 'planned') || {}).key;
+  const dotCls = s => s.status === 'completed' ? 'bg-[#31D583]' : s.status === 'skipped' ? 'bg-[#8FA2B8]' : s.missed ? 'bg-[#F43F5E]' : 'bg-[#1685F8]';
+  const daySessions = byDate[selected] || [];
+  const doneCount = sessions.filter(s => s.status === 'completed').length;
+  const nextSession = sessions.find(s => s.status === 'planned');
+  const wkNow = nextSession ? nextSession.week : program ? program.weeks.length : 0;
+  return React.createElement("div", {
+    className: "space-y-4"
+  }, React.createElement("h2", {
+    className: "text-lg font-black text-white"
+  }, "Calendar"), !program ? React.createElement("div", {
+    className: "bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-5 text-center space-y-3"
+  }, React.createElement("p", {
+    className: "text-xs text-[#8FA2B8]"
+  }, "No program is active. Start one from the Program Library to see its schedule here."), React.createElement("button", {
+    onClick: onOpenProgram,
+    className: "min-h-[44px] px-5 rounded-xl bg-[#1685F8] text-white text-xs font-bold"
+  }, "Open Program Library")) : React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-1"
+  }, React.createElement("div", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#1685F8]"
+  }, "Active program"), React.createElement("div", {
+    className: "text-sm font-black text-white"
+  }, program.name), React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "Week ", wkNow, " of ", program.weeks.length, " \xB7 ", doneCount, "/", sessions.length, " workouts completed")), React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-3"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between mb-2"
+  }, React.createElement("button", {
+    "aria-label": "Previous month",
+    onClick: () => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1)),
+    className: "min-w-[44px] min-h-[44px] text-white text-lg"
+  }, "\u2039"), React.createElement("div", {
+    className: "text-sm font-bold text-white"
+  }, month.toLocaleString(undefined, {
+    month: 'long',
+    year: 'numeric'
+  })), React.createElement("button", {
+    "aria-label": "Next month",
+    onClick: () => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1)),
+    className: "min-w-[44px] min-h-[44px] text-white text-lg"
+  }, "\u203A")), React.createElement("div", {
+    className: "grid grid-cols-7 text-center text-[10px] text-[#8FA2B8] mb-1"
+  }, WEEKDAYS.map(w => React.createElement("div", {
+    key: w
+  }, w))), React.createElement("div", {
+    className: "grid grid-cols-7 gap-1"
+  }, cells.map((ds, i) => ds ? React.createElement("button", {
+    key: ds,
+    onClick: () => setSelected(ds),
+    className: `min-h-[46px] rounded-lg flex flex-col items-center justify-center gap-1 text-xs font-semibold border ${selected === ds ? 'border-[#1685F8] bg-[#1685F8]/10' : 'border-transparent'} ${ds === today ? 'text-[#1685F8]' : 'text-white'}`
+  }, React.createElement("span", null, parseInt(ds.slice(8), 10)), React.createElement("span", {
+    className: "flex gap-0.5 h-1.5"
+  }, (byDate[ds] || []).slice(0, 3).map(s => React.createElement("span", {
+    key: s.key,
+    className: `w-1.5 h-1.5 rounded-full ${dotCls(s)}`
+  })), !(byDate[ds] || []).length && logDates.has(ds) && React.createElement("span", {
+    className: "w-1.5 h-1.5 rounded-full bg-white/60"
+  }))) : React.createElement("div", {
+    key: `e${i}`
+  }))), React.createElement("div", {
+    className: "flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-[#8FA2B8]"
+  }, React.createElement("span", null, React.createElement("span", {
+    className: "inline-block w-2 h-2 rounded-full bg-[#1685F8] mr-1"
+  }), "Scheduled"), React.createElement("span", null, React.createElement("span", {
+    className: "inline-block w-2 h-2 rounded-full bg-[#31D583] mr-1"
+  }), "Completed"), React.createElement("span", null, React.createElement("span", {
+    className: "inline-block w-2 h-2 rounded-full bg-[#F43F5E] mr-1"
+  }), "Missed"), React.createElement("span", null, React.createElement("span", {
+    className: "inline-block w-2 h-2 rounded-full bg-[#8FA2B8] mr-1"
+  }), "Skipped"))), React.createElement("div", {
+    className: "space-y-2"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, fmtShort(selected), selected === today ? ' · Today' : ''), daySessions.length === 0 && React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, program ? 'Rest day — no program workout scheduled.' : 'Nothing scheduled.'), daySessions.map(s => React.createElement("div", {
+    key: s.key,
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl p-3 space-y-2"
+  }, React.createElement("div", {
+    className: "flex items-start justify-between gap-2"
+  }, React.createElement("div", null, React.createElement("div", {
+    className: "text-sm font-bold text-white"
+  }, s.label), React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "Week ", s.week, s.deload ? ' (deload)' : '', " \xB7 Day ", s.day, " \xB7 ", s.exercises.length, " exercises"), s.rescheduled && React.createElement("div", {
+    className: "text-[10px] text-[#F59E0B]"
+  }, "Rescheduled"), s.status === 'completed' && React.createElement("div", {
+    className: "text-[10px] text-[#31D583]"
+  }, "Completed ", s.completedDate, s.completedDate !== s.plannedDate ? ` (planned ${s.plannedDate})` : ''), s.missed && React.createElement("div", {
+    className: "text-[10px] text-[#F43F5E]"
+  }, "Missed \u2014 still pending; nothing was skipped automatically"), s.status === 'skipped' && React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "Skipped by you")), s.key === nextKey && React.createElement("span", {
+    className: "text-[10px] font-bold text-[#1685F8] uppercase"
+  }, "Up next")), s.status === 'planned' && React.createElement("div", {
+    className: "flex flex-wrap items-center gap-2"
+  }, React.createElement("button", {
+    onClick: () => onStart(s),
+    className: "min-h-[44px] px-4 rounded-xl bg-[#1685F8] text-white text-xs font-bold"
+  }, hasActiveWorkout ? 'Return to workout' : 'Start workout'), React.createElement("label", {
+    className: "min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold flex items-center gap-2"
+  }, "Move to", React.createElement("input", {
+    type: "date",
+    value: s.plannedDate || '',
+    onChange: e => e.target.value && onReschedule(s, e.target.value),
+    className: "bg-transparent text-white w-[130px]"
+  })), React.createElement("button", {
+    onClick: () => onSkip(s),
+    className: "min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-[#8FA2B8] text-xs font-bold"
+  }, "Skip")), s.status === 'skipped' && React.createElement("button", {
+    onClick: () => onUnskip(s),
+    className: "min-h-[44px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold"
+  }, "Undo skip"))), logs.filter(l => l.date === selected).map(l => React.createElement("div", {
+    key: l.id,
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl p-3 text-[11px] text-[#8FA2B8]"
+  }, React.createElement("span", {
+    className: "text-white font-bold"
+  }, l.workoutName), " \xB7 logged \xB7 ", l.durationMin, " min", l.programName ? ` · ${l.programName}` : ''))));
+};
+const SubstituteModal = ({
+  item,
+  library,
+  onPick,
+  onRestore,
+  onClose
+}) => {
+  const [q, setQ] = useState('');
+  const [custom, setCustom] = useState('');
+  const suggestions = item.prescribed.sourceSubstitutions || [];
+  const matches = library.filter(x => (x.name + ' ' + x.equipment + ' ' + x.primaryMuscle).toLowerCase().includes(q.toLowerCase()));
+  return React.createElement("div", {
+    className: "fixed inset-0 z-[60] bg-black/80 flex items-end justify-center"
+  }, React.createElement("div", {
+    className: "bg-[#101C2B] border-t border-[#203147] rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, React.createElement("h3", {
+    className: "text-sm font-bold text-white"
+  }, "Substitute exercise"), React.createElement("button", {
+    onClick: onClose,
+    "aria-label": "Close",
+    className: "min-w-[44px] min-h-[44px] text-[#8FA2B8]"
+  }, "\u2715")), React.createElement("div", {
+    className: "bg-[#080E16] border border-[#203147] rounded-xl p-3 text-[11px] space-y-0.5"
+  }, React.createElement("div", {
+    className: "text-[#8FA2B8]"
+  }, "Prescribed (stays on record)"), React.createElement("div", {
+    className: "text-white font-bold"
+  }, item.name, " \xB7 ", item.prescribed.workingSets ?? '?', " \xD7 ", item.prescribed.reps ?? '?')), item.substitution && React.createElement("button", {
+    onClick: onRestore,
+    className: "w-full min-h-[44px] rounded-xl bg-[#142235] border border-[#31D583]/40 text-[#31D583] text-xs font-bold"
+  }, "Restore original: ", item.name), (item.prescribed.sourceGuidance || []).length > 0 && React.createElement("div", {
+    className: "bg-[#080E16] border border-[#203147] rounded-xl p-3 space-y-1.5"
+  }, React.createElement("div", {
+    className: "text-[11px] font-bold text-white"
+  }, "What the program PDF says"), item.prescribed.sourceGuidance.map((g, i) => React.createElement("div", {
+    key: i,
+    className: "text-[11px] text-[#C7D3E0] leading-snug"
+  }, React.createElement("span", {
+    className: "font-bold"
+  }, g.name, ":"), " ", g.text)), item.prescribed.sourceGuidance.some(g => normName(g.name) !== normName(item.name)) && React.createElement("div", {
+    className: "text-[10px] text-[#F59E0B]"
+  }, "Linked by partial name match \u2014 check the wording applies to this exercise.")), suggestions.length > 0 && React.createElement("div", {
+    className: "space-y-1.5"
+  }, React.createElement("div", {
+    className: "text-[11px] font-bold text-white"
+  }, "Alternatives listed in the program PDF"), suggestions.map(n => React.createElement("button", {
+    key: n,
+    onClick: () => onPick({
+      name: n,
+      exerciseId: (library.find(x => normName(x.name) === normName(n)) || {}).id || null,
+      origin: 'program-pdf'
+    }),
+    className: "w-full text-left min-h-[44px] px-3 rounded-xl bg-[#080E16] border border-[#203147] text-xs text-white"
+  }, n))), React.createElement("div", {
+    className: "space-y-1.5"
+  }, React.createElement("div", {
+    className: "text-[11px] font-bold text-white"
+  }, "Your exercise library ", React.createElement("span", {
+    className: "text-[#8FA2B8] font-normal"
+  }, "(not verified as equivalent \u2014 your choice)")), React.createElement("input", {
+    value: q,
+    onChange: e => setQ(e.target.value),
+    placeholder: "Search by name, equipment, muscle",
+    className: "w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white"
+  }), React.createElement("div", {
+    className: "max-h-44 overflow-y-auto space-y-1.5"
+  }, matches.map(x => React.createElement("button", {
+    key: x.id,
+    onClick: () => onPick({
+      name: x.name,
+      exerciseId: x.id,
+      origin: 'library'
+    }),
+    className: "w-full text-left min-h-[44px] px-3 rounded-xl bg-[#080E16] border border-[#203147] text-xs text-white flex justify-between gap-2"
+  }, React.createElement("span", null, x.name), React.createElement("span", {
+    className: "text-[#8FA2B8]"
+  }, x.equipment))), matches.length === 0 && React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "No match. Type a custom exercise below."))), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("input", {
+    value: custom,
+    onChange: e => setCustom(e.target.value),
+    placeholder: "Custom exercise name",
+    className: "flex-1 min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white"
+  }), React.createElement("button", {
+    disabled: !custom.trim(),
+    onClick: () => onPick({
+      name: custom.trim(),
+      exerciseId: null,
+      origin: 'custom'
+    }),
+    className: "min-h-[44px] px-4 rounded-xl bg-[#1685F8] text-white text-xs font-bold disabled:opacity-40"
+  }, "Use"))));
+};
+const EQUIPMENT_OPTIONS = ['Barbell', 'Dumbbells', 'Bench', 'Pull-Up Bar', 'Cable Machine', 'Machines', 'Swiss Ball', 'Box/Step', 'Kettlebell'];
+const DEFAULT_EQUIPMENT = ['Dumbbells', 'Bench', 'Pull-Up Bar'];
+const equipmentFor = name => {
+  const n = (name || '').toLowerCase();
+  if (/dumbbell|\bdb\b/.test(n)) return 'Dumbbells';
+  if (/cable|rope|pushdown|crossover|face ?pull|lat pull/.test(n)) return 'Cable Machine';
+  if (/machine|leg press|leg extension|leg curl|pec deck|t-bar|smith|hack/.test(n)) return 'Machines';
+  if (/pull[- ]?up|chin[- ]?up/.test(n)) return 'Pull-Up Bar';
+  if (/swiss ball/.test(n)) return 'Swiss Ball';
+  if (/step up/.test(n)) return 'Box/Step';
+  if (/barbell|squat|deadlift|ez bar|overhead press|bench press|\brow\b/.test(n)) return 'Barbell';
+  return null;
+};
+const missingEquipment = (program, owned) => {
+  const found = {};
+  program.weeks.forEach(w => w.days.forEach(d => d.exercises.forEach(e => {
+    const eq = equipmentFor(e.name);
+    if (eq && !owned.includes(eq)) (found[eq] = found[eq] || new Set()).add(e.name);
+  })));
+  return Object.entries(found).map(([eq, set]) => ({
+    equipment: eq,
+    exercises: [...set]
+  }));
+};
+const ProgramProgress = ({
+  library,
+  workoutLogs,
+  unit
+}) => {
+  const ids = Object.keys(library.progress).filter(id => library.progress[id].status !== 'not_started');
+  const [sel, setSel] = useState(library.activeProgramId || ids[0] || 'all');
+  const [exName, setExName] = useState('');
+  const program = sel !== 'all' ? library.programs[sel] : null;
+  const prog = sel !== 'all' ? library.progress[sel] : null;
+  const logs = sel === 'all' ? workoutLogs : workoutLogs.filter(l => l.programId === sel);
+  const sessions = program && prog ? buildSessions(program, prog) : [];
+  const done = sessions.filter(x => x.status === 'completed').length;
+  const skipped = sessions.filter(x => x.status === 'skipped').length;
+  const toUnit = lb => unit === 'kg' ? lb / 2.20462 : lb;
+  const byWeek = {};
+  logs.forEach(l => {
+    const k = l.week ? `W${l.week}` : l.date.slice(0, 7);
+    byWeek[k] = (byWeek[k] || 0) + (l.totalVolumeLb || 0);
+  });
+  const weekKeys = Object.keys(byWeek);
+  const maxVol = Math.max(1, ...Object.values(byWeek));
+  const perf = {};
+  logs.slice().reverse().forEach(l => l.exercises.forEach(e => {
+    const work = e.sets.filter(x => x.type !== 'warmup' && x.reps > 0);
+    if (!work.length) return;
+    const best = work.reduce((a, b) => (b.weight || 0) > (a.weight || 0) || (b.weight || 0) === (a.weight || 0) && b.reps > a.reps ? b : a);
+    (perf[e.name] = perf[e.name] || []).push({
+      date: l.date,
+      weight: best.weight || 0,
+      reps: best.reps,
+      unit: best.unit || 'lb'
+    });
+  }));
+  const exNames = Object.keys(perf).sort();
+  const chosen = perf[exName] ? exName : exNames[0];
+  const series = chosen ? perf[chosen] : [];
+  const prWeight = series.length ? Math.max(...series.map(x => x.weight)) : 0;
+  const deloadLines = program ? [...(program.weeks.filter(w => w.deload).length ? [`Deload week(s): ${program.weeks.filter(w => w.deload).map(w => w.week).join(', ')}`] : []), ...program.instructions.flatMap(sec => sec.lines.filter(l => /deload/i.test(l)).map(l => `${sec.page ? 'p.' + sec.page : sec.title || 'note'}: ${l}`))] : [];
+  return React.createElement("div", {
+    className: "space-y-4"
+  }, React.createElement("h2", {
+    className: "text-lg font-black text-white"
+  }, "Progress"), React.createElement("select", {
+    value: sel,
+    onChange: e => setSel(e.target.value),
+    className: "w-full min-h-[44px] bg-[#101C2B] border border-[#203147] rounded-xl px-3 text-white"
+  }, React.createElement("option", {
+    value: "all"
+  }, "All workouts (overall history)"), ids.map(id => React.createElement("option", {
+    key: id,
+    value: id
+  }, library.programs[id] ? library.programs[id].name : id))), program && React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, React.createElement("div", {
+    className: "text-sm font-black text-white"
+  }, program.name), React.createElement(StatusBadge, {
+    status: prog.status
+  })), React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "Week ", (sessions.find(x => x.status === 'planned') || {
+    week: program.weeks.length
+  }).week, " of ", program.weeks.length, " \xB7 ", done, " of ", sessions.length, " workouts completed", skipped ? ` · ${skipped} skipped` : ''), React.createElement("div", {
+    className: "w-full bg-[#080E16] h-2 rounded-full overflow-hidden"
+  }, React.createElement("div", {
+    className: "bg-[#31D583] h-full",
+    style: {
+      width: `${sessions.length ? done / sessions.length * 100 : 0}%`
+    }
+  })), React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, sessions.length ? Math.round(done / sessions.length * 100) : 0, "% complete"), React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "Deload / progression: ", deloadLines.length ? deloadLines.join(' · ') : 'no deload instructions found in the imported text; weekly changes follow the prescriptions in the program detail.')), React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, "Training volume (working sets you logged)"), weekKeys.length === 0 ? React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "No logged workouts yet.") : React.createElement("div", {
+    className: "h-32 flex items-end gap-2"
+  }, weekKeys.map(k => React.createElement("div", {
+    key: k,
+    className: "flex-1 flex flex-col items-center justify-end h-full gap-1"
+  }, React.createElement("div", {
+    className: "w-full bg-[#1685F8] rounded-t-sm",
+    style: {
+      height: `${Math.max(4, byWeek[k] / maxVol * 80)}%`
+    }
+  }), React.createElement("div", {
+    className: "text-[9px] text-[#8FA2B8]"
+  }, k)))), weekKeys.length > 0 && React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "Total ", Math.round(toUnit(Object.values(byWeek).reduce((a, b) => a + b, 0))).toLocaleString(), " ", unit)), React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, "Exercise performance"), exNames.length === 0 ? React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "Log a workout to see exercise trends.") : React.createElement(React.Fragment, null, React.createElement("select", {
+    value: chosen,
+    onChange: e => setExName(e.target.value),
+    className: "w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white"
+  }, exNames.map(n => React.createElement("option", {
+    key: n,
+    value: n
+  }, n))), series.map((x, i) => React.createElement("div", {
+    key: i,
+    className: "flex justify-between text-[11px]"
+  }, React.createElement("span", {
+    className: "text-[#8FA2B8]"
+  }, x.date), React.createElement("span", {
+    className: "text-white tabular-nums"
+  }, x.weight, " ", x.unit, " \xD7 ", x.reps, x.weight === prWeight && prWeight > 0 && series.length > 1 ? ' · best logged' : ''))), React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "Best set per session, from your logged working sets only."))), React.createElement("div", {
+    className: "space-y-2"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, "Recent workouts"), logs.length === 0 && React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "Nothing logged yet."), logs.slice(0, 10).map(l => React.createElement("div", {
+    key: l.id,
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl p-3 flex justify-between gap-2"
+  }, React.createElement("div", null, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, l.workoutName), React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, l.date, l.week ? ` · Week ${l.week} Day ${l.day}` : '', l.programName && sel === 'all' ? ` · ${l.programName}` : '')), React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8] text-right tabular-nums"
+  }, l.durationMin, " min", React.createElement("br", null), Math.round(toUnit(l.totalVolumeLb || 0)).toLocaleString(), " ", unit)))));
+};
+const STORE_KEY = 'stronger.state';
+const SCHEMA_VERSION = 1;
+const migrate = data => {
+  return data;
+};
+const loadStore = () => {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    return raw ? migrate(JSON.parse(raw)) : {};
+  } catch (e) {
+    return {};
+  }
+};
+const STORED = loadStore();
+const fmtClock = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+function App() {
+  const [activeNav, setActiveNav] = useState('Home');
+  const [selectedTheme, setSelectedTheme] = useState(STORED.selectedTheme || 'blue');
+  const theme = THEMES[selectedTheme];
+  const [exercises, setExercises] = useState(STORED.exercises || INITIAL_EXERCISES);
+  const exerciseMap = useMemo(() => {
+    const map = {};
+    exercises.forEach(ex => {
+      map[ex.id] = ex;
+    });
+    return map;
+  }, [exercises]);
+  const [program, setProgram] = useState(STORED.program || INITIAL_PROGRAM);
+  const [selectedDayId, setSelectedDayId] = useState(STORED.selectedDayId || INITIAL_PROGRAM.days[0].id);
+  const todaysWorkout = program.days.find(d => d.id === selectedDayId) || program.days[0];
+  const [workoutLogs, setWorkoutLogs] = useState(STORED.workoutLogs || INITIAL_WORKOUT_LOGS);
+  const [userSettings, setUserSettings] = useState(STORED.userSettings || {
+    name: 'John',
+    unit: 'lb',
+    targetCalories: 2400,
+    targetProtein: 180,
+    equipment: DEFAULT_EQUIPMENT
+  });
+  const [activeSession, setActiveSession] = useState(STORED.activeSession || null);
+  const [workoutOpen, setWorkoutOpen] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [now, setNow] = useState(Date.now());
+  const [restEndsAt, setRestEndsAt] = useState(STORED.restEndsAt || null);
+  const timerSeconds = restEndsAt ? Math.max(0, Math.ceil((restEndsAt - now) / 1000)) : 0;
+  const timerRunning = timerSeconds > 0;
+  const startRest = sec => setRestEndsAt(Date.now() + sec * 1000);
+  const elapsedSeconds = activeSession ? Math.max(0, Math.floor((now - activeSession.startTime) / 1000)) : 0;
+  const importInputRef = useRef(null);
+  const [library, setLibrary] = useState(STORED.library || {
+    programs: {},
+    progress: {},
+    activeProgramId: null
+  });
+  const [openProgramId, setOpenProgramId] = useState(null);
+  const [libraryQuery, setLibraryQuery] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [importReport, setImportReport] = useState(null);
+  const pdfInputRef = useRef(null);
+  const progressOf = id => library.progress[id] || {
+    status: 'not_started'
+  };
+  const ownedEquipment = userSettings.equipment || DEFAULT_EQUIPMENT;
+  const [startSheetId, setStartSheetId] = useState(null);
+  const [subModalIdx, setSubModalIdx] = useState(null);
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const activeProgram = library.activeProgramId ? library.programs[library.activeProgramId] : null;
+  const activeProg = activeProgram ? progressOf(library.activeProgramId) : null;
+  const activeSessions = useMemo(() => activeProgram && activeProg ? buildSessions(activeProgram, activeProg) : [], [activeProgram, activeProg]);
+  const nextProgramSession = activeSessions.find(x => x.status === 'planned') || null;
+  const patchProgress = (id, fn) => setLibrary(prev => ({
+    ...prev,
+    progress: {
+      ...prev.progress,
+      [id]: fn(prev.progress[id] || {
+        status: 'not_started'
+      })
+    }
+  }));
+  const askOpenWorkout = () => setConfirmDialog({
+    title: 'A workout is already in progress',
+    body: 'Return to it (or discard it from inside the workout screen) before starting another.',
+    confirmLabel: 'Return to workout',
+    onConfirm: () => setWorkoutOpen(true)
+  });
+  const requestStartProgram = id => {
+    if (activeSession) return askOpenWorkout();
+    setStartSheetId(id);
+  };
+  const pauseOthers = (progress, activeId, exceptId) => {
+    if (activeId && activeId !== exceptId && progress[activeId] && progress[activeId].status === 'in_progress') progress[activeId] = {
+      ...progress[activeId],
+      status: 'paused'
+    };
+  };
+  const activateProgram = (id, {
+    startDate,
+    weekdays
+  }) => {
+    setLibrary(prev => {
+      const progress = {
+        ...prev.progress
+      };
+      pauseOthers(progress, prev.activeProgramId, id);
+      progress[id] = {
+        status: 'in_progress',
+        startDate,
+        weekdays,
+        sessions: {},
+        startedAt: new Date().toISOString()
+      };
+      return {
+        ...prev,
+        progress,
+        activeProgramId: id
+      };
+    });
+    setStartSheetId(null);
+    setOpenProgramId(null);
+    setActiveNav('Calendar');
+    triggerToast('Program started', 'Your schedule is on the Calendar.');
+  };
+  const resumeProgram = id => {
+    if (activeSession && activeSession.program && activeSession.program.programId !== id) return askOpenWorkout();
+    setLibrary(prev => {
+      const progress = {
+        ...prev.progress
+      };
+      pauseOthers(progress, prev.activeProgramId, id);
+      progress[id] = {
+        ...progress[id],
+        status: 'in_progress'
+      };
+      return {
+        ...prev,
+        progress,
+        activeProgramId: id
+      };
+    });
+    setOpenProgramId(null);
+    setActiveNav('Calendar');
+  };
+  const pauseProgram = id => patchProgress(id, p => ({
+    ...p,
+    status: 'paused'
+  }));
+  const rescheduleSession = (sess, date) => patchProgress(library.activeProgramId, p => ({
+    ...p,
+    sessions: {
+      ...p.sessions,
+      [sess.key]: {
+        ...(p.sessions || {})[sess.key],
+        plannedDate: date
+      }
+    }
+  }));
+  const skipSession = sess => setConfirmDialog({
+    title: `Skip ${sess.label}?`,
+    body: 'It will be marked skipped (not completed) and the program moves on to the next workout. Nothing is logged.',
+    confirmLabel: 'Skip workout',
+    danger: true,
+    onConfirm: () => patchProgress(library.activeProgramId, p => ({
+      ...p,
+      sessions: {
+        ...p.sessions,
+        [sess.key]: {
+          ...(p.sessions || {})[sess.key],
+          status: 'skipped'
+        }
+      }
+    }))
+  });
+  const lastPerformance = name => {
+    const n = normName(name);
+    for (const log of workoutLogs) {
+      const ex = log.exercises.find(e => normName(e.name) === n && e.sets.some(x => x.reps));
+      if (ex) return `${log.date}: ` + ex.sets.filter(x => x.reps && x.type !== 'warmup').map(x => `${x.weight || 0}×${x.reps}`).join(', ');
+    }
+    return null;
+  };
+  const startProgramWorkout = sess => {
+    if (activeSession) return askOpenWorkout();
+    const prog = library.programs[library.activeProgramId];
+    const go = () => {
+      const exs = sess.exercises.map(e => {
+        const sets = [];
+        const mk = (type, n) => ({
+          id: `${sess.key}-${e.order}-${type}-${n}`,
+          setNumber: n,
+          type,
+          completed: false,
+          weight: '',
+          reps: '',
+          rpe: ''
+        });
+        for (let i = 1; i <= (e.warmupSets || 0); i++) sets.push(mk('warmup', i));
+        for (let i = 1; i <= (e.workingSets || 0); i++) sets.push(mk('working', i));
+        const lib = exercises.find(x => normName(x.name) === normName(e.name));
+        return {
+          exerciseId: lib ? lib.id : null,
+          name: e.name,
+          key: normName(e.name),
+          substitution: null,
+          prescribed: {
+            warmupText: e.warmupText || null,
+            technique: e.technique || null,
+            ref: e.ref || null,
+            warmupSets: e.warmupSets,
+            workingSets: e.workingSets,
+            reps: e.reps,
+            intensity: e.intensity,
+            rest: e.rest || null,
+            notes: e.notes,
+            page: e.page,
+            flags: e.flags,
+            sourceSubstitutions: e.sourceSubstitutions || [],
+            sourceGuidance: e.sourceGuidance || [],
+            videoUrl: e.videoUrl || null
+          },
+          sets
+        };
+      });
+      setRestEndsAt(null);
+      setActiveSession({
+        id: `session-${Date.now()}`,
+        dayId: null,
+        workoutName: sess.label,
+        startTime: Date.now(),
+        exercises: exs,
+        program: {
+          programId: prog.id,
+          programName: prog.name,
+          week: sess.week,
+          day: sess.day,
+          key: sess.key,
+          label: sess.label,
+          plannedDate: sess.plannedDate
+        }
+      });
+      setWorkoutOpen(true);
+    };
+    const nxt = activeSessions.find(x => x.status === 'planned');
+    if (nxt && nxt.key !== sess.key) setConfirmDialog({
+      title: 'Start out of order?',
+      body: `Your next scheduled workout is Week ${nxt.week} Day ${nxt.day} (${nxt.label}).`,
+      confirmLabel: 'Start anyway',
+      onConfirm: go
+    });else go();
+  };
+  const updateSet = (exIdx, setIdx, patch) => setActiveSession(prev => ({
+    ...prev,
+    exercises: prev.exercises.map((e, i) => i !== exIdx ? e : {
+      ...e,
+      sets: e.sets.map((st, j) => j !== setIdx ? st : {
+        ...st,
+        ...patch
+      })
+    })
+  }));
+  const addSet = (exIdx, type = 'working') => setActiveSession(prev => ({
+    ...prev,
+    exercises: prev.exercises.map((e, i) => {
+      if (i !== exIdx) return e;
+      const blank = {
+        completed: false,
+        weight: '',
+        reps: '',
+        rpe: ''
+      };
+      if (type === 'warmup') {
+        const w = e.sets.filter(x => x.type === 'warmup');
+        return {
+          ...e,
+          sets: [...w, {
+            ...blank,
+            id: `${e.key}-wu-${Date.now()}`,
+            setNumber: w.length + 1,
+            type: 'warmup'
+          }, ...e.sets.filter(x => x.type !== 'warmup')]
+        };
+      }
+      return {
+        ...e,
+        sets: [...e.sets, {
+          ...blank,
+          id: `${e.key}-extra-${Date.now()}`,
+          setNumber: e.sets.filter(x => x.type === 'working').length + 1,
+          type: 'working',
+          extra: true
+        }]
+      };
+    })
+  }));
+  const setSubstitution = (exIdx, sub) => {
+    setActiveSession(prev => ({
+      ...prev,
+      exercises: prev.exercises.map((e, i) => i !== exIdx ? e : {
+        ...e,
+        substitution: sub
+      })
+    }));
+    setSubModalIdx(null);
+  };
+  const toggleProgramSet = (exIdx, setIdx) => {
+    const st = activeSession.exercises[exIdx].sets[setIdx];
+    if (!st.completed && !String(st.reps).trim()) {
+      triggerToast('Enter reps first', 'Record what you actually performed before checking the set off.');
+      return;
+    }
+    updateSet(exIdx, setIdx, {
+      completed: !st.completed
+    });
+  };
+  const handlePdfFiles = async fileList => {
+    const files = Array.from(fileList || []);
+    if (!files.length) return;
+    setImporting(true);
+    const report = [];
+    let next = library;
+    for (const file of files) {
+      try {
+        const {
+          programs,
+          flags
+        } = await window.StrongerImport.importFile(file);
+        if (!programs.length) {
+          report.push({
+            file: file.name,
+            ok: false,
+            msg: flags.map(f => f.msg).join('; ')
+          });
+          continue;
+        }
+        for (const prog of programs) {
+          const existing = next.programs[prog.id];
+          if (existing && existing.source.sha256 === prog.source.sha256 && (existing.parserVersion || 1) >= prog.parserVersion) {
+            report.push({
+              file: file.name,
+              ok: false,
+              msg: `"${prog.name}" is already in your library (identical file).`
+            });
+            continue;
+          }
+          next = {
+            ...next,
+            programs: {
+              ...next.programs,
+              [prog.id]: prog
+            },
+            progress: {
+              ...next.progress,
+              [prog.id]: next.progress[prog.id] || {
+                status: 'not_started'
+              }
+            }
+          };
+          report.push({
+            file: file.name,
+            ok: true,
+            msg: `${existing ? 'Updated' : 'Imported'} "${prog.name}" — ${prog.metadata.totalWeeks} weeks, ${prog.metadata.daysPerWeek} days/week${prog.flags.length ? `, ${prog.flags.length} item(s) flagged` : ''}.`
+          });
+        }
+      } catch (err) {
+        report.push({
+          file: file.name,
+          ok: false,
+          msg: err.message || String(err)
+        });
+      }
+    }
+    setLibrary(next);
+    setImportReport(report);
+    setImporting(false);
+  };
+  const removeProgram = id => {
+    setLibrary(prev => {
+      const programs = {
+        ...prev.programs
+      };
+      delete programs[id];
+      return {
+        ...prev,
+        programs,
+        activeProgramId: prev.activeProgramId === id ? null : prev.activeProgramId
+      };
+    });
+    setOpenProgramId(null);
+  };
+  const [swapModalConfig, setSwapModalConfig] = useState(null);
+  const [showPlanGeneratorModal, setShowPlanGeneratorModal] = useState(false);
+  const [planGenConfig, setPlanGenConfig] = useState({
+    weeks: 12,
+    daysPerWeek: 4,
+    goal: 'Powerbuilding',
+    equipment: 'Barbell & Rack'
+  });
+  const [toast, setToast] = useState(null);
+  const triggerToast = (title, message) => {
+    setToast({
+      title,
+      message
+    });
+    setTimeout(() => setToast(null), 3500);
+  };
+  const formatWeight = (lb, unit, isWeightedAddition = false) => {
+    if (lb === 0) return 'Bodyweight';
+    if (isWeightedAddition) {
+      if (unit === 'kg') return `+${Math.round(lb * 0.453592 * 2) / 2} kg`;
+      return `+${lb} lb`;
+    }
+    if (unit === 'kg') return `${Math.round(lb * 0.453592)} kg`;
+    return `${lb} lb`;
+  };
+  const getSimilarAlternatives = (sourceExerciseId, equipCategory = 'All') => {
+    const source = exerciseMap[sourceExerciseId];
+    if (!source) return exercises;
+    return exercises.filter(ex => ex.id !== sourceExerciseId).map(ex => {
+      const samePattern = ex.pattern === source.pattern;
+      const sameMuscle = ex.primaryMuscle.toLowerCase().includes(source.primaryMuscle.toLowerCase().split(' ')[0]);
+      let matchScore = (samePattern ? 40 : 0) + (sameMuscle ? 30 : 0);
+      return {
+        ...ex,
+        matchScore
+      };
+    }).filter(ex => {
+      if (equipCategory === 'All') return true;
+      if (equipCategory === 'Dumbbells') return ex.equipment.toLowerCase().includes('dumbbell') || ex.equipment.toLowerCase().includes('bodyweight');
+      if (equipCategory === 'Barbell') return ex.equipment.toLowerCase().includes('barbell') || ex.equipment.toLowerCase().includes('pull-up');
+      if (equipCategory === 'Bodyweight') return ex.equipment.toLowerCase().includes('bodyweight') || ex.equipment.toLowerCase().includes('pull-up');
+      return true;
+    }).sort((a, b) => b.matchScore - a.matchScore);
+  };
+  const convertTargetWeightForSwap = (oldWeightLb, oldEx, newEx) => {
+    if (!newEx) return oldWeightLb;
+    if (newEx.equipment.toLowerCase().includes('bodyweight') && !newEx.equipment.toLowerCase().includes('dumbbell')) return 0;
+    const oldIsBarbell = oldEx?.equipment?.toLowerCase().includes('barbell');
+    const newIsDumbbell = newEx?.equipment?.toLowerCase().includes('dumbbell');
+    if (oldIsBarbell && newIsDumbbell && oldWeightLb > 0) return Math.max(20, Math.round(oldWeightLb * 0.36 / 5) * 5);
+    return oldWeightLb > 0 ? oldWeightLb : 65;
+  };
+  const handleReplaceSingleExercise = newExerciseId => {
+    if (!swapModalConfig) return;
+    const {
+      dayId,
+      exerciseId,
+      activeExIdx
+    } = swapModalConfig;
+    const oldEx = exerciseMap[exerciseId];
+    const newEx = exerciseMap[newExerciseId];
+    if (!newEx) return;
+    if (dayId && exerciseId) {
+      setProgram(prev => ({
+        ...prev,
+        days: prev.days.map(d => {
+          if (d.id !== dayId) return d;
+          return {
+            ...d,
+            exercises: d.exercises.map(item => {
+              if (item.exerciseId !== exerciseId) return item;
+              const adjustedWeight = convertTargetWeightForSwap(item.targetWeightLb, oldEx, newEx);
+              return {
+                ...item,
+                exerciseId: newExerciseId,
+                targetWeightLb: adjustedWeight,
+                isWeightedAddition: newEx.id === 'ex-pullup'
+              };
+            })
+          };
+        })
+      }));
+    }
+    if (activeSession && typeof activeExIdx === 'number') {
+      setActiveSession(prev => {
+        if (!prev) return prev;
+        const updated = prev.exercises.map((item, idx) => {
+          if (idx !== activeExIdx) return item;
+          const baseSet = item.sets[0];
+          const adjustedWeight = convertTargetWeightForSwap(baseSet?.prescribedWeightLb || 135, oldEx, newEx);
+          return {
+            ...item,
+            exerciseId: newExerciseId,
+            isWeightedAddition: newEx.id === 'ex-pullup',
+            sets: item.sets.map(s => ({
+              ...s,
+              prescribedWeightLb: adjustedWeight,
+              actualWeightLb: adjustedWeight
+            }))
+          };
+        });
+        return {
+          ...prev,
+          exercises: updated
+        };
+      });
+    }
+    setSwapModalConfig(null);
+    triggerToast(`Swapped to ${newEx.name}`, `Matched pattern and scaled target load.`);
+  };
+  const handleAdaptEntireWorkoutByEquipment = (targetDayId, equipmentProfileKey) => {
+    const profileMap = {
+      dumbbells_only: {
+        label: 'Dumbbells & Bench Only',
+        location: 'Home / Hotel DBs',
+        replacements: {
+          'ex-bench': 'ex-incline-db',
+          'ex-pullup': 'ex-db-row',
+          'ex-ohp': 'ex-db-ohp',
+          'ex-row': 'ex-db-row',
+          'ex-deadlift': 'ex-db-rdl',
+          'ex-squat': 'ex-goblet-squat',
+          'ex-rdl': 'ex-db-rdl',
+          'ex-leg-raise': 'ex-plank-reach'
+        }
+      },
+      bodyweight_minimal: {
+        label: 'Bodyweight & Pull-Up Bar',
+        location: 'Calisthenics / Travel',
+        replacements: {
+          'ex-bench': 'ex-pushup',
+          'ex-incline-db': 'ex-pushup',
+          'ex-db-ohp': 'ex-pushup',
+          'ex-ohp': 'ex-pushup',
+          'ex-row': 'ex-pullup',
+          'ex-db-row': 'ex-pullup',
+          'ex-deadlift': 'ex-split-squat',
+          'ex-squat': 'ex-split-squat',
+          'ex-rdl': 'ex-split-squat',
+          'ex-leg-raise': 'ex-plank-reach'
+        }
+      },
+      barbell_rack: {
+        label: 'Barbell & Power Rack',
+        location: 'Barbell Garage Gym',
+        replacements: {
+          'ex-incline-db': 'ex-bench',
+          'ex-pushup': 'ex-bench',
+          'ex-db-ohp': 'ex-ohp',
+          'ex-db-row': 'ex-row',
+          'ex-goblet-squat': 'ex-squat',
+          'ex-db-rdl': 'ex-rdl',
+          'ex-plank-reach': 'ex-leg-raise'
+        }
+      }
+    };
+    const chosenProfile = profileMap[equipmentProfileKey];
+    if (!chosenProfile) return;
+    setProgram(prev => ({
+      ...prev,
+      days: prev.days.map(d => {
+        if (d.id !== targetDayId) return d;
+        const adaptedExercises = d.exercises.map(item => {
+          const oldEx = exerciseMap[item.exerciseId];
+          const mappedId = chosenProfile.replacements[item.exerciseId] || item.exerciseId;
+          const newEx = exerciseMap[mappedId] || oldEx;
+          const newWeight = convertTargetWeightForSwap(item.targetWeightLb, oldEx, newEx);
+          return {
+            ...item,
+            exerciseId: mappedId,
+            targetWeightLb: newWeight,
+            isWeightedAddition: mappedId === 'ex-pullup' && equipmentProfileKey !== 'bodyweight_minimal'
+          };
+        });
+        return {
+          ...d,
+          location: chosenProfile.location,
+          exercises: adaptedExercises
+        };
+      })
+    }));
+    setSwapModalConfig(null);
+    triggerToast(`Workout Adapted: ${chosenProfile.label}`, 'All movements and target weights matched.');
+  };
+  const handleGeneratePlan = () => {
+    const newProgramName = `${planGenConfig.weeks} Week ${planGenConfig.goal} Program`;
+    const newDays = [{
+      id: 'gen-1',
+      name: 'Upper Strength & Power',
+      emphasis: 'Push · Pull',
+      durationMin: 60,
+      location: planGenConfig.equipment,
+      exercises: [{
+        exerciseId: 'ex-bench',
+        sets: 4,
+        reps: 5,
+        targetWeightLb: 225,
+        restSeconds: 180,
+        completed: false
+      }, {
+        exerciseId: 'ex-pullup',
+        sets: 4,
+        reps: 6,
+        targetWeightLb: 10,
+        restSeconds: 120,
+        completed: false,
+        isWeightedAddition: true
+      }, {
+        exerciseId: 'ex-row',
+        sets: 3,
+        reps: 8,
+        targetWeightLb: 185,
+        restSeconds: 90,
+        completed: false
+      }]
+    }, {
+      id: 'gen-2',
+      name: 'Lower Posterior Chain',
+      emphasis: 'Squat · Hinge',
+      durationMin: 65,
+      location: planGenConfig.equipment,
+      exercises: [{
+        exerciseId: 'ex-squat',
+        sets: 4,
+        reps: 5,
+        targetWeightLb: 315,
+        restSeconds: 180,
+        completed: false
+      }, {
+        exerciseId: 'ex-rdl',
+        sets: 3,
+        reps: 8,
+        targetWeightLb: 245,
+        restSeconds: 120,
+        completed: false
+      }, {
+        exerciseId: 'ex-leg-raise',
+        sets: 3,
+        reps: 12,
+        targetWeightLb: 0,
+        restSeconds: 60,
+        completed: false
+      }]
+    }];
+    setProgram({
+      name: newProgramName,
+      totalWeeks: Number(planGenConfig.weeks),
+      currentWeek: 1,
+      phase: 'Phase 1 · Accumulation',
+      days: newDays
+    });
+    setSelectedDayId(newDays[0].id);
+    setShowPlanGeneratorModal(false);
+    triggerToast('Program Generated', `Created ${newProgramName} successfully.`);
+  };
+  const startWorkoutSession = (workoutTemplate = todaysWorkout) => {
+    const sessionExercises = workoutTemplate.exercises.map(item => {
+      const setsArr = [];
+      for (let i = 1; i <= item.sets; i++) {
+        setsArr.push({
+          id: `${item.exerciseId}-set-${i}-${Date.now()}`,
+          setNumber: i,
+          type: i === 1 && item.targetWeightLb >= 180 ? 'warmup' : 'working',
+          prescribedReps: item.reps,
+          prescribedWeightLb: item.targetWeightLb,
+          actualWeightLb: item.targetWeightLb,
+          actualReps: item.reps,
+          rpe: 8.0,
+          completed: false
+        });
+      }
+      return {
+        exerciseId: item.exerciseId,
+        restSeconds: item.restSeconds || 90,
+        isWeightedAddition: item.isWeightedAddition || false,
+        sets: setsArr
+      };
+    });
+    if (activeSession) {
+      setWorkoutOpen(true);
+      triggerToast('Workout already active', 'Resume or discard your current session first.');
+      return;
+    }
+    setRestEndsAt(null);
+    setActiveSession({
+      id: `session-${Date.now()}`,
+      dayId: workoutTemplate.id,
+      workoutName: workoutTemplate.name,
+      startTime: Date.now(),
+      exercises: sessionExercises
+    });
+    setWorkoutOpen(true);
+    triggerToast('Workout Started', `Live tracking active for ${workoutTemplate.name}.`);
+  };
+  useEffect(() => {
+    if (!activeSession && !restEndsAt) return;
+    const tick = () => setNow(Date.now());
+    const interval = setInterval(tick, 1000);
+    document.addEventListener('visibilitychange', tick);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', tick);
+    };
+  }, [!!activeSession, !!restEndsAt]);
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        schemaVersion: SCHEMA_VERSION,
+        selectedTheme,
+        program,
+        selectedDayId,
+        workoutLogs,
+        userSettings,
+        exercises,
+        activeSession,
+        restEndsAt,
+        library
+      }));
+    } catch (e) {}
+  }, [selectedTheme, program, selectedDayId, workoutLogs, userSettings, exercises, activeSession, restEndsAt, library]);
+  const exportBackup = () => {
+    const data = {
+      app: 'STRONGER',
+      exportedAt: new Date().toISOString(),
+      ...loadStore()
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], {
+      type: 'application/json'
+    }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `stronger-backup-${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const importBackup = file => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const d = migrate(JSON.parse(reader.result));
+        if (d.app !== 'STRONGER' && !d.workoutLogs) throw new Error('not a STRONGER backup');
+        localStorage.setItem(STORE_KEY, JSON.stringify(d));
+        location.reload();
+      } catch (e) {
+        triggerToast('Restore failed', 'That file is not a valid STRONGER backup.');
+      }
+    };
+    reader.readAsText(file);
+  };
+  const finishActiveWorkout = () => {
+    if (!activeSession) return;
+    if (activeSession.program) return finishProgramWorkout();
+    let totalVol = 0;
+    activeSession.exercises.forEach(ex => {
+      ex.sets.forEach(s => {
+        if (s.completed && s.type === 'working') totalVol += (s.actualWeightLb || 0) * (s.actualReps || 0);
+      });
+    });
+    const newLog = {
+      id: `log-${Date.now()}`,
+      date: new Date().toISOString().split('T')[0],
+      workoutName: activeSession.workoutName,
+      durationMin: Math.max(1, Math.round(elapsedSeconds / 60)),
+      totalVolumeLb: totalVol,
+      exercises: activeSession.exercises.map(e => ({
+        exerciseId: e.exerciseId,
+        name: exerciseMap[e.exerciseId]?.name || 'Exercise',
+        sets: e.sets.map(s => ({
+          setNumber: s.setNumber,
+          weight: s.actualWeightLb,
+          reps: s.actualReps,
+          rpe: s.rpe
+        }))
+      }))
+    };
+    setWorkoutLogs(prev => prev.some(l => l.sessionId === activeSession.id) ? prev : [{
+      ...newLog,
+      sessionId: activeSession.id
+    }, ...prev]);
+    setActiveSession(null);
+    setWorkoutOpen(false);
+    setRestEndsAt(null);
+    triggerToast('Workout Completed!', `Logged ${newLog.workoutName} with ${totalVol.toLocaleString()} lb volume.`);
+  };
+  const finishProgramWorkout = () => {
+    const sess = activeSession;
+    const unit = userSettings.unit,
+      toLb = unit === 'kg' ? 2.20462 : 1;
+    let vol = 0,
+      doneSets = 0;
+    const exLogs = sess.exercises.map(e => {
+      const done = e.sets.filter(x => x.completed);
+      doneSets += done.length;
+      done.forEach(x => {
+        if (x.type === 'working') vol += (parseFloat(x.weight) || 0) * (parseInt(x.reps, 10) || 0) * toLb;
+      });
+      return {
+        exerciseId: e.substitution ? e.substitution.exerciseId : e.exerciseId,
+        name: e.substitution ? e.substitution.name : e.name,
+        prescribedName: e.name,
+        substituted: !!e.substitution,
+        substitutionOrigin: e.substitution ? e.substitution.origin : null,
+        prescribed: e.prescribed,
+        sets: done.map(x => ({
+          setNumber: x.setNumber,
+          type: x.type,
+          weight: parseFloat(x.weight) || 0,
+          unit,
+          reps: parseInt(x.reps, 10) || 0,
+          rpe: x.rpe === '' ? null : parseFloat(x.rpe)
+        }))
+      };
+    }).filter(e => e.sets.length);
+    if (!doneSets) {
+      triggerToast('Nothing to log', 'Complete at least one set, or discard the workout.');
+      return;
+    }
+    const completedDate = todayStr();
+    const log = {
+      id: `log-${sess.id}`,
+      sessionId: sess.id,
+      date: completedDate,
+      workoutName: sess.workoutName,
+      durationMin: Math.max(1, Math.round(elapsedSeconds / 60)),
+      totalVolumeLb: Math.round(vol),
+      programId: sess.program.programId,
+      programName: sess.program.programName,
+      week: sess.program.week,
+      day: sess.program.day,
+      sessionKey: sess.program.key,
+      plannedDate: sess.program.plannedDate,
+      completedDate,
+      exercises: exLogs
+    };
+    setWorkoutLogs(prev => prev.some(l => l.sessionId === sess.id) ? prev : [log, ...prev]);
+    setLibrary(prev => {
+      const pr = prev.progress[sess.program.programId] || {
+        status: 'in_progress'
+      };
+      const sessions = {
+        ...(pr.sessions || {}),
+        [sess.program.key]: {
+          ...((pr.sessions || {})[sess.program.key] || {}),
+          status: 'completed',
+          completedDate,
+          logId: log.id
+        }
+      };
+      const prog = prev.programs[sess.program.programId];
+      const all = prog ? buildSessions(prog, {
+        ...pr,
+        sessions
+      }) : [];
+      const complete = all.length > 0 && all.every(x => x.status === 'completed');
+      return {
+        ...prev,
+        progress: {
+          ...prev.progress,
+          [sess.program.programId]: {
+            ...pr,
+            sessions,
+            status: complete ? 'completed' : 'in_progress'
+          }
+        }
+      };
+    });
+    setActiveSession(null);
+    setWorkoutOpen(false);
+    setRestEndsAt(null);
+    triggerToast('Workout Completed!', `Logged ${doneSets} set(s) for ${sess.workoutName}.`);
+  };
+  const requestFinish = () => {
+    if (!activeSession || !activeSession.program) return finishActiveWorkout();
+    const left = activeSession.exercises.reduce((n, e) => n + e.sets.filter(x => !x.completed && x.type === 'working').length, 0);
+    if (left > 0) setConfirmDialog({
+      title: 'Finish with sets remaining?',
+      body: `${left} working set(s) are not checked off. They will not be logged, and only the work you completed is saved.`,
+      confirmLabel: 'Finish workout',
+      onConfirm: finishProgramWorkout
+    });else finishProgramWorkout();
+  };
+  const renderProgramExercise = (item, exIdx) => {
+    const pr = item.prescribed;
+    const display = item.substitution ? item.substitution.name : item.name;
+    const prev = lastPerformance(display);
+    return React.createElement("div", {
+      key: exIdx,
+      className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3"
+    }, React.createElement("div", {
+      className: "flex items-start justify-between gap-2"
+    }, React.createElement("div", {
+      className: "min-w-0"
+    }, React.createElement("div", {
+      className: "text-[10px] text-[#8FA2B8]"
+    }, "Exercise ", exIdx + 1, " of ", activeSession.exercises.length), React.createElement("h3", {
+      className: "text-sm font-bold text-white"
+    }, display), item.substitution && React.createElement("div", {
+      className: "text-[10px] text-[#F59E0B]"
+    }, "Your substitution \xB7 prescribed: ", item.name)), React.createElement("button", {
+      onClick: () => setSubModalIdx(exIdx),
+      "aria-label": "Substitute exercise",
+      className: "min-w-[44px] min-h-[44px] rounded-lg bg-[#142235] text-[#8FA2B8] text-base shrink-0"
+    }, "\u21C4")), React.createElement("div", {
+      className: "bg-[#080E16] border border-[#203147] rounded-xl p-2.5 text-[11px] space-y-0.5"
+    }, React.createElement("div", {
+      className: "text-[#8FA2B8] uppercase text-[9px] font-bold tracking-wide"
+    }, "Prescribed by program"), React.createElement("div", {
+      className: "text-white font-bold"
+    }, pr.workingSets ?? '?', " \xD7 ", pr.reps ?? '?', pr.warmupText ? ` · ${pr.warmupText} warm-up` : pr.warmupSets ? ` · ${pr.warmupSets} warm-up` : '', " \xB7 ", intensityLabel(pr.intensity), pr.rest ? ` · rest ${restLabel(pr.rest)}` : ''), pr.technique && React.createElement("div", {
+      className: "text-[#F59E0B] font-semibold"
+    }, "Last-set technique: ", pr.technique), pr.notes && React.createElement("div", {
+      className: "text-[#C7D3E0] leading-snug"
+    }, pr.notes), pr.rest && pr.rest.maxSeconds && React.createElement("button", {
+      onClick: () => startRest(pr.rest.maxSeconds),
+      className: "min-h-[36px] px-3 rounded-lg bg-[#142235] border border-[#203147] text-[11px] font-semibold text-white"
+    }, "\u23F1 Start prescribed rest (", restLabel(pr.rest), ")"), pr.videoUrl && React.createElement("a", {
+      href: pr.videoUrl,
+      target: "_blank",
+      rel: "noopener noreferrer",
+      className: "block text-[11px] font-semibold text-[#1685F8]"
+    }, "\u25B6 Technique video"), !item.substitution && equipmentFor(item.name) && !ownedEquipment.includes(equipmentFor(item.name)) && React.createElement("div", {
+      className: "text-[#F59E0B]"
+    }, "\u26A0 May need ", equipmentFor(item.name), " (not in your equipment list) \u2014 tap \u21C4 to substitute"), pr.flags.length > 0 && React.createElement("div", {
+      className: "text-[#F59E0B]"
+    }, "\u26A0 Uncertain extraction \u2014 check ", pr.page ? `PDF p.${pr.page}` : pr.ref)), prev && React.createElement("div", {
+      className: "text-[11px] text-[#8FA2B8]"
+    }, "Last time \xB7 ", prev), React.createElement("div", {
+      className: "space-y-2"
+    }, item.sets.map((st, setIdx) => React.createElement("div", {
+      key: st.id,
+      className: `grid grid-cols-[34px_1fr_1fr_44px] gap-2 items-center p-2 rounded-xl border ${st.completed ? 'bg-[#31D583]/10 border-[#31D583]/30' : 'bg-[#080E16] border-[#203147]'}`
+    }, React.createElement("span", {
+      className: "text-[11px] font-bold text-white"
+    }, st.type === 'warmup' ? `W${st.setNumber}` : `#${st.setNumber}`), React.createElement("input", {
+      type: "number",
+      inputMode: "decimal",
+      value: st.weight,
+      placeholder: userSettings.unit,
+      "aria-label": "Weight",
+      onChange: e => updateSet(exIdx, setIdx, {
+        weight: e.target.value
+      }),
+      className: "w-full min-w-0 h-11 bg-[#101C2B] border border-[#203147] rounded-lg px-2 text-center text-white tabular-nums font-bold"
+    }), React.createElement("input", {
+      type: "number",
+      inputMode: "numeric",
+      value: st.reps,
+      placeholder: pr.reps || 'reps',
+      "aria-label": "Reps",
+      onChange: e => updateSet(exIdx, setIdx, {
+        reps: e.target.value
+      }),
+      className: "w-full min-w-0 h-11 bg-[#101C2B] border border-[#203147] rounded-lg px-2 text-center text-white tabular-nums font-bold"
+    }), React.createElement("button", {
+      onClick: () => toggleProgramSet(exIdx, setIdx),
+      "aria-label": "Complete set",
+      className: `h-11 w-11 rounded-lg text-base font-black ${st.completed ? 'bg-[#31D583] text-[#080E16]' : 'bg-[#142235] text-[#8FA2B8]'}`
+    }, "\u2713"))), React.createElement("div", {
+      className: "flex gap-2"
+    }, pr.warmupText && !pr.warmupSets && React.createElement("button", {
+      onClick: () => addSet(exIdx, 'warmup'),
+      className: "flex-1 min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]"
+    }, "\uFF0B Warm-up set"), React.createElement("button", {
+      onClick: () => addSet(exIdx),
+      className: "flex-1 min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]"
+    }, "\uFF0B Add extra set"))));
+  };
+  return React.createElement("div", {
+    style: {
+      backgroundColor: theme.bgPrimary,
+      color: theme.textPrimary
+    },
+    className: "min-h-screen flex flex-col w-full font-sans antialiased pb-24 md:pb-0"
+  }, React.createElement("header", {
+    className: "px-4 py-3.5 border-b border-[#203147] bg-[#0D1622]/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3 safe-top"
+  }, React.createElement("div", {
+    className: "flex items-center gap-2.5"
+  }, React.createElement("div", {
+    className: "w-8 h-8 rounded-xl bg-gradient-to-br from-[#1685F8] to-[#0A529B] flex items-center justify-center shadow-md shadow-[#1685F8]/25 shrink-0"
+  }, React.createElement(Icon, {
+    name: "dumbbell",
+    className: "w-4 h-4 text-white"
+  })), React.createElement("div", null, React.createElement("h1", {
+    className: "text-xs font-black tracking-wider text-white"
+  }, "STRONGER"), React.createElement("p", {
+    className: "text-[10px] text-[#8FA2B8] truncate"
+  }, "Hey, ", userSettings.name, " \uD83D\uDC4B"))), React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, React.createElement("div", {
+    className: "flex items-center gap-1 bg-[#101C2B] border border-[#203147] rounded-lg px-2 py-1 text-[11px]"
+  }, React.createElement("select", {
+    value: selectedTheme,
+    onChange: e => setSelectedTheme(e.target.value),
+    className: "bg-transparent text-white font-semibold outline-none cursor-pointer"
+  }, Object.entries(THEMES).map(([key, t]) => React.createElement("option", {
+    key: key,
+    value: key,
+    className: "bg-[#101C2B] text-white"
+  }, t.name)))), React.createElement("div", {
+    onClick: () => setActiveNav('Settings'),
+    className: "w-8 h-8 rounded-xl bg-[#1685F8] text-white font-bold flex items-center justify-center text-xs shadow cursor-pointer"
+  }, userSettings.name[0]))), activeSession && workoutOpen && React.createElement("div", {
+    className: "fixed inset-0 z-50 bg-[#080E16]/95 backdrop-blur-xl flex flex-col p-4 overflow-y-auto safe-top safe-bottom"
+  }, React.createElement("div", {
+    className: "max-w-xl mx-auto w-full space-y-4"
+  }, React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl"
+  }, React.createElement("div", null, React.createElement("div", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#1685F8]"
+  }, "Active Workout"), React.createElement("h2", {
+    className: "text-lg font-black text-white"
+  }, activeSession.workoutName), activeSession.program && React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, activeSession.program.programName, " \xB7 Week ", activeSession.program.week, " \xB7 Day ", activeSession.program.day), React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8] flex items-center gap-2 mt-0.5"
+  }, React.createElement("span", null, "Time: ", React.createElement("strong", {
+    className: "text-white tabular-nums"
+  }, Math.floor(elapsedSeconds / 60), "m ", elapsedSeconds % 60, "s")), React.createElement("span", null, "\xB7"), React.createElement("span", null, "Rest: ", React.createElement("strong", {
+    className: "text-[#31D583] tabular-nums"
+  }, fmtClock(timerSeconds))))), React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, React.createElement("button", {
+    onClick: () => {
+      setWorkoutOpen(false);
+      setActiveNav('Home');
+    },
+    "aria-label": "Back to Home, keep workout running",
+    className: "min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold"
+  }, "\u2302 Home"), React.createElement("button", {
+    onClick: requestFinish,
+    className: "px-3.5 py-2 rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-[#080E16] text-xs font-black shadow cursor-pointer"
+  }, "Finish"), React.createElement("button", {
+    onClick: () => setConfirmDiscard(true),
+    "aria-label": "Discard workout",
+    className: "min-w-[44px] min-h-[44px] rounded-xl bg-[#142235] text-[#F43F5E] text-sm font-black"
+  }, "\u2715"))), React.createElement("div", {
+    className: "flex items-center gap-2 overflow-x-auto pb-1"
+  }, React.createElement("span", {
+    className: "text-[11px] text-[#8FA2B8] shrink-0"
+  }, "Rest timer"), [60, 90, 120, 180].map(sec => React.createElement("button", {
+    key: sec,
+    onClick: () => startRest(sec),
+    className: "min-h-[40px] px-3.5 rounded-lg bg-[#142235] border border-[#203147] text-[11px] font-semibold text-white shrink-0"
+  }, sec >= 120 ? `${sec / 60} min` : `${sec}s`)), timerRunning && React.createElement("button", {
+    onClick: () => setRestEndsAt(null),
+    className: "min-h-[40px] px-3.5 rounded-lg bg-[#142235] border border-[#F43F5E]/40 text-[11px] font-semibold text-[#F43F5E] shrink-0"
+  }, "Stop ", fmtClock(timerSeconds))), React.createElement("div", {
+    className: "space-y-4"
+  }, activeSession.exercises.map((item, exIdx) => {
+    if (item.prescribed) return renderProgramExercise(item, exIdx);
+    const ex = exerciseMap[item.exerciseId];
+    return React.createElement("div", {
+      key: item.exerciseId,
+      className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3"
+    }, React.createElement("div", {
+      className: "flex items-center justify-between"
+    }, React.createElement("div", {
+      className: "flex items-center gap-2.5"
+    }, React.createElement("img", {
+      src: ex?.thumbnail,
+      alt: ex?.name,
+      className: "w-10 h-10 rounded-lg object-cover border border-[#203147]"
+    }), React.createElement("div", null, React.createElement("h3", {
+      className: "text-sm font-bold text-white"
+    }, ex?.name), React.createElement("p", {
+      className: "text-[11px] text-[#8FA2B8]"
+    }, ex?.primaryMuscle, " \xB7 ", ex?.equipment))), React.createElement("button", {
+      onClick: () => setSwapModalConfig({
+        mode: 'exercise',
+        dayId: activeSession.dayId,
+        exerciseId: item.exerciseId,
+        activeExIdx: exIdx
+      }),
+      className: "p-1.5 rounded-lg bg-[#142235] text-[#1685F8] text-xs"
+    }, React.createElement(Icon, {
+      name: "refresh-cw",
+      className: "w-3.5 h-3.5"
+    }))), React.createElement("div", {
+      className: "space-y-2"
+    }, item.sets.map((setObj, setIdx) => React.createElement("div", {
+      key: setObj.id,
+      className: `flex items-center justify-between gap-2 p-2.5 rounded-xl border ${setObj.completed ? 'bg-[#31D583]/10 border-[#31D583]/30' : 'bg-[#080E16] border-[#203147]'}`
+    }, React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, React.createElement("span", {
+      className: "text-xs font-bold text-white w-6"
+    }, "#", setObj.setNumber), React.createElement("span", {
+      className: "px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-[#1685F8]/20 text-[#1685F8]"
+    }, setObj.type)), React.createElement("div", {
+      className: "flex items-center gap-2"
+    }, React.createElement("div", {
+      className: "flex items-center gap-1"
+    }, React.createElement("input", {
+      type: "number",
+      value: setObj.actualWeightLb,
+      onChange: e => {
+        const val = Number(e.target.value);
+        setActiveSession(prev => {
+          const updated = [...prev.exercises];
+          updated[exIdx].sets[setIdx].actualWeightLb = val;
+          return {
+            ...prev,
+            exercises: updated
+          };
+        });
+      },
+      className: "w-16 bg-[#101C2B] border border-[#203147] rounded px-1.5 py-1 text-center text-xs text-white tabular-nums font-bold"
+    }), React.createElement("span", {
+      className: "text-[10px] text-[#8FA2B8]"
+    }, userSettings.unit)), React.createElement("div", {
+      className: "flex items-center gap-1"
+    }, React.createElement("input", {
+      type: "number",
+      value: setObj.actualReps,
+      onChange: e => {
+        const val = Number(e.target.value);
+        setActiveSession(prev => {
+          const updated = [...prev.exercises];
+          updated[exIdx].sets[setIdx].actualReps = val;
+          return {
+            ...prev,
+            exercises: updated
+          };
+        });
+      },
+      className: "w-12 bg-[#101C2B] border border-[#203147] rounded px-1.5 py-1 text-center text-xs text-white tabular-nums font-bold"
+    }), React.createElement("span", {
+      className: "text-[10px] text-[#8FA2B8]"
+    }, "reps")), React.createElement("button", {
+      onClick: () => {
+        setActiveSession(prev => {
+          const updated = [...prev.exercises];
+          updated[exIdx].sets[setIdx].completed = !updated[exIdx].sets[setIdx].completed;
+          return {
+            ...prev,
+            exercises: updated
+          };
+        });
+        if (!setObj.completed) startRest(item.restSeconds || 90);
+      },
+      className: `p-2 rounded-lg cursor-pointer ${setObj.completed ? 'bg-[#31D583] text-[#080E16]' : 'bg-[#142235] text-[#8FA2B8]'}`
+    }, React.createElement(Icon, {
+      name: "check",
+      className: "w-4 h-4"
+    })))))));
+  })))), React.createElement("main", {
+    className: `flex-1 flex flex-col p-4 max-w-xl mx-auto w-full space-y-6 ${activeSession ? 'pb-16' : ''}`
+  }, activeNav === 'Home' && React.createElement("div", {
+    className: "space-y-5"
+  }, activeProgram && React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#1685F8]/40 rounded-2xl p-4 space-y-2"
+  }, React.createElement("div", {
+    className: "text-[10px] font-bold uppercase tracking-wider text-[#1685F8]"
+  }, "Active program \xB7 ", activeProgram.name), nextProgramSession ? React.createElement(React.Fragment, null, React.createElement("div", {
+    className: "text-sm font-black text-white"
+  }, "Week ", nextProgramSession.week, " \xB7 Day ", nextProgramSession.day, " \xB7 ", nextProgramSession.label), React.createElement("div", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, nextProgramSession.plannedDate ? nextProgramSession.plannedDate === todayStr() ? 'Scheduled today' : nextProgramSession.missed ? `Missed — was planned ${fmtShort(nextProgramSession.plannedDate)} (still pending)` : `Planned ${fmtShort(nextProgramSession.plannedDate)}` : ''), React.createElement("div", {
+    className: "flex gap-2 pt-1"
+  }, React.createElement("button", {
+    onClick: () => startProgramWorkout(nextProgramSession),
+    className: "flex-1 min-h-[44px] rounded-xl bg-[#1685F8] text-white text-xs font-bold"
+  }, activeSession ? 'Return to workout' : 'Start workout'), React.createElement("button", {
+    onClick: () => setActiveNav('Calendar'),
+    className: "min-h-[44px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold"
+  }, "Calendar"))) : React.createElement("div", {
+    className: "text-xs text-[#8FA2B8]"
+  }, "No pending workouts left in this program.")), React.createElement("div", {
+    className: "relative rounded-2xl overflow-hidden border border-[#203147] bg-[#101C2B] shadow-xl"
+  }, React.createElement("div", {
+    className: "absolute inset-0 z-0"
+  }, React.createElement("img", {
+    src: IMAGES.heroDeadlift,
+    alt: "Hero athlete",
+    className: "w-full h-full object-cover opacity-35"
+  }), React.createElement("div", {
+    className: "absolute inset-0 bg-gradient-to-t from-[#080E16] via-[#080E16]/80 to-transparent"
+  })), React.createElement("div", {
+    className: "relative z-10 p-5 space-y-4"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, React.createElement("span", {
+    className: "px-2.5 py-0.5 rounded-full bg-[#1685F8]/20 text-[#1685F8] border border-[#1685F8]/30 text-[10px] font-extrabold uppercase tracking-widest"
+  }, "Today's Workout"), React.createElement("span", {
+    className: "text-[11px] text-[#8FA2B8] font-medium"
+  }, todaysWorkout.durationMin, " min")), React.createElement("div", null, React.createElement("h2", {
+    className: "text-xl font-black text-white tracking-tight"
+  }, todaysWorkout.name), React.createElement("p", {
+    className: "text-xs text-[#A4B3C5] font-medium mt-0.5"
+  }, todaysWorkout.emphasis)), React.createElement("div", {
+    className: "flex items-center gap-2 pt-1"
+  }, React.createElement("button", {
+    onClick: () => startWorkoutSession(todaysWorkout),
+    className: "flex-1 py-3 rounded-xl bg-[#1685F8] hover:bg-[#2992FF] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#1685F8]/30 cursor-pointer"
+  }, React.createElement(Icon, {
+    name: "play",
+    className: "w-4 h-4 fill-white"
+  }), React.createElement("span", null, "Start Workout")), React.createElement("button", {
+    onClick: () => setSwapModalConfig({
+      mode: 'day',
+      dayId: todaysWorkout.id
+    }),
+    className: "px-3.5 py-3 rounded-xl bg-[#142235] text-[#31D583] border border-[#203147] text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
+  }, React.createElement(Icon, {
+    name: "refresh-cw",
+    className: "w-4 h-4"
+  }), React.createElement("span", null, "Adapt"))))), React.createElement("div", {
+    className: "grid grid-cols-2 gap-3"
+  }, React.createElement("div", {
+    className: "p-3.5 rounded-xl bg-[#101C2B] border border-[#203147] space-y-2"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between text-[11px] text-[#8FA2B8]"
+  }, React.createElement("span", null, "Current Program"), React.createElement(Icon, {
+    name: "layers",
+    className: "w-3.5 h-3.5 text-[#1685F8]"
+  })), React.createElement("div", {
+    className: "text-xs font-bold text-white truncate"
+  }, program.name), React.createElement("div", {
+    className: "w-full bg-[#080E16] h-1.5 rounded-full overflow-hidden"
+  }, React.createElement("div", {
+    className: "bg-[#1685F8] h-full rounded-full",
+    style: {
+      width: `${program.currentWeek / program.totalWeeks * 100}%`
+    }
+  }))), React.createElement("div", {
+    className: "p-3.5 rounded-xl bg-[#101C2B] border border-[#203147] space-y-2"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between text-[11px] text-[#8FA2B8]"
+  }, React.createElement("span", null, "Weekly Training"), React.createElement(Icon, {
+    name: "check-circle-2",
+    className: "w-3.5 h-3.5 text-[#31D583]"
+  })), React.createElement("div", {
+    className: "flex items-baseline gap-1.5"
+  }, React.createElement("span", {
+    className: "text-lg font-extrabold text-white"
+  }, "4 / 5"), React.createElement("span", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "Sessions")), React.createElement("div", {
+    className: "flex items-center gap-1"
+  }, [true, true, true, true, false].map((done, i) => React.createElement("div", {
+    key: i,
+    className: `h-1.5 flex-1 rounded-full ${done ? 'bg-[#31D583]' : 'bg-[#203147]'}`
+  }))))), React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, React.createElement("div", {
+    className: "flex items-center gap-2"
+  }, React.createElement(Icon, {
+    name: "dumbbell",
+    className: "w-4 h-4 text-[#1685F8]"
+  }), React.createElement("h3", {
+    className: "text-xs font-bold text-white uppercase tracking-wider"
+  }, "Today's Exercises")), React.createElement("button", {
+    onClick: () => setShowPlanGeneratorModal(true),
+    className: "text-[11px] font-semibold text-[#1685F8] flex items-center gap-1"
+  }, React.createElement(Icon, {
+    name: "sparkles",
+    className: "w-3 h-3"
+  }), React.createElement("span", null, "New Plan"))), React.createElement("div", {
+    className: "divide-y divide-[#182638]"
+  }, todaysWorkout.exercises.map(item => {
+    const ex = exerciseMap[item.exerciseId];
+    if (!ex) return null;
+    return React.createElement("div", {
+      key: item.exerciseId,
+      className: "py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3"
+    }, React.createElement("div", {
+      className: "flex items-center gap-3 min-w-0"
+    }, React.createElement("div", {
+      className: "w-12 h-10 rounded-lg overflow-hidden border border-[#203147] shrink-0 bg-[#080E16]"
+    }, React.createElement("img", {
+      src: ex.thumbnail,
+      alt: ex.name,
+      className: "w-full h-full object-cover"
+    })), React.createElement("div", {
+      className: "min-w-0"
+    }, React.createElement("div", {
+      className: "text-xs font-bold truncate text-white"
+    }, ex.name), React.createElement("div", {
+      className: "text-[10px] text-[#8FA2B8] tabular-nums mt-0.5"
+    }, item.sets, " sets \xD7 ", item.reps, " reps ", item.targetWeightLb > 0 ? `· ${formatWeight(item.targetWeightLb, userSettings.unit, item.isWeightedAddition)}` : ''))), React.createElement("button", {
+      onClick: () => setSwapModalConfig({
+        mode: 'exercise',
+        dayId: todaysWorkout.id,
+        exerciseId: item.exerciseId
+      }),
+      className: "p-2 rounded-lg bg-[#142235] text-[#1685F8] shrink-0"
+    }, React.createElement(Icon, {
+      name: "refresh-cw",
+      className: "w-3.5 h-3.5"
+    })));
+  })))), activeNav === 'Workouts' && React.createElement("div", {
+    className: "space-y-4"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, React.createElement("h2", {
+    className: "text-base font-black text-white"
+  }, "Workouts"), React.createElement("button", {
+    onClick: () => setShowPlanGeneratorModal(true),
+    className: "px-3 py-1.5 rounded-lg bg-[#1685F8] text-white text-xs font-bold"
+  }, "Generate Plan")), React.createElement("div", {
+    className: "space-y-3"
+  }, program.days.map(day => React.createElement("div", {
+    key: day.id,
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between"
+  }, React.createElement("span", {
+    className: "px-2 py-0.5 rounded-full bg-[#1685F8]/15 text-[#1685F8] text-[9px] font-bold uppercase"
+  }, day.location), React.createElement("span", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, day.durationMin, " min")), React.createElement("div", null, React.createElement("h3", {
+    className: "text-sm font-bold text-white"
+  }, day.name), React.createElement("p", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, day.emphasis)), React.createElement("div", {
+    className: "flex items-center gap-2 pt-2 border-t border-[#182638]"
+  }, React.createElement("button", {
+    onClick: () => startWorkoutSession(day),
+    className: "flex-1 py-2 rounded-lg bg-[#1685F8] text-white text-xs font-bold flex items-center justify-center gap-1.5"
+  }, React.createElement(Icon, {
+    name: "play",
+    className: "w-3 h-3 fill-white"
+  }), React.createElement("span", null, "Start Workout")), React.createElement("button", {
+    onClick: () => setSwapModalConfig({
+      mode: 'day',
+      dayId: day.id
+    }),
+    className: "px-3 py-2 rounded-lg bg-[#142235] text-[#31D583] text-xs font-semibold flex items-center gap-1"
+  }, React.createElement(Icon, {
+    name: "refresh-cw",
+    className: "w-3 h-3"
+  }), React.createElement("span", null, "Adapt"))))))), activeNav === 'Program' && openProgramId && library.programs[openProgramId] && React.createElement(ProgramDetail, {
+    program: library.programs[openProgramId],
+    state: progressOf(openProgramId),
+    isActive: library.activeProgramId === openProgramId,
+    unit: userSettings.unit,
+    onBack: () => setOpenProgramId(null),
+    onRemove: () => removeProgram(openProgramId)
+  }, (() => {
+    const st = progressOf(openProgramId).status,
+      id = openProgramId;
+    const btn = 'w-full min-h-[48px] rounded-xl text-sm font-black ';
+    if (st === 'not_started') return React.createElement("button", {
+      onClick: () => requestStartProgram(id),
+      className: btn + 'bg-[#1685F8] text-white'
+    }, "Start Program");
+    if (st === 'completed') return React.createElement("div", {
+      className: "text-xs font-bold text-[#31D583]"
+    }, "\u2713 All workouts completed");
+    return React.createElement("div", {
+      className: "flex gap-2"
+    }, React.createElement("button", {
+      onClick: () => resumeProgram(id),
+      className: btn + 'flex-1 bg-[#1685F8] text-white'
+    }, "Resume Program"), st === 'in_progress' && React.createElement("button", {
+      onClick: () => pauseProgram(id),
+      className: "min-h-[48px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold"
+    }, "Pause"));
+  })()), activeNav === 'Program' && !(openProgramId && library.programs[openProgramId]) && React.createElement("div", {
+    className: "space-y-4"
+  }, React.createElement("div", null, React.createElement("h2", {
+    className: "text-lg font-black text-white"
+  }, "Program Library"), React.createElement("p", {
+    className: "text-[11px] text-[#8FA2B8] mt-0.5"
+  }, "Import your Jeff Nippard program PDFs or spreadsheets. Each program is followed exactly as written.")), React.createElement("button", {
+    onClick: () => pdfInputRef.current && pdfInputRef.current.click(),
+    disabled: importing,
+    className: "w-full min-h-[48px] rounded-xl bg-[#1685F8] text-white text-sm font-black disabled:opacity-60"
+  }, importing ? 'Reading file…' : '＋ Import program file(s) (PDF or Excel)'), React.createElement("input", {
+    ref: pdfInputRef,
+    type: "file",
+    accept: "application/pdf,.pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    multiple: true,
+    className: "hidden",
+    onChange: e => {
+      handlePdfFiles(e.target.files);
+      e.target.value = '';
+    }
+  }), importReport && React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl p-3 space-y-1.5"
+  }, importReport.map((r, i) => React.createElement("div", {
+    key: i,
+    className: `text-[11px] leading-snug ${r.ok ? 'text-[#31D583]' : 'text-[#F43F5E]'}`
+  }, r.ok ? '✓' : '✕', " ", r.file, ": ", r.msg)), React.createElement("button", {
+    onClick: () => setImportReport(null),
+    className: "text-[10px] text-[#8FA2B8] min-h-[32px]"
+  }, "Dismiss")), Object.keys(library.programs).length > 1 && React.createElement("input", {
+    type: "search",
+    value: libraryQuery,
+    onChange: e => setLibraryQuery(e.target.value),
+    placeholder: "Search programs",
+    className: "w-full min-h-[44px] bg-[#101C2B] border border-[#203147] rounded-xl px-3 text-white"
+  }), Object.keys(library.programs).length === 0 && !importing && React.createElement("div", {
+    className: "bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-6 text-center text-xs text-[#8FA2B8]"
+  }, "No programs imported yet. Tap \u201CImport program file(s)\u201D to add one."), Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase())).map(pr => React.createElement(ProgramCard, {
+    key: pr.id,
+    program: pr,
+    state: progressOf(pr.id),
+    isActive: library.activeProgramId === pr.id,
+    onOpen: () => setOpenProgramId(pr.id)
+  })), React.createElement("h2", {
+    className: "text-base font-black text-white pt-2"
+  }, "Built-in plan: ", program.name), React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, "Periodized Weeks"), React.createElement("div", {
+    className: "grid grid-cols-4 gap-2"
+  }, Array.from({
+    length: program.totalWeeks
+  }).map((_, i) => {
+    const wkNum = i + 1;
+    const isCurrent = wkNum === program.currentWeek;
+    return React.createElement("div", {
+      key: wkNum,
+      onClick: () => setProgram(prev => ({
+        ...prev,
+        currentWeek: wkNum
+      })),
+      className: `p-2.5 rounded-lg border text-center cursor-pointer ${isCurrent ? 'bg-[#1685F8] border-[#1685F8] text-white font-extrabold' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]'}`
+    }, React.createElement("div", {
+      className: "text-[9px] uppercase"
+    }, "Wk"), React.createElement("div", {
+      className: "text-sm font-black"
+    }, wkNum));
+  })))), activeNav === 'Progress' && React.createElement(ProgramProgress, {
+    key: library.activeProgramId || 'none',
+    library: library,
+    workoutLogs: workoutLogs,
+    unit: userSettings.unit
+  }), activeNav === 'Nutrition' && React.createElement("div", {
+    className: "space-y-4"
+  }, React.createElement("h2", {
+    className: "text-base font-black text-white"
+  }, "Nutrition"), React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, "Macros Today"), React.createElement("div", {
+    className: "grid grid-cols-2 gap-3"
+  }, React.createElement("div", {
+    className: "bg-[#080E16] p-3 rounded-lg border border-[#203147] text-center"
+  }, React.createElement("div", {
+    className: "text-lg font-black text-white"
+  }, "1,850"), React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "of 2,400 kcal")), React.createElement("div", {
+    className: "bg-[#080E16] p-3 rounded-lg border border-[#203147] text-center"
+  }, React.createElement("div", {
+    className: "text-lg font-black text-white"
+  }, "145g"), React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, "Protein (Goal 180g)"))))), activeNav === 'Recovery' && React.createElement("div", {
+    className: "space-y-4"
+  }, React.createElement("h2", {
+    className: "text-base font-black text-white"
+  }, "Recovery"), React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, "Sleep Biometrics"), React.createElement("div", {
+    className: "bg-[#080E16] p-3 rounded-lg border border-[#203147] flex items-center justify-between"
+  }, React.createElement("div", null, React.createElement("div", {
+    className: "text-xs text-[#8FA2B8]"
+  }, "Duration"), React.createElement("div", {
+    className: "text-sm font-bold text-white"
+  }, "7h 28m")), React.createElement("div", null, React.createElement("div", {
+    className: "text-xs text-[#8FA2B8]"
+  }, "Score"), React.createElement("div", {
+    className: "text-sm font-bold text-[#31D583]"
+  }, "82 / 100"))))), activeNav === 'Calendar' && React.createElement(CalendarView, {
+    program: activeProgram,
+    prog: activeProg,
+    sessions: activeSessions,
+    logs: workoutLogs,
+    hasActiveWorkout: !!activeSession,
+    onStart: startProgramWorkout,
+    onReschedule: rescheduleSession,
+    onSkip: skipSession,
+    onUnskip: sess => patchProgress(library.activeProgramId, p => ({
+      ...p,
+      sessions: {
+        ...p.sessions,
+        [sess.key]: {
+          ...(p.sessions || {})[sess.key],
+          status: 'planned'
+        }
+      }
+    })),
+    onOpenProgram: () => setActiveNav('Program')
+  }), activeNav === 'Settings' && React.createElement("div", {
+    className: "space-y-4"
+  }, React.createElement("h2", {
+    className: "text-base font-black text-white"
+  }, "Settings"), React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3"
+  }, React.createElement("div", null, React.createElement("label", {
+    className: "text-[11px] text-[#8FA2B8] block mb-1"
+  }, "Athlete Name"), React.createElement("input", {
+    type: "text",
+    value: userSettings.name,
+    onChange: e => setUserSettings({
+      ...userSettings,
+      name: e.target.value
+    }),
+    className: "w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs"
+  })), React.createElement("div", null, React.createElement("label", {
+    className: "text-[11px] text-[#8FA2B8] block mb-1"
+  }, "Weight Unit"), React.createElement("select", {
+    value: userSettings.unit,
+    onChange: e => setUserSettings({
+      ...userSettings,
+      unit: e.target.value
+    }),
+    className: "w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs"
+  }, React.createElement("option", {
+    value: "lb"
+  }, "Pounds (lb)"), React.createElement("option", {
+    value: "kg"
+  }, "Kilograms (kg)"))), React.createElement("div", {
+    className: "pt-3 border-t border-[#203147] space-y-2"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, "My equipment"), React.createElement("p", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "Used to flag program exercises you may not be able to do. You choose any substitutions; nothing is changed automatically."), React.createElement("div", {
+    className: "grid grid-cols-2 gap-2"
+  }, EQUIPMENT_OPTIONS.map(eq => {
+    const on = ownedEquipment.includes(eq);
+    return React.createElement("button", {
+      key: eq,
+      onClick: () => setUserSettings({
+        ...userSettings,
+        equipment: on ? ownedEquipment.filter(x => x !== eq) : [...ownedEquipment, eq]
+      }),
+      className: `min-h-[44px] rounded-xl border text-xs font-bold ${on ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]'}`
+    }, on ? '✓ ' : '', eq);
+  }))), React.createElement("div", {
+    className: "pt-3 border-t border-[#203147] space-y-2"
+  }, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, "Backup"), React.createElement("p", {
+    className: "text-[11px] text-[#8FA2B8]"
+  }, "Data is stored only in this browser on this device (no cloud sync). Export a backup to keep it safe."), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("button", {
+    onClick: exportBackup,
+    className: "flex-1 min-h-[44px] rounded-xl bg-[#1685F8] text-white text-xs font-bold"
+  }, "Export backup"), React.createElement("button", {
+    onClick: () => importInputRef.current && importInputRef.current.click(),
+    className: "flex-1 min-h-[44px] rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold"
+  }, "Restore backup"), React.createElement("input", {
+    ref: importInputRef,
+    type: "file",
+    accept: "application/json,.json",
+    className: "hidden",
+    onChange: e => {
+      importBackup(e.target.files[0]);
+      e.target.value = '';
+    }
+  })))))), React.createElement("div", {
+    className: "fixed bottom-0 left-0 right-0 z-40"
+  }, activeSession && !workoutOpen && React.createElement("button", {
+    onClick: () => setWorkoutOpen(true),
+    "aria-label": "Return to active workout",
+    className: "w-full flex items-center justify-between gap-3 px-4 min-h-[48px] bg-[#1685F8] text-white text-left"
+  }, React.createElement("span", {
+    className: "flex items-center gap-2 min-w-0"
+  }, React.createElement("span", {
+    className: "w-2 h-2 rounded-full bg-white animate-pulse shrink-0"
+  }), React.createElement("span", {
+    className: "text-xs font-black truncate"
+  }, activeSession.workoutName)), React.createElement("span", {
+    className: "flex items-center gap-3 shrink-0 text-xs tabular-nums font-bold"
+  }, React.createElement("span", null, Math.floor(elapsedSeconds / 60), ":", String(elapsedSeconds % 60).padStart(2, '0')), timerRunning && React.createElement("span", {
+    className: "px-1.5 py-0.5 rounded bg-white/20"
+  }, "Rest ", fmtClock(timerSeconds)), React.createElement("span", null, "Resume \u203A"))), React.createElement("nav", {
+    "aria-label": "Bottom Navigation",
+    className: "bg-[#0D1622]/95 backdrop-blur-xl border-t border-[#203147] px-2 py-1.5 flex items-center justify-around safe-bottom"
+  }, [{
+    id: 'Home',
+    label: 'Home',
+    icon: 'home'
+  }, {
+    id: 'Workouts',
+    label: 'Workouts',
+    icon: 'dumbbell'
+  }, {
+    id: 'Program',
+    label: 'Program',
+    icon: 'layers'
+  }, {
+    id: 'Calendar',
+    label: 'Calendar',
+    icon: 'calendar'
+  }, {
+    id: 'Progress',
+    label: 'Progress',
+    icon: 'bar-chart-3'
+  }, {
+    id: 'Nutrition',
+    label: 'Nutrition',
+    icon: 'utensils'
+  }].map(item => {
+    const isActive = activeNav === item.id;
+    return React.createElement("button", {
+      key: item.id,
+      onClick: () => setActiveNav(item.id),
+      className: `flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${isActive ? 'text-[#1685F8]' : 'text-[#8FA2B8] hover:text-white'}`
+    }, React.createElement(Icon, {
+      name: item.icon,
+      className: "w-5 h-5"
+    }), React.createElement("span", {
+      className: "text-[10px] font-semibold mt-0.5"
+    }, item.label));
+  }))), confirmDiscard && React.createElement("div", {
+    className: "fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
+  }, React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl max-w-sm w-full p-5 space-y-4"
+  }, React.createElement("h3", {
+    className: "text-sm font-bold text-white"
+  }, "Discard this workout?"), React.createElement("p", {
+    className: "text-xs text-[#8FA2B8]"
+  }, "All sets logged in this session will be lost. Nothing will be saved to your history."), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("button", {
+    onClick: () => setConfirmDiscard(false),
+    className: "flex-1 min-h-[44px] rounded-xl bg-[#142235] text-white text-xs font-bold"
+  }, "Keep Workout"), React.createElement("button", {
+    onClick: () => {
+      setActiveSession(null);
+      setWorkoutOpen(false);
+      setRestEndsAt(null);
+      setConfirmDiscard(false);
+    },
+    className: "flex-1 min-h-[44px] rounded-xl bg-[#F43F5E] text-white text-xs font-black"
+  }, "Discard")))), startSheetId && library.programs[startSheetId] && React.createElement(StartProgramSheet, {
+    program: library.programs[startSheetId],
+    owned: ownedEquipment,
+    onCancel: () => setStartSheetId(null),
+    onConfirm: cfg => activateProgram(startSheetId, cfg)
+  }), subModalIdx !== null && activeSession && activeSession.exercises[subModalIdx] && React.createElement(SubstituteModal, {
+    item: activeSession.exercises[subModalIdx],
+    library: exercises,
+    onClose: () => setSubModalIdx(null),
+    onPick: sub => setSubstitution(subModalIdx, sub),
+    onRestore: () => setSubstitution(subModalIdx, null)
+  }), confirmDialog && React.createElement("div", {
+    className: "fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4"
+  }, React.createElement("div", {
+    className: "bg-[#101C2B] border border-[#203147] rounded-2xl max-w-sm w-full p-5 space-y-4"
+  }, React.createElement("h3", {
+    className: "text-sm font-bold text-white"
+  }, confirmDialog.title), React.createElement("p", {
+    className: "text-xs text-[#8FA2B8]"
+  }, confirmDialog.body), React.createElement("div", {
+    className: "flex gap-2"
+  }, React.createElement("button", {
+    onClick: () => setConfirmDialog(null),
+    className: "flex-1 min-h-[44px] rounded-xl bg-[#142235] text-white text-xs font-bold"
+  }, "Cancel"), React.createElement("button", {
+    onClick: () => {
+      const fn = confirmDialog.onConfirm;
+      setConfirmDialog(null);
+      fn();
+    },
+    className: `flex-1 min-h-[44px] rounded-xl text-white text-xs font-black ${confirmDialog.danger ? 'bg-[#F43F5E]' : 'bg-[#1685F8]'}`
+  }, confirmDialog.confirmLabel)))), swapModalConfig && React.createElement("div", {
+    className: "fixed inset-0 z-50 bg-black/80 flex items-end md:items-center justify-center p-0 md:p-4"
+  }, React.createElement("div", {
+    className: "bg-[#101C2B] border-t md:border border-[#203147] rounded-t-3xl md:rounded-2xl max-w-lg w-full p-5 space-y-4 max-h-[85vh] overflow-y-auto safe-bottom"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#203147]"
+  }, React.createElement("h3", {
+    className: "text-sm font-bold text-white"
+  }, swapModalConfig.mode === 'day' ? 'Equipment Adapter' : 'Movement Substitution'), React.createElement("button", {
+    onClick: () => setSwapModalConfig(null),
+    className: "p-1.5 bg-[#142235] text-[#8FA2B8] rounded-lg"
+  }, React.createElement(Icon, {
+    name: "x",
+    className: "w-4 h-4"
+  }))), swapModalConfig.mode === 'day' ? React.createElement("div", {
+    className: "space-y-2.5"
+  }, [{
+    key: 'dumbbells_only',
+    title: 'Dumbbells & Bench',
+    desc: 'Convert barbell lifts to dumbbells.'
+  }, {
+    key: 'bodyweight_minimal',
+    title: 'Bodyweight & Pull-Up Bar',
+    desc: 'Convert to calisthenics.'
+  }, {
+    key: 'barbell_rack',
+    title: 'Barbell & Rack',
+    desc: 'Standard barbell lifts.'
+  }].map(prof => React.createElement("div", {
+    key: prof.key,
+    onClick: () => handleAdaptEntireWorkoutByEquipment(swapModalConfig.dayId, prof.key),
+    className: "p-3 rounded-xl bg-[#080E16] border border-[#203147] cursor-pointer flex items-center justify-between"
+  }, React.createElement("div", null, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, prof.title), React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, prof.desc)), React.createElement(Icon, {
+    name: "chevron-right",
+    className: "w-4 h-4 text-[#8FA2B8]"
+  })))) : React.createElement("div", {
+    className: "space-y-2"
+  }, getSimilarAlternatives(swapModalConfig.exerciseId).map(altEx => React.createElement("div", {
+    key: altEx.id,
+    onClick: () => handleReplaceSingleExercise(altEx.id),
+    className: "p-2.5 rounded-xl bg-[#080E16] border border-[#203147] cursor-pointer flex items-center justify-between"
+  }, React.createElement("div", {
+    className: "flex items-center gap-2.5"
+  }, React.createElement("img", {
+    src: altEx.thumbnail,
+    alt: altEx.name,
+    className: "w-10 h-9 rounded-lg object-cover"
+  }), React.createElement("div", null, React.createElement("div", {
+    className: "text-xs font-bold text-white"
+  }, altEx.name), React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, altEx.equipment))), React.createElement("span", {
+    className: "text-xs font-bold text-[#1685F8]"
+  }, "Select")))))), showPlanGeneratorModal && React.createElement("div", {
+    className: "fixed inset-0 z-50 bg-black/80 flex items-end md:items-center justify-center p-0 md:p-4"
+  }, React.createElement("div", {
+    className: "bg-[#101C2B] border-t md:border border-[#203147] rounded-t-3xl md:rounded-2xl max-w-md w-full p-5 space-y-4 safe-bottom"
+  }, React.createElement("div", {
+    className: "flex items-center justify-between pb-3 border-b border-[#203147]"
+  }, React.createElement("h3", {
+    className: "text-sm font-bold text-white"
+  }, "Generate Plan"), React.createElement("button", {
+    onClick: () => setShowPlanGeneratorModal(false),
+    className: "p-1.5 bg-[#142235] text-[#8FA2B8] rounded-lg"
+  }, React.createElement(Icon, {
+    name: "x",
+    className: "w-4 h-4"
+  }))), React.createElement("div", {
+    className: "space-y-3"
+  }, React.createElement("div", null, React.createElement("label", {
+    className: "text-[11px] text-[#8FA2B8] block mb-1"
+  }, "Duration (Weeks)"), React.createElement("select", {
+    value: planGenConfig.weeks,
+    onChange: e => setPlanGenConfig({
+      ...planGenConfig,
+      weeks: Number(e.target.value)
+    }),
+    className: "w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs"
+  }, React.createElement("option", {
+    value: "4"
+  }, "4 Weeks"), React.createElement("option", {
+    value: "8"
+  }, "8 Weeks"), React.createElement("option", {
+    value: "12"
+  }, "12 Weeks"))), React.createElement("div", null, React.createElement("label", {
+    className: "text-[11px] text-[#8FA2B8] block mb-1"
+  }, "Training Goal"), React.createElement("select", {
+    value: planGenConfig.goal,
+    onChange: e => setPlanGenConfig({
+      ...planGenConfig,
+      goal: e.target.value
+    }),
+    className: "w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs"
+  }, React.createElement("option", {
+    value: "Powerbuilding"
+  }, "Powerbuilding"), React.createElement("option", {
+    value: "Maximal Strength"
+  }, "Maximal Strength"), React.createElement("option", {
+    value: "Hypertrophy"
+  }, "Hypertrophy"))), React.createElement("button", {
+    onClick: handleGeneratePlan,
+    className: "w-full py-3 rounded-xl bg-[#1685F8] text-white text-xs font-bold shadow-lg shadow-[#1685F8]/25 cursor-pointer"
+  }, "Generate & Save Plan")))), toast && React.createElement("div", {
+    className: "fixed bottom-20 left-4 right-4 z-50 bg-[#101C2B] border border-[#1685F8] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3"
+  }, React.createElement("div", {
+    className: "w-2 h-2 rounded-full bg-[#1685F8] animate-ping"
+  }), React.createElement("div", null, React.createElement("div", {
+    className: "text-xs font-bold"
+  }, toast.title), React.createElement("div", {
+    className: "text-[10px] text-[#8FA2B8]"
+  }, toast.message))));
+}
+ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
