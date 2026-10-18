@@ -27,6 +27,9 @@
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
         }
+        html, body { overflow-x: hidden; max-width: 100%; }
+        .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+        input, select, textarea { font-size: 16px; } /* prevents iOS Safari zoom-on-focus */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
         ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
@@ -120,28 +123,53 @@
             ]}
         ];
 
+        // ---- Local persistence (browser localStorage only; no cloud sync) ----
+        const STORE_KEY = 'stronger.state';
+        const SCHEMA_VERSION = 1;
+        const migrate = (data) => {
+            // Future schema upgrades go here, keyed on data.schemaVersion.
+            return data;
+        };
+        const loadStore = () => {
+            try {
+                const raw = localStorage.getItem(STORE_KEY);
+                return raw ? migrate(JSON.parse(raw)) : {};
+            } catch (e) { return {}; }
+        };
+        const STORED = loadStore();
+        const fmtClock = (sec) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
+
         function App() {
             const [activeNav, setActiveNav] = useState('Home');
-            const [selectedTheme, setSelectedTheme] = useState('blue');
+            const [selectedTheme, setSelectedTheme] = useState(STORED.selectedTheme || 'blue');
             const theme = THEMES[selectedTheme];
 
-            const [exercises, setExercises] = useState(INITIAL_EXERCISES);
+            const [exercises, setExercises] = useState(STORED.exercises || INITIAL_EXERCISES);
             const exerciseMap = useMemo(() => {
                 const map = {};
                 exercises.forEach(ex => { map[ex.id] = ex; });
                 return map;
             }, [exercises]);
 
-            const [program, setProgram] = useState(INITIAL_PROGRAM);
-            const [selectedDayId, setSelectedDayId] = useState(INITIAL_PROGRAM.days[0].id);
+            const [program, setProgram] = useState(STORED.program || INITIAL_PROGRAM);
+            const [selectedDayId, setSelectedDayId] = useState(STORED.selectedDayId || INITIAL_PROGRAM.days[0].id);
             const todaysWorkout = program.days.find(d => d.id === selectedDayId) || program.days[0];
 
-            const [workoutLogs, setWorkoutLogs] = useState(INITIAL_WORKOUT_LOGS);
-            const [userSettings, setUserSettings] = useState({ name: 'John', unit: 'lb', targetCalories: 2400, targetProtein: 180 });
+            const [workoutLogs, setWorkoutLogs] = useState(STORED.workoutLogs || INITIAL_WORKOUT_LOGS);
+            const [userSettings, setUserSettings] = useState(STORED.userSettings || { name: 'John', unit: 'lb', targetCalories: 2400, targetProtein: 180 });
 
-            const [activeSession, setActiveSession] = useState(null);
-            const [timerSeconds, setTimerSeconds] = useState(120);
-            const [timerRunning, setTimerRunning] = useState(false);
+            const [activeSession, setActiveSession] = useState(STORED.activeSession || null);
+            // Workout view is a layer over the app; the session itself lives here regardless of the page shown.
+            const [workoutOpen, setWorkoutOpen] = useState(false);
+            const [confirmDiscard, setConfirmDiscard] = useState(false);
+            // Timers derive from timestamps so they stay accurate when Safari is backgrounded or the phone locks.
+            const [now, setNow] = useState(Date.now());
+            const [restEndsAt, setRestEndsAt] = useState(STORED.restEndsAt || null);
+            const timerSeconds = restEndsAt ? Math.max(0, Math.ceil((restEndsAt - now) / 1000)) : 0;
+            const timerRunning = timerSeconds > 0;
+            const startRest = (sec) => setRestEndsAt(Date.now() + sec * 1000);
+            const elapsedSeconds = activeSession ? Math.max(0, Math.floor((now - activeSession.startTime) / 1000)) : 0;
+            const importInputRef = useRef(null);
 
             const [swapModalConfig, setSwapModalConfig] = useState(null);
             const [showPlanGeneratorModal, setShowPlanGeneratorModal] = useState(false);
@@ -304,32 +332,51 @@
                     return { exerciseId: item.exerciseId, restSeconds: item.restSeconds || 90, isWeightedAddition: item.isWeightedAddition || false, sets: setsArr };
                 });
 
-                setActiveSession({ dayId: workoutTemplate.id, workoutName: workoutTemplate.name, startTime: Date.now(), elapsedSeconds: 0, exercises: sessionExercises });
+                if (activeSession) { setWorkoutOpen(true); triggerToast('Workout already active', 'Resume or discard your current session first.'); return; }
+                setRestEndsAt(null);
+                setActiveSession({ id: `session-${Date.now()}`, dayId: workoutTemplate.id, workoutName: workoutTemplate.name, startTime: Date.now(), exercises: sessionExercises });
+                setWorkoutOpen(true);
                 triggerToast('Workout Started', `Live tracking active for ${workoutTemplate.name}.`);
             };
 
             useEffect(() => {
-                let interval = null;
-                if (activeSession) {
-                    interval = setInterval(() => {
-                        setActiveSession(prev => prev ? { ...prev, elapsedSeconds: prev.elapsedSeconds + 1 } : null);
-                    }, 1000);
-                }
-                return () => clearInterval(interval);
-            }, [activeSession]);
+                if (!activeSession && !restEndsAt) return;
+                const tick = () => setNow(Date.now());
+                const interval = setInterval(tick, 1000);
+                document.addEventListener('visibilitychange', tick);
+                return () => { clearInterval(interval); document.removeEventListener('visibilitychange', tick); };
+            }, [!!activeSession, !!restEndsAt]);
 
+            // Persist everything incrementally (including the in-progress session).
             useEffect(() => {
-                let interval = null;
-                if (timerRunning && timerSeconds > 0) {
-                    interval = setInterval(() => {
-                        setTimerSeconds(prev => {
-                            if (prev <= 1) { setTimerRunning(false); return 0; }
-                            return prev - 1;
-                        });
-                    }, 1000);
-                }
-                return () => clearInterval(interval);
-            }, [timerRunning, timerSeconds]);
+                try {
+                    localStorage.setItem(STORE_KEY, JSON.stringify({
+                        schemaVersion: SCHEMA_VERSION,
+                        selectedTheme, program, selectedDayId, workoutLogs, userSettings, exercises, activeSession, restEndsAt
+                    }));
+                } catch (e) { /* storage full or unavailable */ }
+            }, [selectedTheme, program, selectedDayId, workoutLogs, userSettings, exercises, activeSession, restEndsAt]);
+
+            const exportBackup = () => {
+                const data = { app: 'STRONGER', exportedAt: new Date().toISOString(), ...loadStore() };
+                const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
+                const a = document.createElement('a');
+                a.href = url; a.download = `stronger-backup-${new Date().toISOString().split('T')[0]}.json`;
+                a.click(); URL.revokeObjectURL(url);
+            };
+            const importBackup = (file) => {
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => {
+                    try {
+                        const d = migrate(JSON.parse(reader.result));
+                        if (d.app !== 'STRONGER' && !d.workoutLogs) throw new Error('not a STRONGER backup');
+                        localStorage.setItem(STORE_KEY, JSON.stringify(d));
+                        location.reload();
+                    } catch (e) { triggerToast('Restore failed', 'That file is not a valid STRONGER backup.'); }
+                };
+                reader.readAsText(file);
+            };
 
             const finishActiveWorkout = () => {
                 if (!activeSession) return;
@@ -344,13 +391,15 @@
                     id: `log-${Date.now()}`,
                     date: new Date().toISOString().split('T')[0],
                     workoutName: activeSession.workoutName,
-                    durationMin: Math.round(activeSession.elapsedSeconds / 60) || 45,
-                    totalVolumeLb: totalVol || 15000,
+                    durationMin: Math.max(1, Math.round(elapsedSeconds / 60)),
+                    totalVolumeLb: totalVol,
                     exercises: activeSession.exercises.map(e => ({ exerciseId: e.exerciseId, name: exerciseMap[e.exerciseId]?.name || 'Exercise', sets: e.sets.map(s => ({ setNumber: s.setNumber, weight: s.actualWeightLb, reps: s.actualReps, rpe: s.rpe })) }))
                 };
 
-                setWorkoutLogs([newLog, ...workoutLogs]);
+                setWorkoutLogs(prev => prev.some(l => l.sessionId === activeSession.id) ? prev : [{ ...newLog, sessionId: activeSession.id }, ...prev]);
                 setActiveSession(null);
+                setWorkoutOpen(false);
+                setRestEndsAt(null);
                 triggerToast('Workout Completed!', `Logged ${newLog.workoutName} with ${totalVol.toLocaleString()} lb volume.`);
             };
 
@@ -388,7 +437,7 @@
                     </header>
 
                     {/* ACTIVE WORKOUT OVERLAY (Optimized for gym thumb usage) */}
-                    {activeSession && (
+                    {activeSession && workoutOpen && (
                         <div className="fixed inset-0 z-50 bg-[#080E16]/95 backdrop-blur-xl flex flex-col p-4 overflow-y-auto safe-top safe-bottom">
                             <div className="max-w-xl mx-auto w-full space-y-4">
                                 <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl">
@@ -396,23 +445,22 @@
                                         <div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Active Workout</div>
                                         <h2 className="text-lg font-black text-white">{activeSession.workoutName}</h2>
                                         <div className="text-[11px] text-[#8FA2B8] flex items-center gap-2 mt-0.5">
-                                            <span>Time: <strong className="text-white tabular-nums">{Math.floor(activeSession.elapsedSeconds / 60)}m {activeSession.elapsedSeconds % 60}s</strong></span>
+                                            <span>Time: <strong className="text-white tabular-nums">{Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s</strong></span>
                                             <span>·</span>
-                                            <span>Rest: <strong className="text-[#31D583] tabular-nums">{Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')}</strong></span>
+                                            <span>Rest: <strong className="text-[#31D583] tabular-nums">{fmtClock(timerSeconds)}</strong></span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
+                                        <button onClick={() => { setWorkoutOpen(false); setActiveNav('Home'); }} aria-label="Back to Home, keep workout running" className="min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">⌂ Home</button>
                                         <button onClick={finishActiveWorkout} className="px-3.5 py-2 rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-[#080E16] text-xs font-black shadow cursor-pointer">
                                             Finish
                                         </button>
-                                        <button onClick={() => setActiveSession(null)} className="p-2 rounded-xl bg-[#142235] text-[#8FA2B8]">
-                                            <i data-lucide="x" className="w-4 h-4"></i>
-                                        </button>
+                                        <button onClick={() => setConfirmDiscard(true)} aria-label="Discard workout" className="min-w-[44px] min-h-[44px] rounded-xl bg-[#142235] text-[#F43F5E] text-sm font-black">✕</button>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                                    <button onClick={() => { setTimerSeconds(90); setTimerRunning(true); }} className="px-3 py-1.5 rounded-lg bg-[#142235] border border-[#203147] text-[11px] font-semibold text-white flex items-center gap-1 shrink-0">
+                                    <button onClick={() => startRest(90)} className="px-3 py-1.5 rounded-lg bg-[#142235] border border-[#203147] text-[11px] font-semibold text-white flex items-center gap-1 shrink-0">
                                         <i data-lucide="clock" className="w-3.5 h-3.5 text-[#1685F8]"></i><span>Rest 90s</span>
                                     </button>
                                 </div>
@@ -471,8 +519,7 @@
                                                                         updated[exIdx].sets[setIdx].completed = !updated[exIdx].sets[setIdx].completed;
                                                                         return { ...prev, exercises: updated };
                                                                     });
-                                                                    setTimerSeconds(item.restSeconds || 90);
-                                                                    setTimerRunning(true);
+                                                                    if (!setObj.completed) startRest(item.restSeconds || 90);
                                                                 }} className={`p-2 rounded-lg cursor-pointer ${setObj.completed ? 'bg-[#31D583] text-[#080E16]' : 'bg-[#142235] text-[#8FA2B8]'}`}>
                                                                     <i data-lucide="check" className="w-4 h-4"></i>
                                                                 </button>
@@ -489,7 +536,7 @@
                     )}
 
                     {/* MAIN CONTAINER */}
-                    <main className="flex-1 flex flex-col p-4 max-w-xl mx-auto w-full space-y-6">
+                    <main className={`flex-1 flex flex-col p-4 max-w-xl mx-auto w-full space-y-6 ${activeSession ? 'pb-16' : ''}`}>
                         {activeNav === 'Home' && (
                             <div className="space-y-5">
                                 {/* HERO WORKOUT CARD */}
@@ -714,13 +761,36 @@
                                             <option value="kg">Kilograms (kg)</option>
                                         </select>
                                     </div>
+                                    <div className="pt-3 border-t border-[#203147] space-y-2">
+                                        <div className="text-xs font-bold text-white">Backup</div>
+                                        <p className="text-[11px] text-[#8FA2B8]">Data is stored only in this browser on this device (no cloud sync). Export a backup to keep it safe.</p>
+                                        <div className="flex gap-2">
+                                            <button onClick={exportBackup} className="flex-1 min-h-[44px] rounded-xl bg-[#1685F8] text-white text-xs font-bold">Export backup</button>
+                                            <button onClick={() => importInputRef.current && importInputRef.current.click()} className="flex-1 min-h-[44px] rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Restore backup</button>
+                                            <input ref={importInputRef} type="file" accept="application/json,.json" className="hidden" onChange={e => { importBackup(e.target.files[0]); e.target.value = ''; }} />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         )}
                     </main>
 
                     {/* IPHONE BOTTOM TAB BAR (Thumb friendly navigation) */}
-                    <nav aria-label="Bottom Navigation" className="fixed bottom-0 left-0 right-0 bg-[#0D1622]/95 backdrop-blur-xl border-t border-[#203147] px-2 py-1.5 flex items-center justify-around z-40 safe-bottom">
+                    <div className="fixed bottom-0 left-0 right-0 z-40">
+                    {activeSession && !workoutOpen && (
+                        <button onClick={() => setWorkoutOpen(true)} aria-label="Return to active workout" className="w-full flex items-center justify-between gap-3 px-4 min-h-[48px] bg-[#1685F8] text-white text-left">
+                            <span className="flex items-center gap-2 min-w-0">
+                                <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span>
+                                <span className="text-xs font-black truncate">{activeSession.workoutName}</span>
+                            </span>
+                            <span className="flex items-center gap-3 shrink-0 text-xs tabular-nums font-bold">
+                                <span>{Math.floor(elapsedSeconds / 60)}:{String(elapsedSeconds % 60).padStart(2, '0')}</span>
+                                {timerRunning && <span className="px-1.5 py-0.5 rounded bg-white/20">Rest {fmtClock(timerSeconds)}</span>}
+                                <span>Resume ›</span>
+                            </span>
+                        </button>
+                    )}
+                    <nav aria-label="Bottom Navigation" className="bg-[#0D1622]/95 backdrop-blur-xl border-t border-[#203147] px-2 py-1.5 flex items-center justify-around safe-bottom">
                         {[
                             { id: 'Home', label: 'Home', icon: 'home' },
                             { id: 'Workouts', label: 'Workouts', icon: 'dumbbell' },
@@ -743,6 +813,20 @@
                             );
                         })}
                     </nav>
+                    </div>
+
+                    {confirmDiscard && (
+                        <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
+                            <div className="bg-[#101C2B] border border-[#203147] rounded-2xl max-w-sm w-full p-5 space-y-4">
+                                <h3 className="text-sm font-bold text-white">Discard this workout?</h3>
+                                <p className="text-xs text-[#8FA2B8]">All sets logged in this session will be lost. Nothing will be saved to your history.</p>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setConfirmDiscard(false)} className="flex-1 min-h-[44px] rounded-xl bg-[#142235] text-white text-xs font-bold">Keep Workout</button>
+                                    <button onClick={() => { setActiveSession(null); setWorkoutOpen(false); setRestEndsAt(null); setConfirmDiscard(false); }} className="flex-1 min-h-[44px] rounded-xl bg-[#F43F5E] text-white text-xs font-black">Discard</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
                     {/* MODALS */}
                     {swapModalConfig && (
