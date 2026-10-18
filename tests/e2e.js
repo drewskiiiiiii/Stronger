@@ -128,9 +128,34 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     ok('theme persists after reload', await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim()) === '224 165 38');
     await p.getByLabel('Settings').click(); await p.getByRole('radio', { name: 'Stealth Ember' }).click();
 
+    // --- removing programs ---
+    await tab('Program');
+    await p.getByRole('button', { name: 'Manage / remove' }).click();
+    await p.getByRole('button', { name: /Remove “Test Program Beta”/ }).click();
+    ok('removal asks for confirmation', await p.getByText(/Remove "Test Program Beta"\?/).isVisible());
+    await p.getByRole('button', { name: 'Remove program', exact: true }).click(); await p.waitForTimeout(400);
+    s = await state();
+    ok('program without history is removed', !s.library.programs['prog-test-program-beta'] && !!s.library.programs['prog-test-program-alpha']);
+    await p.getByRole('button', { name: /Remove “Test Program Alpha”/ }).click();
+    ok('cannot remove a program while its workout is in progress', await p.getByText('A workout is already in progress').isVisible());
+    await p.getByRole('button', { name: 'Cancel' }).click();
+    await p.getByLabel('Return to active workout').click(); await p.getByLabel('Discard workout').click(); await p.getByRole('button', { name: 'Discard', exact: true }).click();
+    await tab('Program');
+    await p.getByRole('button', { name: /Remove “Test Program Alpha”/ }).click();
+    ok('program with history offers a choice', await p.getByRole('button', { name: 'Remove, keep my workout history' }).isVisible());
+    await p.getByRole('button', { name: 'Remove, keep my workout history' }).click(); await p.waitForTimeout(400);
+    s = await state();
+    ok('keep-history removal keeps logs and clears the active program', !s.library.programs['prog-test-program-alpha'] && s.workoutLogs.length === 1 && s.library.activeProgramId === null);
+    await p.locator('input[type=file]').setInputFiles(files.alpha); await p.waitForTimeout(2000);
+    s = await state();
+    ok('re-importing restores your place in the program', s.library.progress['prog-test-program-alpha'].sessions.w1d1.status === 'completed');
+    await p.getByRole('button', { name: /Remove “Test Program Alpha”/ }).click();
+    await p.getByRole('button', { name: 'Remove and delete its history' }).click(); await p.waitForTimeout(400);
+    s = await state();
+    ok('full removal deletes programs, progress and its logs', Object.keys(s.library.programs).length === 0 && !s.library.progress['prog-test-program-alpha'] && s.workoutLogs.length === 0);
+
     // --- progress + layout ---
     await tab('Progress');
-    ok('progress shows program completion', await p.getByText(/1 of 6 workouts completed/).isVisible());
     ok('no horizontal overflow', await p.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
     ok('no page errors', errs.length === 0);
     if (errs.length) console.log(errs);

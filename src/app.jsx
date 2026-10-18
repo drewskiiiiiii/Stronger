@@ -156,7 +156,7 @@
                             ))}
                         </div>
                     )}
-                    <button onClick={onRemove} className="w-full min-h-[44px] rounded-xl bg-th-elevated border border-th-line text-[#F43F5E] text-xs font-bold">Archive program (workout history is kept)</button>
+                    <button onClick={onRemove} className="w-full min-h-[44px] rounded-xl bg-th-elevated border border-th-line text-[#F43F5E] text-xs font-bold">Remove program…</button>
                 </div>
             );
         };
@@ -453,7 +453,7 @@
 
         // ---- Program progress ----
         const ProgramProgress = ({ library, workoutLogs, unit }) => {
-            const ids = Object.keys(library.progress).filter(id => library.progress[id].status !== 'not_started');
+            const ids = Object.keys(library.progress).filter(id => library.programs[id] && library.progress[id].status !== 'not_started');
             const [sel, setSel] = useState(library.activeProgramId || ids[0] || 'all');
             const [exName, setExName] = useState('');
             const program = sel !== 'all' ? library.programs[sel] : null;
@@ -584,6 +584,7 @@
             const [openProgramId, setOpenProgramId] = useState(null);
             const [libraryQuery, setLibraryQuery] = useState('');
             const [libDays, setLibDays] = useState('all');
+            const [manageMode, setManageMode] = useState(false);
             const [libStatus, setLibStatus] = useState('all');
             const [importing, setImporting] = useState(false);
             const [importReport, setImportReport] = useState(null);
@@ -715,9 +716,31 @@
                 setImportReport(report);
                 setImporting(false);
             };
-            const removeProgram = (id) => {
-                setLibrary(prev => { const programs = { ...prev.programs }; delete programs[id]; return { ...prev, programs, activeProgramId: prev.activeProgramId === id ? null : prev.activeProgramId }; });
+            // Removing a program never touches workout history unless you choose to delete it too.
+            const performRemove = (id, deleteHistory) => {
+                setLibrary(prev => {
+                    const programs = { ...prev.programs }; delete programs[id];
+                    const progress = { ...prev.progress };
+                    if (deleteHistory) delete progress[id]; // otherwise your place is kept, so re-importing the file restores it
+                    return { ...prev, programs, progress, activeProgramId: prev.activeProgramId === id ? null : prev.activeProgramId };
+                });
+                if (deleteHistory) setWorkoutLogs(prev => prev.filter(l => l.programId !== id));
                 setOpenProgramId(null);
+                triggerToast('Program removed', deleteHistory ? 'Its workout history was deleted too.' : 'Your workout history was kept.');
+            };
+            const removeProgram = (id) => {
+                const prog = library.programs[id];
+                if (!prog) return;
+                if (activeSession && activeSession.program && activeSession.program.programId === id) { askOpenWorkout(); return; }
+                const logCount = workoutLogs.filter(l => l.programId === id).length;
+                setConfirmDialog({
+                    title: `Remove "${prog.name}"?`,
+                    body: `You can import the file again at any time.${logCount ? ` You have ${logCount} logged workout(s) from this program.` : ''}`,
+                    confirmLabel: logCount ? 'Remove and delete its history' : 'Remove program',
+                    danger: true,
+                    onConfirm: () => performRemove(id, true),
+                    ...(logCount ? { secondaryLabel: 'Remove, keep my workout history', onSecondary: () => performRemove(id, false) } : {})
+                });
             };
 
             const [toast, setToast] = useState(null);
@@ -1068,11 +1091,17 @@
                                         </div>
                                     );
                                 })()}
+                                {Object.keys(library.programs).length > 0 && (
+                                    <div className="flex justify-end"><button onClick={() => setManageMode(!manageMode)} className={`min-h-[40px] px-4 rounded-lg border text-[11px] font-bold ${manageMode ? 'bg-[#F43F5E] border-[#F43F5E] text-white' : 'bg-th-card border-th-line text-th-muted'}`}>{manageMode ? 'Done' : 'Manage / remove'}</button></div>
+                                )}
                                 {Object.keys(library.programs).length === 0 && !importing && (
                                     <div className="bg-th-card border border-dashed border-th-line rounded-2xl p-6 text-center text-xs text-th-muted">No programs imported yet. Tap “Import program file(s)” to add one.</div>
                                 )}
                                 {Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase()) && (libDays === 'all' || pr.metadata.daysPerWeek === libDays) && (libStatus === 'all' || progressOf(pr.id).status === libStatus)).map(pr => (
-                                    <ProgramCard key={pr.id} program={pr} state={progressOf(pr.id)} isActive={library.activeProgramId === pr.id} onOpen={() => setOpenProgramId(pr.id)} />
+                                    <div key={pr.id} className="space-y-1.5">
+                                        <ProgramCard program={pr} state={progressOf(pr.id)} isActive={library.activeProgramId === pr.id} onOpen={() => setOpenProgramId(pr.id)} />
+                                        {manageMode && <button onClick={() => removeProgram(pr.id)} className="w-full min-h-[44px] rounded-xl bg-th-elevated border border-[#F43F5E]/50 text-[#F43F5E] text-xs font-bold">Remove “{pr.name}”</button>}
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -1197,9 +1226,10 @@
                             <div className="bg-th-card border border-th-line rounded-2xl max-w-sm w-full p-5 space-y-4">
                                 <h3 className="text-sm font-bold text-white">{confirmDialog.title}</h3>
                                 <p className="text-xs text-th-muted">{confirmDialog.body}</p>
-                                <div className="flex gap-2">
+                                <div className={confirmDialog.secondaryLabel ? 'flex flex-col gap-2' : 'flex gap-2'}>
+                                    {confirmDialog.secondaryLabel && <button onClick={() => { const fn = confirmDialog.onSecondary; setConfirmDialog(null); fn(); }} className="min-h-[44px] rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">{confirmDialog.secondaryLabel}</button>}
                                     <button onClick={() => setConfirmDialog(null)} className="flex-1 min-h-[44px] rounded-xl bg-th-elevated text-white text-xs font-bold">Cancel</button>
-                                    <button onClick={() => { const fn = confirmDialog.onConfirm; setConfirmDialog(null); fn(); }} className={`flex-1 min-h-[44px] rounded-xl text-th-on-accent text-xs font-black ${confirmDialog.danger ? 'bg-[#F43F5E]' : 'bg-th-accent'}`}>{confirmDialog.confirmLabel}</button>
+                                    <button onClick={() => { const fn = confirmDialog.onConfirm; setConfirmDialog(null); fn(); }} className={`flex-1 min-h-[44px] rounded-xl text-xs font-black ${confirmDialog.danger ? 'bg-[#F43F5E] text-white' : 'bg-th-accent text-th-on-accent'}`}>{confirmDialog.confirmLabel}</button>
                                 </div>
                             </div>
                         </div>

@@ -319,7 +319,7 @@ const ProgramDetail = ({
   }, sec.lines.join('\n'))))), React.createElement("button", {
     onClick: onRemove,
     className: "w-full min-h-[44px] rounded-xl bg-th-elevated border border-th-line text-[#F43F5E] text-xs font-bold"
-  }, "Archive program (workout history is kept)"));
+  }, "Remove program\u2026"));
 };
 const pad2 = n => String(n).padStart(2, '0');
 const toDateStr = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -786,7 +786,7 @@ const ProgramProgress = ({
   workoutLogs,
   unit
 }) => {
-  const ids = Object.keys(library.progress).filter(id => library.progress[id].status !== 'not_started');
+  const ids = Object.keys(library.progress).filter(id => library.programs[id] && library.progress[id].status !== 'not_started');
   const [sel, setSel] = useState(library.activeProgramId || ids[0] || 'all');
   const [exName, setExName] = useState('');
   const program = sel !== 'all' ? library.programs[sel] : null;
@@ -982,6 +982,7 @@ function App() {
   const [openProgramId, setOpenProgramId] = useState(null);
   const [libraryQuery, setLibraryQuery] = useState('');
   const [libDays, setLibDays] = useState('all');
+  const [manageMode, setManageMode] = useState(false);
   const [libStatus, setLibStatus] = useState('all');
   const [importing, setImporting] = useState(false);
   const [importReport, setImportReport] = useState(null);
@@ -1325,19 +1326,46 @@ function App() {
     setImportReport(report);
     setImporting(false);
   };
-  const removeProgram = id => {
+  const performRemove = (id, deleteHistory) => {
     setLibrary(prev => {
       const programs = {
         ...prev.programs
       };
       delete programs[id];
+      const progress = {
+        ...prev.progress
+      };
+      if (deleteHistory) delete progress[id];
       return {
         ...prev,
         programs,
+        progress,
         activeProgramId: prev.activeProgramId === id ? null : prev.activeProgramId
       };
     });
+    if (deleteHistory) setWorkoutLogs(prev => prev.filter(l => l.programId !== id));
     setOpenProgramId(null);
+    triggerToast('Program removed', deleteHistory ? 'Its workout history was deleted too.' : 'Your workout history was kept.');
+  };
+  const removeProgram = id => {
+    const prog = library.programs[id];
+    if (!prog) return;
+    if (activeSession && activeSession.program && activeSession.program.programId === id) {
+      askOpenWorkout();
+      return;
+    }
+    const logCount = workoutLogs.filter(l => l.programId === id).length;
+    setConfirmDialog({
+      title: `Remove "${prog.name}"?`,
+      body: `You can import the file again at any time.${logCount ? ` You have ${logCount} logged workout(s) from this program.` : ''}`,
+      confirmLabel: logCount ? 'Remove and delete its history' : 'Remove program',
+      danger: true,
+      onConfirm: () => performRemove(id, true),
+      ...(logCount ? {
+        secondaryLabel: 'Remove, keep my workout history',
+        onSecondary: () => performRemove(id, false)
+      } : {})
+    });
   };
   const [toast, setToast] = useState(null);
   const triggerToast = (title, message) => {
@@ -1909,15 +1937,25 @@ function App() {
       onClick: () => setLibStatus(k),
       className: chip(libStatus === k)
     }, l))));
-  })(), Object.keys(library.programs).length === 0 && !importing && React.createElement("div", {
+  })(), Object.keys(library.programs).length > 0 && React.createElement("div", {
+    className: "flex justify-end"
+  }, React.createElement("button", {
+    onClick: () => setManageMode(!manageMode),
+    className: `min-h-[40px] px-4 rounded-lg border text-[11px] font-bold ${manageMode ? 'bg-[#F43F5E] border-[#F43F5E] text-white' : 'bg-th-card border-th-line text-th-muted'}`
+  }, manageMode ? 'Done' : 'Manage / remove')), Object.keys(library.programs).length === 0 && !importing && React.createElement("div", {
     className: "bg-th-card border border-dashed border-th-line rounded-2xl p-6 text-center text-xs text-th-muted"
-  }, "No programs imported yet. Tap \u201CImport program file(s)\u201D to add one."), Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase()) && (libDays === 'all' || pr.metadata.daysPerWeek === libDays) && (libStatus === 'all' || progressOf(pr.id).status === libStatus)).map(pr => React.createElement(ProgramCard, {
+  }, "No programs imported yet. Tap \u201CImport program file(s)\u201D to add one."), Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase()) && (libDays === 'all' || pr.metadata.daysPerWeek === libDays) && (libStatus === 'all' || progressOf(pr.id).status === libStatus)).map(pr => React.createElement("div", {
     key: pr.id,
+    className: "space-y-1.5"
+  }, React.createElement(ProgramCard, {
     program: pr,
     state: progressOf(pr.id),
     isActive: library.activeProgramId === pr.id,
     onOpen: () => setOpenProgramId(pr.id)
-  }))), activeNav === 'Progress' && React.createElement(ProgramProgress, {
+  }), manageMode && React.createElement("button", {
+    onClick: () => removeProgram(pr.id),
+    className: "w-full min-h-[44px] rounded-xl bg-th-elevated border border-[#F43F5E]/50 text-[#F43F5E] text-xs font-bold"
+  }, "Remove \u201C", pr.name, "\u201D")))), activeNav === 'Progress' && React.createElement(ProgramProgress, {
     key: library.activeProgramId || 'none',
     library: library,
     workoutLogs: workoutLogs,
@@ -2128,8 +2166,15 @@ function App() {
   }, confirmDialog.title), React.createElement("p", {
     className: "text-xs text-th-muted"
   }, confirmDialog.body), React.createElement("div", {
-    className: "flex gap-2"
-  }, React.createElement("button", {
+    className: confirmDialog.secondaryLabel ? 'flex flex-col gap-2' : 'flex gap-2'
+  }, confirmDialog.secondaryLabel && React.createElement("button", {
+    onClick: () => {
+      const fn = confirmDialog.onSecondary;
+      setConfirmDialog(null);
+      fn();
+    },
+    className: "min-h-[44px] rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold"
+  }, confirmDialog.secondaryLabel), React.createElement("button", {
     onClick: () => setConfirmDialog(null),
     className: "flex-1 min-h-[44px] rounded-xl bg-th-elevated text-white text-xs font-bold"
   }, "Cancel"), React.createElement("button", {
@@ -2138,7 +2183,7 @@ function App() {
       setConfirmDialog(null);
       fn();
     },
-    className: `flex-1 min-h-[44px] rounded-xl text-th-on-accent text-xs font-black ${confirmDialog.danger ? 'bg-[#F43F5E]' : 'bg-th-accent'}`
+    className: `flex-1 min-h-[44px] rounded-xl text-xs font-black ${confirmDialog.danger ? 'bg-[#F43F5E] text-white' : 'bg-th-accent text-th-on-accent'}`
   }, confirmDialog.confirmLabel)))), toast && React.createElement("div", {
     className: "fixed bottom-20 left-4 right-4 z-50 bg-th-card border border-th-accent text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3"
   }, React.createElement("div", {
