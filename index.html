@@ -29,6 +29,7 @@
         }
         html, body { overflow-x: hidden; max-width: 100%; }
         .min-h-screen { min-height: 100vh; min-height: 100dvh; }
+        input[type=date] { color-scheme: dark; }
         input, select, textarea { font-size: 16px; } /* prevents iOS Safari zoom-on-focus */
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
@@ -226,7 +227,223 @@
                             ))}
                         </div>
                     )}
-                    <button onClick={onRemove} className="w-full min-h-[44px] rounded-xl bg-[#142235] border border-[#203147] text-[#F43F5E] text-xs font-bold">Remove from library (workout history is kept)</button>
+                    <button onClick={onRemove} className="w-full min-h-[44px] rounded-xl bg-[#142235] border border-[#203147] text-[#F43F5E] text-xs font-bold">Archive program (workout history is kept)</button>
+                </div>
+            );
+        };
+
+        // ---- Program scheduling helpers (pure) ----
+        const pad2 = (n) => String(n).padStart(2, '0');
+        const toDateStr = (d) => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+        const parseDate = (s) => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+        const addDays = (s, n) => { const d = parseDate(s); d.setDate(d.getDate() + n); return toDateStr(d); };
+        const todayStr = () => toDateStr(new Date());
+        const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        const fmtShort = (s) => { const d = parseDate(s); return `${WEEKDAYS[d.getDay()]} ${d.getMonth() + 1}/${d.getDate()}`; };
+        const normName = (s) => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+        const sessionKeyOf = (week, day) => `w${week}d${day}`;
+        const defaultWeekdays = (n) => ({ 1: [1], 2: [1, 4], 3: [1, 3, 5], 4: [1, 2, 4, 5], 5: [1, 2, 3, 4, 5], 6: [1, 2, 3, 4, 5, 6], 7: [0, 1, 2, 3, 4, 5, 6] }[n] || [1, 2, 3, 4, 5, 6].slice(0, n));
+
+        // Planned dates come from the user's start date and chosen weekdays; the program order itself is never altered.
+        function buildSessions(program, prog) {
+            const out = [];
+            const today = todayStr();
+            const weekdays = (prog.weekdays || []).slice().sort((a, b) => a - b);
+            program.weeks.forEach((w, wi) => {
+                const windowDates = [];
+                if (prog.startDate) for (let i = 0; i < 7; i++) { const ds = addDays(prog.startDate, wi * 7 + i); if (weekdays.includes(parseDate(ds).getDay())) windowDates.push(ds); }
+                w.days.forEach((d, k) => {
+                    const key = sessionKeyOf(w.week, d.day);
+                    const rec = (prog.sessions || {})[key] || {};
+                    const status = rec.status || 'planned';
+                    const basePlanned = windowDates[k] || windowDates[windowDates.length - 1] || null;
+                    const plannedDate = rec.plannedDate || basePlanned;
+                    out.push({ key, week: w.week, day: d.day, label: d.label, page: d.page, exercises: d.exercises, status, plannedDate,
+                        rescheduled: !!rec.plannedDate && rec.plannedDate !== basePlanned, completedDate: rec.completedDate || null, logId: rec.logId || null,
+                        missed: status === 'planned' && !!plannedDate && plannedDate < today });
+                });
+            });
+            return out;
+        }
+
+        // ---- Start program sheet ----
+        const StartProgramSheet = ({ program, onCancel, onConfirm }) => {
+            const need = program.metadata.daysPerWeek || 0;
+            const [startDate, setStartDate] = useState(todayStr());
+            const [weekdays, setWeekdays] = useState(defaultWeekdays(need));
+            const toggle = (d) => setWeekdays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
+            const valid = weekdays.length === need && !!startDate;
+            const preview = valid ? buildSessions(program, { startDate, weekdays, sessions: {} }) : [];
+            const lastDate = preview.length ? preview[preview.length - 1].plannedDate : null;
+            return (
+                <div className="fixed inset-0 z-[60] bg-black/80 flex items-end justify-center">
+                    <div className="bg-[#101C2B] border-t border-[#203147] rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-white">Start: {program.name}</h3>
+                            <button onClick={onCancel} aria-label="Close" className="min-w-[44px] min-h-[44px] text-[#8FA2B8]">✕</button>
+                        </div>
+                        <div>
+                            <label className="text-[11px] text-[#8FA2B8] block mb-1">Start date</label>
+                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white" />
+                        </div>
+                        <div>
+                            <label className="text-[11px] text-[#8FA2B8] block mb-1">Training weekdays — choose {need} (the PDF does not say which days)</label>
+                            <div className="grid grid-cols-7 gap-1.5">
+                                {WEEKDAYS.map((n, d) => (
+                                    <button key={d} onClick={() => toggle(d)} className={`min-h-[44px] rounded-lg text-[11px] font-bold border ${weekdays.includes(d) ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]'}`}>{n}</button>
+                                ))}
+                            </div>
+                            {!valid && <div className="text-[11px] text-[#F59E0B] mt-1.5">Select exactly {need} days ({weekdays.length} selected).</div>}
+                        </div>
+                        {valid && (
+                            <div className="space-y-1.5">
+                                <div className="text-xs font-bold text-white">Calendar preview · ends {fmtShort(lastDate)}</div>
+                                <div className="bg-[#080E16] border border-[#203147] rounded-xl p-3 max-h-48 overflow-y-auto space-y-1">
+                                    {preview.map(s => <div key={s.key} className="flex justify-between text-[11px]"><span className="text-[#8FA2B8]">{fmtShort(s.plannedDate)}</span><span className="text-white">W{s.week} D{s.day} · {s.label}</span></div>)}
+                                </div>
+                                <p className="text-[10px] text-[#8FA2B8]">Other days are rest days. Workouts never advance or complete just because a date passes.</p>
+                            </div>
+                        )}
+                        <button disabled={!valid} onClick={() => onConfirm({ startDate, weekdays: weekdays.slice().sort((a, b) => a - b) })} className="w-full min-h-[48px] rounded-xl bg-[#1685F8] text-white text-sm font-black disabled:opacity-40">Start Program</button>
+                    </div>
+                </div>
+            );
+        };
+
+        // ---- Calendar ----
+        const CalendarView = ({ program, prog, sessions, logs, hasActiveWorkout, onStart, onReschedule, onSkip, onUnskip, onOpenProgram }) => {
+            const firstPending = sessions.find(x => x.status === 'planned' && x.plannedDate);
+            const initialDate = firstPending ? firstPending.plannedDate : todayStr();
+            const [month, setMonth] = useState(() => { const t = parseDate(initialDate); return new Date(t.getFullYear(), t.getMonth(), 1); });
+            const [selected, setSelected] = useState(initialDate);
+            const today = todayStr();
+            const first = month.getDay();
+            const dim = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+            const cells = [];
+            for (let i = 0; i < first; i++) cells.push(null);
+            for (let d = 1; d <= dim; d++) cells.push(`${month.getFullYear()}-${pad2(month.getMonth() + 1)}-${pad2(d)}`);
+            const byDate = {};
+            sessions.forEach(s => { const k = s.status === 'completed' && s.completedDate ? s.completedDate : s.plannedDate; if (k) (byDate[k] = byDate[k] || []).push(s); });
+            const logDates = new Set(logs.map(l => l.date));
+            const nextKey = (sessions.find(s => s.status === 'planned') || {}).key;
+            const dotCls = (s) => s.status === 'completed' ? 'bg-[#31D583]' : s.status === 'skipped' ? 'bg-[#8FA2B8]' : s.missed ? 'bg-[#F43F5E]' : 'bg-[#1685F8]';
+            const daySessions = byDate[selected] || [];
+            const doneCount = sessions.filter(s => s.status === 'completed').length;
+            const nextSession = sessions.find(s => s.status === 'planned');
+            const wkNow = nextSession ? nextSession.week : (program ? program.weeks.length : 0);
+            return (
+                <div className="space-y-4">
+                    <h2 className="text-lg font-black text-white">Calendar</h2>
+                    {!program ? (
+                        <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-5 text-center space-y-3">
+                            <p className="text-xs text-[#8FA2B8]">No program is active. Start one from the Program Library to see its schedule here.</p>
+                            <button onClick={onOpenProgram} className="min-h-[44px] px-5 rounded-xl bg-[#1685F8] text-white text-xs font-bold">Open Program Library</button>
+                        </div>
+                    ) : (
+                        <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-1">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Active program</div>
+                            <div className="text-sm font-black text-white">{program.name}</div>
+                            <div className="text-[11px] text-[#8FA2B8]">Week {wkNow} of {program.weeks.length} · {doneCount}/{sessions.length} workouts completed</div>
+                        </div>
+                    )}
+                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-3">
+                        <div className="flex items-center justify-between mb-2">
+                            <button aria-label="Previous month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="min-w-[44px] min-h-[44px] text-white text-lg">‹</button>
+                            <div className="text-sm font-bold text-white">{month.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</div>
+                            <button aria-label="Next month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="min-w-[44px] min-h-[44px] text-white text-lg">›</button>
+                        </div>
+                        <div className="grid grid-cols-7 text-center text-[10px] text-[#8FA2B8] mb-1">{WEEKDAYS.map(w => <div key={w}>{w}</div>)}</div>
+                        <div className="grid grid-cols-7 gap-1">
+                            {cells.map((ds, i) => ds ? (
+                                <button key={ds} onClick={() => setSelected(ds)} className={`min-h-[46px] rounded-lg flex flex-col items-center justify-center gap-1 text-xs font-semibold border ${selected === ds ? 'border-[#1685F8] bg-[#1685F8]/10' : 'border-transparent'} ${ds === today ? 'text-[#1685F8]' : 'text-white'}`}>
+                                    <span>{parseInt(ds.slice(8), 10)}</span>
+                                    <span className="flex gap-0.5 h-1.5">
+                                        {(byDate[ds] || []).slice(0, 3).map(s => <span key={s.key} className={`w-1.5 h-1.5 rounded-full ${dotCls(s)}`}></span>)}
+                                        {!(byDate[ds] || []).length && logDates.has(ds) && <span className="w-1.5 h-1.5 rounded-full bg-white/60"></span>}
+                                    </span>
+                                </button>
+                            ) : <div key={`e${i}`}></div>)}
+                        </div>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-[#8FA2B8]">
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-[#1685F8] mr-1"></span>Scheduled</span>
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-[#31D583] mr-1"></span>Completed</span>
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-[#F43F5E] mr-1"></span>Missed</span>
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-[#8FA2B8] mr-1"></span>Skipped</span>
+                        </div>
+                    </div>
+                    <div className="space-y-2">
+                        <div className="text-xs font-bold text-white">{fmtShort(selected)}{selected === today ? ' · Today' : ''}</div>
+                        {daySessions.length === 0 && <div className="text-[11px] text-[#8FA2B8]">{program ? 'Rest day — no program workout scheduled.' : 'Nothing scheduled.'}</div>}
+                        {daySessions.map(s => (
+                            <div key={s.key} className="bg-[#101C2B] border border-[#203147] rounded-xl p-3 space-y-2">
+                                <div className="flex items-start justify-between gap-2">
+                                    <div>
+                                        <div className="text-sm font-bold text-white">{s.label}</div>
+                                        <div className="text-[11px] text-[#8FA2B8]">Week {s.week} · Day {s.day} · {s.exercises.length} exercises</div>
+                                        {s.rescheduled && <div className="text-[10px] text-[#F59E0B]">Rescheduled</div>}
+                                        {s.status === 'completed' && <div className="text-[10px] text-[#31D583]">Completed {s.completedDate}{s.completedDate !== s.plannedDate ? ` (planned ${s.plannedDate})` : ''}</div>}
+                                        {s.missed && <div className="text-[10px] text-[#F43F5E]">Missed — still pending; nothing was skipped automatically</div>}
+                                        {s.status === 'skipped' && <div className="text-[10px] text-[#8FA2B8]">Skipped by you</div>}
+                                    </div>
+                                    {s.key === nextKey && <span className="text-[10px] font-bold text-[#1685F8] uppercase">Up next</span>}
+                                </div>
+                                {s.status === 'planned' && (
+                                    <div className="flex flex-wrap items-center gap-2">
+                                        <button onClick={() => onStart(s)} className="min-h-[44px] px-4 rounded-xl bg-[#1685F8] text-white text-xs font-bold">{hasActiveWorkout ? 'Return to workout' : 'Start workout'}</button>
+                                        <label className="min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold flex items-center gap-2">Move to
+                                            <input type="date" value={s.plannedDate || ''} onChange={e => e.target.value && onReschedule(s, e.target.value)} className="bg-transparent text-white w-[130px]" />
+                                        </label>
+                                        <button onClick={() => onSkip(s)} className="min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-[#8FA2B8] text-xs font-bold">Skip</button>
+                                    </div>
+                                )}
+                                {s.status === 'skipped' && <button onClick={() => onUnskip(s)} className="min-h-[44px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Undo skip</button>}
+                            </div>
+                        ))}
+                        {logs.filter(l => l.date === selected).map(l => (
+                            <div key={l.id} className="bg-[#101C2B] border border-[#203147] rounded-xl p-3 text-[11px] text-[#8FA2B8]"><span className="text-white font-bold">{l.workoutName}</span> · logged · {l.durationMin} min{l.programName ? ` · ${l.programName}` : ''}</div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        // ---- Exercise substitution (program workouts) ----
+        const SubstituteModal = ({ item, library, onPick, onRestore, onClose }) => {
+            const [q, setQ] = useState('');
+            const [custom, setCustom] = useState('');
+            const suggestions = item.prescribed.sourceSubstitutions || [];
+            const matches = library.filter(x => (x.name + ' ' + x.equipment + ' ' + x.primaryMuscle).toLowerCase().includes(q.toLowerCase()));
+            return (
+                <div className="fixed inset-0 z-[60] bg-black/80 flex items-end justify-center">
+                    <div className="bg-[#101C2B] border-t border-[#203147] rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
+                        <div className="flex items-center justify-between">
+                            <h3 className="text-sm font-bold text-white">Substitute exercise</h3>
+                            <button onClick={onClose} aria-label="Close" className="min-w-[44px] min-h-[44px] text-[#8FA2B8]">✕</button>
+                        </div>
+                        <div className="bg-[#080E16] border border-[#203147] rounded-xl p-3 text-[11px] space-y-0.5">
+                            <div className="text-[#8FA2B8]">Prescribed (stays on record)</div>
+                            <div className="text-white font-bold">{item.name} · {item.prescribed.workingSets ?? '?'} × {item.prescribed.reps ?? '?'}</div>
+                        </div>
+                        {item.substitution && <button onClick={onRestore} className="w-full min-h-[44px] rounded-xl bg-[#142235] border border-[#31D583]/40 text-[#31D583] text-xs font-bold">Restore original: {item.name}</button>}
+                        {suggestions.length > 0 && (
+                            <div className="space-y-1.5">
+                                <div className="text-[11px] font-bold text-white">Alternatives listed in the program PDF</div>
+                                {suggestions.map(n => <button key={n} onClick={() => onPick({ name: n, exerciseId: (library.find(x => normName(x.name) === normName(n)) || {}).id || null, origin: 'program-pdf' })} className="w-full text-left min-h-[44px] px-3 rounded-xl bg-[#080E16] border border-[#203147] text-xs text-white">{n}</button>)}
+                            </div>
+                        )}
+                        <div className="space-y-1.5">
+                            <div className="text-[11px] font-bold text-white">Your exercise library <span className="text-[#8FA2B8] font-normal">(not verified as equivalent — your choice)</span></div>
+                            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by name, equipment, muscle" className="w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white" />
+                            <div className="max-h-44 overflow-y-auto space-y-1.5">
+                                {matches.map(x => <button key={x.id} onClick={() => onPick({ name: x.name, exerciseId: x.id, origin: 'library' })} className="w-full text-left min-h-[44px] px-3 rounded-xl bg-[#080E16] border border-[#203147] text-xs text-white flex justify-between gap-2"><span>{x.name}</span><span className="text-[#8FA2B8]">{x.equipment}</span></button>)}
+                                {matches.length === 0 && <div className="text-[11px] text-[#8FA2B8]">No match. Type a custom exercise below.</div>}
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                            <input value={custom} onChange={e => setCustom(e.target.value)} placeholder="Custom exercise name" className="flex-1 min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white" />
+                            <button disabled={!custom.trim()} onClick={() => onPick({ name: custom.trim(), exerciseId: null, origin: 'custom' })} className="min-h-[44px] px-4 rounded-xl bg-[#1685F8] text-white text-xs font-bold disabled:opacity-40">Use</button>
+                        </div>
+                    </div>
                 </div>
             );
         };
@@ -286,6 +503,85 @@
             const [importReport, setImportReport] = useState(null);
             const pdfInputRef = useRef(null);
             const progressOf = (id) => library.progress[id] || { status: 'not_started' };
+
+            const [startSheetId, setStartSheetId] = useState(null);
+            const [subModalIdx, setSubModalIdx] = useState(null);
+            const [confirmDialog, setConfirmDialog] = useState(null);
+            const activeProgram = library.activeProgramId ? library.programs[library.activeProgramId] : null;
+            const activeProg = activeProgram ? progressOf(library.activeProgramId) : null;
+            const activeSessions = useMemo(() => activeProgram && activeProg ? buildSessions(activeProgram, activeProg) : [], [activeProgram, activeProg]);
+            const nextProgramSession = activeSessions.find(x => x.status === 'planned') || null;
+
+            const patchProgress = (id, fn) => setLibrary(prev => ({ ...prev, progress: { ...prev.progress, [id]: fn(prev.progress[id] || { status: 'not_started' }) } }));
+            const askOpenWorkout = () => setConfirmDialog({ title: 'A workout is already in progress', body: 'Return to it (or discard it from inside the workout screen) before starting another.', confirmLabel: 'Return to workout', onConfirm: () => setWorkoutOpen(true) });
+            const requestStartProgram = (id) => { if (activeSession) return askOpenWorkout(); setStartSheetId(id); };
+            const pauseOthers = (progress, activeId, exceptId) => {
+                if (activeId && activeId !== exceptId && progress[activeId] && progress[activeId].status === 'in_progress')
+                    progress[activeId] = { ...progress[activeId], status: 'paused' };
+            };
+            const activateProgram = (id, { startDate, weekdays }) => {
+                setLibrary(prev => {
+                    const progress = { ...prev.progress };
+                    pauseOthers(progress, prev.activeProgramId, id);
+                    progress[id] = { status: 'in_progress', startDate, weekdays, sessions: {}, startedAt: new Date().toISOString() };
+                    return { ...prev, progress, activeProgramId: id };
+                });
+                setStartSheetId(null); setOpenProgramId(null); setActiveNav('Calendar');
+                triggerToast('Program started', 'Your schedule is on the Calendar.');
+            };
+            const resumeProgram = (id) => {
+                if (activeSession && activeSession.program && activeSession.program.programId !== id) return askOpenWorkout();
+                setLibrary(prev => {
+                    const progress = { ...prev.progress };
+                    pauseOthers(progress, prev.activeProgramId, id);
+                    progress[id] = { ...progress[id], status: 'in_progress' };
+                    return { ...prev, progress, activeProgramId: id };
+                });
+                setOpenProgramId(null); setActiveNav('Calendar');
+            };
+            const pauseProgram = (id) => patchProgress(id, p => ({ ...p, status: 'paused' }));
+            const rescheduleSession = (sess, date) => patchProgress(library.activeProgramId, p => ({ ...p, sessions: { ...p.sessions, [sess.key]: { ...(p.sessions || {})[sess.key], plannedDate: date } } }));
+            const skipSession = (sess) => setConfirmDialog({ title: `Skip ${sess.label}?`, body: 'It will be marked skipped (not completed) and the program moves on to the next workout. Nothing is logged.', confirmLabel: 'Skip workout', danger: true,
+                onConfirm: () => patchProgress(library.activeProgramId, p => ({ ...p, sessions: { ...p.sessions, [sess.key]: { ...(p.sessions || {})[sess.key], status: 'skipped' } } })) });
+
+            const lastPerformance = (name) => {
+                const n = normName(name);
+                for (const log of workoutLogs) {
+                    const ex = log.exercises.find(e => normName(e.name) === n && e.sets.some(x => x.reps));
+                    if (ex) return `${log.date}: ` + ex.sets.filter(x => x.reps && x.type !== 'warmup').map(x => `${x.weight || 0}×${x.reps}`).join(', ');
+                }
+                return null;
+            };
+            const startProgramWorkout = (sess) => {
+                if (activeSession) return askOpenWorkout();
+                const prog = library.programs[library.activeProgramId];
+                const go = () => {
+                    const exs = sess.exercises.map(e => {
+                        const sets = [];
+                        const mk = (type, n) => ({ id: `${sess.key}-${e.order}-${type}-${n}`, setNumber: n, type, completed: false, weight: '', reps: '', rpe: '' });
+                        for (let i = 1; i <= (e.warmupSets || 0); i++) sets.push(mk('warmup', i));
+                        for (let i = 1; i <= (e.workingSets || 0); i++) sets.push(mk('working', i));
+                        const lib = exercises.find(x => normName(x.name) === normName(e.name));
+                        return { exerciseId: lib ? lib.id : null, name: e.name, key: normName(e.name), substitution: null,
+                            prescribed: { warmupSets: e.warmupSets, workingSets: e.workingSets, reps: e.reps, intensity: e.intensity, restSeconds: e.restSeconds, notes: e.notes, page: e.page, flags: e.flags, sourceSubstitutions: e.sourceSubstitutions || [] }, sets };
+                    });
+                    setRestEndsAt(null);
+                    setActiveSession({ id: `session-${Date.now()}`, dayId: null, workoutName: sess.label, startTime: Date.now(), exercises: exs,
+                        program: { programId: prog.id, programName: prog.name, week: sess.week, day: sess.day, key: sess.key, label: sess.label, plannedDate: sess.plannedDate } });
+                    setWorkoutOpen(true);
+                };
+                const nxt = activeSessions.find(x => x.status === 'planned');
+                if (nxt && nxt.key !== sess.key) setConfirmDialog({ title: 'Start out of order?', body: `Your next scheduled workout is Week ${nxt.week} Day ${nxt.day} (${nxt.label}).`, confirmLabel: 'Start anyway', onConfirm: go });
+                else go();
+            };
+            const updateSet = (exIdx, setIdx, patch) => setActiveSession(prev => ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : { ...e, sets: e.sets.map((st, j) => j !== setIdx ? st : { ...st, ...patch }) }) }));
+            const addSet = (exIdx) => setActiveSession(prev => ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : { ...e, sets: [...e.sets, { id: `${e.key}-extra-${Date.now()}`, setNumber: e.sets.filter(x => x.type === 'working').length + 1, type: 'working', extra: true, completed: false, weight: '', reps: '', rpe: '' }] }) }));
+            const setSubstitution = (exIdx, sub) => { setActiveSession(prev => ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : { ...e, substitution: sub }) })); setSubModalIdx(null); };
+            const toggleProgramSet = (exIdx, setIdx) => {
+                const st = activeSession.exercises[exIdx].sets[setIdx];
+                if (!st.completed && !String(st.reps).trim()) { triggerToast('Enter reps first', 'Record what you actually performed before checking the set off.'); return; }
+                updateSet(exIdx, setIdx, { completed: !st.completed });
+            };
 
             const handlePdfFiles = async (fileList) => {
                 const files = Array.from(fileList || []);
@@ -523,6 +819,7 @@
 
             const finishActiveWorkout = () => {
                 if (!activeSession) return;
+                if (activeSession.program) return finishProgramWorkout();
                 let totalVol = 0;
                 activeSession.exercises.forEach(ex => {
                     ex.sets.forEach(s => {
@@ -544,6 +841,78 @@
                 setWorkoutOpen(false);
                 setRestEndsAt(null);
                 triggerToast('Workout Completed!', `Logged ${newLog.workoutName} with ${totalVol.toLocaleString()} lb volume.`);
+            };
+
+            const finishProgramWorkout = () => {
+                const sess = activeSession;
+                const unit = userSettings.unit, toLb = unit === 'kg' ? 2.20462 : 1;
+                let vol = 0, doneSets = 0;
+                const exLogs = sess.exercises.map(e => {
+                    const done = e.sets.filter(x => x.completed);
+                    doneSets += done.length;
+                    done.forEach(x => { if (x.type === 'working') vol += (parseFloat(x.weight) || 0) * (parseInt(x.reps, 10) || 0) * toLb; });
+                    return { exerciseId: e.substitution ? e.substitution.exerciseId : e.exerciseId, name: e.substitution ? e.substitution.name : e.name,
+                        prescribedName: e.name, substituted: !!e.substitution, substitutionOrigin: e.substitution ? e.substitution.origin : null, prescribed: e.prescribed,
+                        sets: done.map(x => ({ setNumber: x.setNumber, type: x.type, weight: parseFloat(x.weight) || 0, unit, reps: parseInt(x.reps, 10) || 0, rpe: x.rpe === '' ? null : parseFloat(x.rpe) })) };
+                }).filter(e => e.sets.length);
+                if (!doneSets) { triggerToast('Nothing to log', 'Complete at least one set, or discard the workout.'); return; }
+                const completedDate = todayStr();
+                const log = { id: `log-${sess.id}`, sessionId: sess.id, date: completedDate, workoutName: sess.workoutName, durationMin: Math.max(1, Math.round(elapsedSeconds / 60)),
+                    totalVolumeLb: Math.round(vol), programId: sess.program.programId, programName: sess.program.programName, week: sess.program.week, day: sess.program.day,
+                    sessionKey: sess.program.key, plannedDate: sess.program.plannedDate, completedDate, exercises: exLogs };
+                setWorkoutLogs(prev => prev.some(l => l.sessionId === sess.id) ? prev : [log, ...prev]);
+                setLibrary(prev => {
+                    const pr = prev.progress[sess.program.programId] || { status: 'in_progress' };
+                    const sessions = { ...(pr.sessions || {}), [sess.program.key]: { ...((pr.sessions || {})[sess.program.key] || {}), status: 'completed', completedDate, logId: log.id } };
+                    const prog = prev.programs[sess.program.programId];
+                    const all = prog ? buildSessions(prog, { ...pr, sessions }) : [];
+                    const complete = all.length > 0 && all.every(x => x.status === 'completed');
+                    return { ...prev, progress: { ...prev.progress, [sess.program.programId]: { ...pr, sessions, status: complete ? 'completed' : 'in_progress' } } };
+                });
+                setActiveSession(null); setWorkoutOpen(false); setRestEndsAt(null);
+                triggerToast('Workout Completed!', `Logged ${doneSets} set(s) for ${sess.workoutName}.`);
+            };
+            const requestFinish = () => {
+                if (!activeSession || !activeSession.program) return finishActiveWorkout();
+                const left = activeSession.exercises.reduce((n, e) => n + e.sets.filter(x => !x.completed && x.type === 'working').length, 0);
+                if (left > 0) setConfirmDialog({ title: 'Finish with sets remaining?', body: `${left} working set(s) are not checked off. They will not be logged, and only the work you completed is saved.`, confirmLabel: 'Finish workout', onConfirm: finishProgramWorkout });
+                else finishProgramWorkout();
+            };
+
+            const renderProgramExercise = (item, exIdx) => {
+                const pr = item.prescribed;
+                const display = item.substitution ? item.substitution.name : item.name;
+                const prev = lastPerformance(display);
+                return (
+                    <div key={exIdx} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                                <div className="text-[10px] text-[#8FA2B8]">Exercise {exIdx + 1} of {activeSession.exercises.length}</div>
+                                <h3 className="text-sm font-bold text-white">{display}</h3>
+                                {item.substitution && <div className="text-[10px] text-[#F59E0B]">Your substitution · prescribed: {item.name}</div>}
+                            </div>
+                            <button onClick={() => setSubModalIdx(exIdx)} aria-label="Substitute exercise" className="min-w-[44px] min-h-[44px] rounded-lg bg-[#142235] text-[#8FA2B8] text-base shrink-0">⇄</button>
+                        </div>
+                        <div className="bg-[#080E16] border border-[#203147] rounded-xl p-2.5 text-[11px] space-y-0.5">
+                            <div className="text-[#8FA2B8] uppercase text-[9px] font-bold tracking-wide">Prescribed by program</div>
+                            <div className="text-white font-bold">{pr.workingSets ?? '?'} × {pr.reps ?? '?'}{pr.warmupSets ? ` · ${pr.warmupSets} warm-up` : ''} · {intensityLabel(pr.intensity)}</div>
+                            {pr.notes && <div className="text-[#C7D3E0] leading-snug">{pr.notes}</div>}
+                            {pr.flags.length > 0 && <div className="text-[#F59E0B]">⚠ Uncertain extraction — check PDF p.{pr.page}</div>}
+                        </div>
+                        {prev && <div className="text-[11px] text-[#8FA2B8]">Last time · {prev}</div>}
+                        <div className="space-y-2">
+                            {item.sets.map((st, setIdx) => (
+                                <div key={st.id} className={`grid grid-cols-[34px_1fr_1fr_44px] gap-2 items-center p-2 rounded-xl border ${st.completed ? 'bg-[#31D583]/10 border-[#31D583]/30' : 'bg-[#080E16] border-[#203147]'}`}>
+                                    <span className="text-[11px] font-bold text-white">{st.type === 'warmup' ? `W${st.setNumber}` : `#${st.setNumber}`}</span>
+                                    <input type="number" inputMode="decimal" value={st.weight} placeholder={userSettings.unit} aria-label="Weight" onChange={e => updateSet(exIdx, setIdx, { weight: e.target.value })} className="w-full min-w-0 h-11 bg-[#101C2B] border border-[#203147] rounded-lg px-2 text-center text-white tabular-nums font-bold" />
+                                    <input type="number" inputMode="numeric" value={st.reps} placeholder={pr.reps || 'reps'} aria-label="Reps" onChange={e => updateSet(exIdx, setIdx, { reps: e.target.value })} className="w-full min-w-0 h-11 bg-[#101C2B] border border-[#203147] rounded-lg px-2 text-center text-white tabular-nums font-bold" />
+                                    <button onClick={() => toggleProgramSet(exIdx, setIdx)} aria-label="Complete set" className={`h-11 w-11 rounded-lg text-base font-black ${st.completed ? 'bg-[#31D583] text-[#080E16]' : 'bg-[#142235] text-[#8FA2B8]'}`}>✓</button>
+                                </div>
+                            ))}
+                            <button onClick={() => addSet(exIdx)} className="w-full min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]">＋ Add extra set</button>
+                        </div>
+                    </div>
+                );
             };
 
             return (
@@ -587,6 +956,7 @@
                                     <div>
                                         <div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Active Workout</div>
                                         <h2 className="text-lg font-black text-white">{activeSession.workoutName}</h2>
+                                        {activeSession.program && <div className="text-[11px] text-[#8FA2B8]">{activeSession.program.programName} · Week {activeSession.program.week} · Day {activeSession.program.day}</div>}
                                         <div className="text-[11px] text-[#8FA2B8] flex items-center gap-2 mt-0.5">
                                             <span>Time: <strong className="text-white tabular-nums">{Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s</strong></span>
                                             <span>·</span>
@@ -595,7 +965,7 @@
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <button onClick={() => { setWorkoutOpen(false); setActiveNav('Home'); }} aria-label="Back to Home, keep workout running" className="min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">⌂ Home</button>
-                                        <button onClick={finishActiveWorkout} className="px-3.5 py-2 rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-[#080E16] text-xs font-black shadow cursor-pointer">
+                                        <button onClick={requestFinish} className="px-3.5 py-2 rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-[#080E16] text-xs font-black shadow cursor-pointer">
                                             Finish
                                         </button>
                                         <button onClick={() => setConfirmDiscard(true)} aria-label="Discard workout" className="min-w-[44px] min-h-[44px] rounded-xl bg-[#142235] text-[#F43F5E] text-sm font-black">✕</button>
@@ -603,13 +973,14 @@
                                 </div>
 
                                 <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                                    <button onClick={() => startRest(90)} className="px-3 py-1.5 rounded-lg bg-[#142235] border border-[#203147] text-[11px] font-semibold text-white flex items-center gap-1 shrink-0">
-                                        <i data-lucide="clock" className="w-3.5 h-3.5 text-[#1685F8]"></i><span>Rest 90s</span>
-                                    </button>
+                                    <span className="text-[11px] text-[#8FA2B8] shrink-0">Rest timer</span>
+                                    {[60, 90, 120, 180].map(sec => <button key={sec} onClick={() => startRest(sec)} className="min-h-[40px] px-3.5 rounded-lg bg-[#142235] border border-[#203147] text-[11px] font-semibold text-white shrink-0">{sec >= 120 ? `${sec / 60} min` : `${sec}s`}</button>)}
+                                    {timerRunning && <button onClick={() => setRestEndsAt(null)} className="min-h-[40px] px-3.5 rounded-lg bg-[#142235] border border-[#F43F5E]/40 text-[11px] font-semibold text-[#F43F5E] shrink-0">Stop {fmtClock(timerSeconds)}</button>}
                                 </div>
 
                                 <div className="space-y-4">
                                     {activeSession.exercises.map((item, exIdx) => {
+                                        if (item.prescribed) return renderProgramExercise(item, exIdx);
                                         const ex = exerciseMap[item.exerciseId];
                                         return (
                                             <div key={item.exerciseId} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
@@ -682,6 +1053,20 @@
                     <main className={`flex-1 flex flex-col p-4 max-w-xl mx-auto w-full space-y-6 ${activeSession ? 'pb-16' : ''}`}>
                         {activeNav === 'Home' && (
                             <div className="space-y-5">
+                                {activeProgram && (
+                                    <div className="bg-[#101C2B] border border-[#1685F8]/40 rounded-2xl p-4 space-y-2">
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Active program · {activeProgram.name}</div>
+                                        {nextProgramSession ? (<>
+                                            <div className="text-sm font-black text-white">Week {nextProgramSession.week} · Day {nextProgramSession.day} · {nextProgramSession.label}</div>
+                                            <div className="text-[11px] text-[#8FA2B8]">{nextProgramSession.plannedDate ? (nextProgramSession.plannedDate === todayStr() ? 'Scheduled today' : nextProgramSession.missed ? `Missed — was planned ${fmtShort(nextProgramSession.plannedDate)} (still pending)` : `Planned ${fmtShort(nextProgramSession.plannedDate)}`) : ''}</div>
+                                            <div className="flex gap-2 pt-1">
+                                                <button onClick={() => startProgramWorkout(nextProgramSession)} className="flex-1 min-h-[44px] rounded-xl bg-[#1685F8] text-white text-xs font-bold">{activeSession ? 'Return to workout' : 'Start workout'}</button>
+                                                <button onClick={() => setActiveNav('Calendar')} className="min-h-[44px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Calendar</button>
+                                            </div>
+                                        </>) : <div className="text-xs text-[#8FA2B8]">No pending workouts left in this program.</div>}
+                                    </div>
+                                )}
+
                                 {/* HERO WORKOUT CARD */}
                                 <div className="relative rounded-2xl overflow-hidden border border-[#203147] bg-[#101C2B] shadow-xl">
                                     <div className="absolute inset-0 z-0">
@@ -809,7 +1194,20 @@
 
                         {activeNav === 'Program' && openProgramId && library.programs[openProgramId] && (
                             <ProgramDetail program={library.programs[openProgramId]} state={progressOf(openProgramId)} isActive={library.activeProgramId === openProgramId} unit={userSettings.unit}
-                                onBack={() => setOpenProgramId(null)} onRemove={() => removeProgram(openProgramId)} />
+                                onBack={() => setOpenProgramId(null)} onRemove={() => removeProgram(openProgramId)}>
+                                {(() => {
+                                    const st = progressOf(openProgramId).status, id = openProgramId;
+                                    const btn = 'w-full min-h-[48px] rounded-xl text-sm font-black ';
+                                    if (st === 'not_started') return <button onClick={() => requestStartProgram(id)} className={btn + 'bg-[#1685F8] text-white'}>Start Program</button>;
+                                    if (st === 'completed') return <div className="text-xs font-bold text-[#31D583]">✓ All workouts completed</div>;
+                                    return (
+                                        <div className="flex gap-2">
+                                            <button onClick={() => resumeProgram(id)} className={btn + 'flex-1 bg-[#1685F8] text-white'}>Resume Program</button>
+                                            {st === 'in_progress' && <button onClick={() => pauseProgram(id)} className="min-h-[48px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Pause</button>}
+                                        </div>
+                                    );
+                                })()}
+                            </ProgramDetail>
                         )}
 
                         {activeNav === 'Program' && !(openProgramId && library.programs[openProgramId]) && (
@@ -907,12 +1305,10 @@
                         )}
 
                         {activeNav === 'Calendar' && (
-                            <div className="space-y-4">
-                                <h2 className="text-base font-black text-white">Calendar</h2>
-                                <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 text-center text-xs text-[#8FA2B8]">
-                                    Synced with Week {program.currentWeek} Roadmap
-                                </div>
-                            </div>
+                            <CalendarView program={activeProgram} prog={activeProg} sessions={activeSessions} logs={workoutLogs} hasActiveWorkout={!!activeSession}
+                                onStart={startProgramWorkout} onReschedule={rescheduleSession} onSkip={skipSession}
+                                onUnskip={(sess) => patchProgress(library.activeProgramId, p => ({ ...p, sessions: { ...p.sessions, [sess.key]: { ...(p.sessions || {})[sess.key], status: 'planned' } } }))}
+                                onOpenProgram={() => setActiveNav('Program')} />
                         )}
 
                         {activeNav === 'Settings' && (
@@ -964,6 +1360,7 @@
                             { id: 'Home', label: 'Home', icon: 'home' },
                             { id: 'Workouts', label: 'Workouts', icon: 'dumbbell' },
                             { id: 'Program', label: 'Program', icon: 'layers' },
+                            { id: 'Calendar', label: 'Calendar', icon: 'calendar' },
                             { id: 'Progress', label: 'Progress', icon: 'bar-chart-3' },
                             { id: 'Nutrition', label: 'Nutrition', icon: 'utensils' }
                         ].map(item => {
@@ -992,6 +1389,24 @@
                                 <div className="flex gap-2">
                                     <button onClick={() => setConfirmDiscard(false)} className="flex-1 min-h-[44px] rounded-xl bg-[#142235] text-white text-xs font-bold">Keep Workout</button>
                                     <button onClick={() => { setActiveSession(null); setWorkoutOpen(false); setRestEndsAt(null); setConfirmDiscard(false); }} className="flex-1 min-h-[44px] rounded-xl bg-[#F43F5E] text-white text-xs font-black">Discard</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {startSheetId && library.programs[startSheetId] && <StartProgramSheet program={library.programs[startSheetId]} onCancel={() => setStartSheetId(null)} onConfirm={(cfg) => activateProgram(startSheetId, cfg)} />}
+                    {subModalIdx !== null && activeSession && activeSession.exercises[subModalIdx] && (
+                        <SubstituteModal item={activeSession.exercises[subModalIdx]} library={exercises} onClose={() => setSubModalIdx(null)}
+                            onPick={(sub) => setSubstitution(subModalIdx, sub)} onRestore={() => setSubstitution(subModalIdx, null)} />
+                    )}
+                    {confirmDialog && (
+                        <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4">
+                            <div className="bg-[#101C2B] border border-[#203147] rounded-2xl max-w-sm w-full p-5 space-y-4">
+                                <h3 className="text-sm font-bold text-white">{confirmDialog.title}</h3>
+                                <p className="text-xs text-[#8FA2B8]">{confirmDialog.body}</p>
+                                <div className="flex gap-2">
+                                    <button onClick={() => setConfirmDialog(null)} className="flex-1 min-h-[44px] rounded-xl bg-[#142235] text-white text-xs font-bold">Cancel</button>
+                                    <button onClick={() => { const fn = confirmDialog.onConfirm; setConfirmDialog(null); fn(); }} className={`flex-1 min-h-[44px] rounded-xl text-white text-xs font-black ${confirmDialog.danger ? 'bg-[#F43F5E]' : 'bg-[#1685F8]'}`}>{confirmDialog.confirmLabel}</button>
                                 </div>
                             </div>
                         </div>
