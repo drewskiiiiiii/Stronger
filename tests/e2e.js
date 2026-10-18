@@ -149,7 +149,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     await up.goto(srv3.url, { waitUntil: 'domcontentloaded' }); await up.waitForTimeout(1500);
     const migrated = await up.evaluate(() => JSON.parse(localStorage['stronger.state']));
     ok('upgrade removes sample name, plan, exercises and demo log', migrated.userSettings.name === '' && !migrated.program && !migrated.exercises && !migrated.workoutLogs.some(l => l.id === 'log-1'));
-    ok('upgrade keeps real data and settings', migrated.workoutLogs.some(l => l.id === 'log-real') && migrated.userSettings.unit === 'kg' && migrated.selectedTheme === 'emerald');
+    ok('upgrade keeps real data and settings', migrated.workoutLogs.some(l => l.id === 'log-real') && migrated.userSettings.unit === 'kg' && migrated.selectedTheme === 'steel');
     ok('upgrade drops a stuck sample workout', migrated.activeSession === null);
     ok('greeting no longer uses a placeholder name', await up.getByText('Welcome').isVisible() && !(await up.locator('body').innerText()).includes('John'));
     await u.browser.close(); srv3.close();
