@@ -5,8 +5,8 @@
 /* App base styles (previously inline in index.html) */
 @layer base {
         :root { /* default (Athletic Blue); the app overwrites these when a theme is applied */
-            --c-bg: 8 14 22; --c-bg2: 13 22 34; --c-card: 16 28 43; --c-elevated: 20 34 53; --c-line: 32 49 71;
-            --c-accent: 22 133 248; --c-accent-hover: 41 146 255; --c-accent-dark: 12 73 137; --c-ink: 243 246 250; --c-muted: 143 162 184; --c-on-accent: 255 255 255;
+            --c-bg: 10 10 11; --c-bg2: 16 16 18; --c-card: 22 22 24; --c-elevated: 31 31 34; --c-line: 44 44 49;
+            --c-accent: 255 77 31; --c-accent-hover: 255 107 61; --c-accent-dark: 140 42 17; --c-ink: 245 245 244; --c-muted: 156 156 164; --c-on-accent: 10 10 11;
         }
         body { 
             font-family: 'Inter', sans-serif; 
@@ -25,3 +25,9 @@
             .safe-top { padding-top: max(env(safe-area-inset-top), 12px); }
         }
     }
+
+/* Performance look: bold uppercase headings and primary actions, crisp edges, accent rule under the header */
+h2 { text-transform: uppercase; letter-spacing: 0.06em; }
+.bg-th-accent { text-transform: uppercase; letter-spacing: 0.05em; font-weight: 900; }
+header.sticky { position: sticky; }
+header.sticky::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, rgb(var(--c-accent)) 0%, rgb(var(--c-accent) / 0.0) 70%); pointer-events: none; }

@@ -38,75 +38,84 @@ const Icon = ({
 });
 const EXERCISE_LIBRARY = [];
 const THEMES = {
-  blue: {
-    name: 'Athletic Blue',
-    bg: '#080E16',
-    bg2: '#0D1622',
-    card: '#101C2B',
-    elevated: '#142235',
-    line: '#203147',
-    accent: '#1685F8',
-    accentHover: '#2992FF',
-    ink: '#F3F6FA',
-    muted: '#8FA2B8',
-    onAccent: '#FFFFFF'
+  ember: {
+    name: 'Stealth Ember',
+    bg: '#0A0A0B',
+    bg2: '#101012',
+    card: '#161618',
+    elevated: '#1F1F22',
+    line: '#2C2C31',
+    accent: '#FF4D1F',
+    accentHover: '#FF6B3D',
+    ink: '#F5F5F4',
+    muted: '#9C9CA4',
+    onAccent: '#0A0A0B'
   },
-  emerald: {
-    name: 'Volt Emerald',
-    bg: '#07100E',
-    bg2: '#0C1916',
-    card: '#10231F',
-    elevated: '#16302A',
-    line: '#1F403A',
-    accent: '#10B981',
-    accentHover: '#34D399',
-    ink: '#F0FDF9',
-    muted: '#86ADA3',
-    onAccent: '#04130E'
+  steel: {
+    name: 'Steel Blue',
+    bg: '#090B0E',
+    bg2: '#0F1317',
+    card: '#151A20',
+    elevated: '#1D242C',
+    line: '#2A333D',
+    accent: '#4DB8FF',
+    accentHover: '#7FCBFF',
+    ink: '#F1F5F9',
+    muted: '#94A3B3',
+    onAccent: '#06121C'
   },
-  crimson: {
-    name: 'Crimson Force',
-    bg: '#0B0A0C',
-    bg2: '#141217',
-    card: '#1E1B22',
-    elevated: '#28242E',
-    line: '#3B3542',
-    accent: '#F43F5E',
-    accentHover: '#FB7185',
-    ink: '#FFF1F2',
-    muted: '#A59BA8',
+  graphite: {
+    name: 'Graphite',
+    bg: '#0A0A0A',
+    bg2: '#111111',
+    card: '#171717',
+    elevated: '#212121',
+    line: '#303030',
+    accent: '#E8E8EA',
+    accentHover: '#FFFFFF',
+    ink: '#FAFAFA',
+    muted: '#9E9E9E',
+    onAccent: '#0A0A0A'
+  },
+  blood: {
+    name: 'Blood Red',
+    bg: '#0B0909',
+    bg2: '#121010',
+    card: '#191515',
+    elevated: '#232020',
+    line: '#352E2E',
+    accent: '#F0343C',
+    accentHover: '#FF5A60',
+    ink: '#FAF5F5',
+    muted: '#A39A9A',
     onAccent: '#FFFFFF'
   },
   gold: {
     name: 'Titan Gold',
-    bg: '#0D0C0A',
-    bg2: '#161410',
-    card: '#211E18',
-    elevated: '#2C2821',
-    line: '#3F3930',
-    accent: '#F59E0B',
-    accentHover: '#FBBF24',
-    ink: '#FFFBEB',
-    muted: '#A8A29E',
-    onAccent: '#1A1203'
-  },
-  violet: {
-    name: 'Cyber Violet',
-    bg: '#0A0812',
-    bg2: '#120F1D',
-    card: '#1A162B',
-    elevated: '#241F3B',
-    line: '#362F54',
-    accent: '#8B5CF6',
-    accentHover: '#A78BFA',
-    ink: '#F5F3FF',
-    muted: '#A39BC4',
-    onAccent: '#FFFFFF'
+    bg: '#0B0A08',
+    bg2: '#12110E',
+    card: '#181612',
+    elevated: '#22201A',
+    line: '#35322A',
+    accent: '#E0A526',
+    accentHover: '#F0BC45',
+    ink: '#FBF8F1',
+    muted: '#A39E92',
+    onAccent: '#140E02'
   }
 };
+const DEFAULT_THEME = 'ember';
+const LEGACY_THEME_KEYS = {
+  blue: 'ember',
+  emerald: 'steel',
+  crimson: 'blood',
+  gold: 'gold',
+  violet: 'graphite'
+};
+const resolveTheme = k => THEMES[k] ? k : LEGACY_THEME_KEYS[k] || DEFAULT_THEME;
 const hexToRgb = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(' ');
 const applyTheme = key => {
-  const t = THEMES[key] || THEMES.blue;
+  const t = THEMES[resolveTheme(key)];
   const dark = '#' + [1, 3, 5].map(i => Math.round(parseInt(t.accent.slice(i, i + 2), 16) * 0.55).toString(16).padStart(2, '0')).join('');
   const vars = {
     bg: t.bg,
@@ -224,7 +233,7 @@ const ProgramDetail = ({
   }, [m.totalWeeks && `${m.totalWeeks} weeks`, m.daysPerWeek && `${m.daysPerWeek} training days/week`, m.split].filter(Boolean).join(' · ')), React.createElement("p", {
     className: "text-[10px] text-th-muted"
   }, "Source: ", program.source.fileName, " \xB7 imported ", program.source.importedAt.split('T')[0], " \xB7 level, focus & equipment are not stated in a structured form in the PDF")), m.suggestedSchedule && React.createElement("div", {
-    className: "text-[11px] text-[#C7D3E0] bg-th-card border border-th-line rounded-xl p-3"
+    className: "text-[11px] text-th-ink/80 bg-th-card border border-th-line rounded-xl p-3"
   }, React.createElement("span", {
     className: "font-bold text-white"
   }, "Weekly layout in the PDF:"), " ", m.suggestedSchedule), m.restNote && React.createElement("div", {
@@ -250,7 +259,7 @@ const ProgramDetail = ({
   }, "Week ", w.week, w.deload ? ' ↓' : ''))), wk && (wk.phase || wk.deload) && React.createElement("div", {
     className: "text-[11px] text-th-muted"
   }, wk.phase, wk.deload ? ' · deload week (from the source)' : ''), wk && wk.note && React.createElement("div", {
-    className: "text-[11px] text-[#C7D3E0] bg-th-card border border-th-line rounded-xl p-3"
+    className: "text-[11px] text-th-ink/80 bg-th-card border border-th-line rounded-xl p-3"
   }, wk.note), wk && wk.days.map(d => React.createElement("div", {
     key: d.day,
     className: "bg-th-card border border-th-line rounded-2xl p-4 space-y-3"
@@ -280,7 +289,7 @@ const ProgramDetail = ({
   }, e.warmupText ? `${e.warmupText} warm-up set(s) · ` : e.warmupSets != null ? `${e.warmupSets} warm-up set(s) · ` : '', "Intensity ", intensityLabel(e.intensity), " \xB7 Rest: ", restLabel(e.rest)), e.technique && React.createElement("div", {
     className: "text-[11px] font-semibold text-[#F59E0B]"
   }, "Last-set technique: ", e.technique), e.notes && React.createElement("div", {
-    className: "text-[11px] text-[#C7D3E0] leading-snug"
+    className: "text-[11px] text-th-ink/80 leading-snug"
   }, e.notes), e.sourceSubstitutions && e.sourceSubstitutions.length > 0 && !e.sourceGuidance && React.createElement("div", {
     className: "text-[10px] text-th-muted"
   }, "Substitutes in source: ", e.sourceSubstitutions.join(' · ')), e.videoUrl && React.createElement("a", {
@@ -306,7 +315,7 @@ const ProgramDetail = ({
   }, sec.title || sec.lines[0]), React.createElement("span", {
     className: "text-th-muted ml-2 shrink-0"
   }, sec.page ? `p.${sec.page} ` : '', openSection === si ? '▲' : '▼')), openSection === si && React.createElement("div", {
-    className: "px-3 pb-3 text-[11px] text-[#C7D3E0] leading-relaxed whitespace-pre-line"
+    className: "px-3 pb-3 text-[11px] text-th-ink/80 leading-relaxed whitespace-pre-line"
   }, sec.lines.join('\n'))))), React.createElement("button", {
     onClick: onRemove,
     className: "w-full min-h-[44px] rounded-xl bg-th-elevated border border-th-line text-[#F43F5E] text-xs font-bold"
@@ -648,7 +657,7 @@ const SubstituteModal = ({
     className: "text-[11px] font-bold text-white"
   }, "What the program PDF says"), item.prescribed.sourceGuidance.map((g, i) => React.createElement("div", {
     key: i,
-    className: "text-[11px] text-[#C7D3E0] leading-snug"
+    className: "text-[11px] text-th-ink/80 leading-snug"
   }, React.createElement("span", {
     className: "font-bold"
   }, g.name, ":"), " ", g.text)), item.prescribed.sourceGuidance.some(g => normName(g.name) !== normName(item.name)) && React.createElement("div", {
@@ -940,7 +949,7 @@ const STORED = loadStore();
 const fmtClock = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 function App() {
   const [activeNav, setActiveNav] = useState('Home');
-  const [selectedTheme, setSelectedTheme] = useState(STORED.selectedTheme || 'blue');
+  const [selectedTheme, setSelectedTheme] = useState(resolveTheme(STORED.selectedTheme));
   useEffect(() => {
     applyTheme(selectedTheme);
   }, [selectedTheme]);
@@ -1551,7 +1560,7 @@ function App() {
     }, pr.workingSets ?? '?', " \xD7 ", pr.reps ?? '?', pr.warmupText ? ` · ${pr.warmupText} warm-up` : pr.warmupSets ? ` · ${pr.warmupSets} warm-up` : '', " \xB7 ", intensityLabel(pr.intensity), pr.rest ? ` · rest ${restLabel(pr.rest)}` : ''), pr.technique && React.createElement("div", {
       className: "text-[#F59E0B] font-semibold"
     }, "Last-set technique: ", pr.technique), pr.notes && React.createElement("div", {
-      className: "text-[#C7D3E0] leading-snug"
+      className: "text-th-ink/80 leading-snug"
     }, pr.notes), pr.rest && pr.rest.maxSeconds && React.createElement("button", {
       onClick: () => startRest(pr.rest.maxSeconds),
       className: "min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[11px] font-semibold text-white"
@@ -1655,7 +1664,7 @@ function App() {
     className: "w-8 h-8 rounded-xl bg-gradient-to-br from-th-accent to-th-accent-dark flex items-center justify-center shadow-md shadow-th-accent/25 shrink-0"
   }, React.createElement(Icon, {
     name: "dumbbell",
-    className: "w-4 h-4 text-white"
+    className: "w-4 h-4 text-th-on-accent"
   })), React.createElement("div", null, React.createElement("h1", {
     className: "text-xs font-black tracking-wider text-white"
   }, "STRONGER"), React.createElement("p", {
@@ -1722,7 +1731,7 @@ function App() {
   }, React.createElement("div", {
     className: "text-xs font-bold text-[#F59E0B]"
   }, "Back up your data"), React.createElement("p", {
-    className: "text-[11px] text-[#C7D3E0]"
+    className: "text-[11px] text-th-ink/80"
   }, "Your programs and workout history live only in this browser. ", userSettings.lastBackupAt ? `Last backup ${daysSince(userSettings.lastBackupAt)} day(s) ago.` : 'You have never exported a backup.'), React.createElement("div", {
     className: "flex gap-2"
   }, React.createElement("button", {
@@ -2140,5 +2149,5 @@ function App() {
     className: "text-[10px] text-th-muted"
   }, toast.message))));
 }
-applyTheme(STORED.selectedTheme || 'blue');
+applyTheme(resolveTheme(STORED.selectedTheme));
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));
