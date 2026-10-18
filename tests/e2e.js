@@ -52,6 +52,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
 
     // --- workout: persistence across navigation and reload ---
     await p.getByRole('button', { name: 'Start workout' }).first().click(); await p.waitForTimeout(400);
+    ok('integer warm-up count creates labelled Warm-up rows', await p.getByText('Warm-up sets', { exact: true }).first().isVisible() && await p.getByLabel(/Warm-up set 2 weight/).first().isVisible());
     await p.getByLabel('Reps').nth(0).fill('8'); await p.getByLabel('Weight').nth(0).fill('100'); await p.getByLabel('Complete set').nth(0).click();
     await p.getByRole('button', { name: /Home/ }).first().click();
     ok('banner visible on Home', await p.getByLabel('Return to active workout').isVisible());
@@ -74,6 +75,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     await p.reload({ waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1200);
     ok('no duplicate log after reload', (await state()).workoutLogs.length === 1);
 
+    // --- warm-up vs working sets are clearly separated ---
     // --- next workout: previous weights, technique helpers ---
     await tab('Home');
     await p.getByRole('button', { name: 'Start workout' }).first().click(); await p.waitForTimeout(300); // Lower (next)
@@ -87,6 +89,8 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     await tab('Calendar'); await p.getByRole('button', { name: /^22/ }).first().click();
     await p.getByRole('button', { name: 'Start workout' }).first().click();
     await p.getByRole('button', { name: 'Start anyway' }).click(); await p.waitForTimeout(500);
+    ok('sets are grouped under Warm-up / Working headings', await p.getByText('Working sets', { exact: true }).first().isVisible());
+    ok('each row is labelled Working', await p.getByLabel(/Working set 1 weight/).first().isVisible());
     ok('last weight shown as placeholder, not a value', await p.getByLabel('Weight').first().getAttribute('placeholder') === '100' && (await p.getByLabel('Weight').first().inputValue()) === '');
     ok('"Use last weights" offered', await p.getByRole('button', { name: 'Use last weights' }).first().isVisible());
     await p.getByRole('button', { name: 'Use last weights' }).first().click();

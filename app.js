@@ -1573,36 +1573,58 @@ function App() {
       className: "min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[10px] font-bold text-white shrink-0"
     }, "Use last weights")), React.createElement("div", {
       className: "space-y-2"
-    }, item.sets.map((st, setIdx) => React.createElement("div", {
-      key: st.id,
-      className: `grid grid-cols-[34px_1fr_1fr_44px] gap-2 items-center p-2 rounded-xl border ${st.completed ? 'bg-[#31D583]/10 border-[#31D583]/30' : 'bg-th-bg border-th-line'}`
-    }, React.createElement("span", {
-      className: "text-[11px] font-bold text-white"
-    }, st.type === 'warmup' ? `W${st.setNumber}` : st.type === 'drop' ? `D${st.setNumber}` : st.type === 'myo' ? `M${st.setNumber}` : `#${st.setNumber}`), React.createElement("input", {
-      type: "number",
-      inputMode: "decimal",
-      value: st.weight,
-      placeholder: st.type === 'drop' ? dropHint : placeholderWeight(st, setIdx),
-      "aria-label": "Weight",
-      onChange: e => updateSet(exIdx, setIdx, {
-        weight: e.target.value
-      }),
-      className: "w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold"
-    }), React.createElement("input", {
-      type: "number",
-      inputMode: "numeric",
-      value: st.reps,
-      placeholder: pr.reps || 'reps',
-      "aria-label": "Reps",
-      onChange: e => updateSet(exIdx, setIdx, {
-        reps: e.target.value
-      }),
-      className: "w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold"
-    }), React.createElement("button", {
-      onClick: () => toggleProgramSet(exIdx, setIdx),
-      "aria-label": "Complete set",
-      className: `h-11 w-11 rounded-lg text-base font-black ${st.completed ? 'bg-[#31D583] text-th-bg' : 'bg-th-elevated text-th-muted'}`
-    }, "\u2713"))), (/myo/i.test(tech) || /drop/i.test(tech) || holdSec) && React.createElement("div", {
+    }, item.sets.map((st, setIdx) => {
+      const catOf = x => x.type === 'warmup' ? 'warmup' : x.type === 'drop' || x.type === 'myo' ? 'technique' : 'working';
+      const cat = catOf(st),
+        isWarm = cat === 'warmup',
+        isTech = cat === 'technique';
+      const header = setIdx === 0 || catOf(item.sets[setIdx - 1]) !== cat;
+      const word = isWarm ? 'Warm-up' : st.type === 'drop' ? 'Drop' : st.type === 'myo' ? 'Myo-rep' : st.extra ? 'Extra' : 'Working';
+      const rowCls = isWarm ? st.completed ? 'bg-th-elevated border-dashed border-th-line' : 'bg-th-bg/40 border-dashed border-th-line' : (st.completed ? 'bg-[#31D583]/10 border-[#31D583]/30' : 'bg-th-bg border-th-line') + ' border-l-4 ' + (isTech ? 'border-l-[#F59E0B]' : 'border-l-th-accent');
+      const wordCls = isWarm ? 'text-th-muted' : isTech ? 'text-[#F59E0B]' : 'text-th-accent';
+      const doneCls = isWarm ? 'bg-th-muted text-th-bg' : 'bg-[#31D583] text-th-bg';
+      return React.createElement(React.Fragment, {
+        key: st.id
+      }, header && React.createElement("div", {
+        className: "flex items-center gap-2 pt-1"
+      }, React.createElement("span", {
+        className: `px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${isWarm ? 'bg-th-elevated text-th-muted' : isTech ? 'bg-[#F59E0B]/15 text-[#F59E0B]' : 'bg-th-accent/20 text-th-accent'}`
+      }, isWarm ? 'Warm-up sets' : isTech ? 'Technique sets' : 'Working sets'), React.createElement("span", {
+        className: "text-[10px] text-th-muted"
+      }, isWarm ? `${pr.warmupText ? pr.warmupText + ' per the program · ' : ''}not counted in volume` : isTech ? 'extra sets for the last-set technique' : `${pr.workingSets ?? '?'} × ${pr.reps ?? '?'} · ${intensityLabel(pr.intensity)}`)), React.createElement("div", {
+        className: `grid grid-cols-[56px_1fr_1fr_44px] gap-2 items-center p-2 rounded-xl border ${rowCls}`
+      }, React.createElement("span", {
+        className: "leading-tight"
+      }, React.createElement("span", {
+        className: `block text-[9px] font-black uppercase tracking-wide ${wordCls}`
+      }, word), React.createElement("span", {
+        className: "block text-sm font-black text-white"
+      }, st.setNumber)), React.createElement("input", {
+        type: "number",
+        inputMode: "decimal",
+        value: st.weight,
+        placeholder: st.type === 'drop' ? dropHint : placeholderWeight(st, setIdx),
+        "aria-label": `${word} set ${st.setNumber} weight`,
+        onChange: e => updateSet(exIdx, setIdx, {
+          weight: e.target.value
+        }),
+        className: "w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold"
+      }), React.createElement("input", {
+        type: "number",
+        inputMode: "numeric",
+        value: st.reps,
+        placeholder: isWarm ? 'reps' : pr.reps || 'reps',
+        "aria-label": `${word} set ${st.setNumber} reps`,
+        onChange: e => updateSet(exIdx, setIdx, {
+          reps: e.target.value
+        }),
+        className: "w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold"
+      }), React.createElement("button", {
+        onClick: () => toggleProgramSet(exIdx, setIdx),
+        "aria-label": `Complete set (${word} ${st.setNumber})`,
+        className: `h-11 w-11 rounded-lg text-base font-black ${st.completed ? doneCls : 'bg-th-elevated text-th-muted'}`
+      }, "\u2713")));
+    }), (/myo/i.test(tech) || /drop/i.test(tech) || holdSec) && React.createElement("div", {
       className: "flex gap-2 flex-wrap"
     }, /myo/i.test(tech) && React.createElement("button", {
       onClick: () => addSet(exIdx, 'myo'),

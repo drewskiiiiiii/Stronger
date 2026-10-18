@@ -58,7 +58,7 @@ function writeFixtures() {
     const XLSX = require('xlsx');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stronger-fixtures-'));
     const a = makeProgramSheet(XLSX, { title: 'Test Program Alpha', sheetName: 'Alpha Program', weeks: 2, days: [
-        { label: 'Upper', exercises: [{ name: 'Test Bench Press', sets: '2', reps: '6-8', rest: '3-5 min', sub1: 'Test DB Press' }, { name: 'Test Row' }] },
+        { label: 'Upper', exercises: [{ name: 'Test Bench Press', sets: '2', reps: '6-8', rest: '3-5 min', sub1: 'Test DB Press' }, { name: 'Test Row', warm: '2' }] },
         { label: 'Lower', exercises: [{ name: 'Test Squat' }, { name: 'Test Leg Curl' }] },
         { label: 'Push', exercises: [
             { name: 'Test Bench Press', technique: 'Two Drop Sets (~25% per)' },
