@@ -584,7 +584,7 @@
             const [restEndsAt, setRestEndsAt] = useState(STORED.restEndsAt || null);
             const timerSeconds = restEndsAt ? Math.max(0, Math.ceil((restEndsAt - now) / 1000)) : 0;
             const timerRunning = timerSeconds > 0;
-            const startRest = (sec) => setRestEndsAt(Date.now() + sec * 1000);
+            const startRest = (sec) => { const t = Date.now(); setNow(t); setRestEndsAt(t + sec * 1000); };
             const elapsedSeconds = activeSession ? Math.max(0, Math.floor((now - activeSession.startTime) / 1000)) : 0;
             const importInputRef = useRef(null);
             // Program library: original imported programs stay untouched; per-program progress is stored separately.

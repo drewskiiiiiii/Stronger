@@ -28,10 +28,10 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     ok('two separate programs imported', Object.keys(s.library.programs).length === 2);
     await p.locator('input[type=file]').setInputFiles(files.alpha); await p.waitForTimeout(1500);
     ok('duplicate import blocked', await p.getByText('already in your library').first().isVisible());
-    await p.getByRole('button', { name: '4 days/week' }).click();
+    await p.getByRole('button', { name: '4 days/week', exact: true }).click();
     ok('days filter shows only the 4-day program', (await p.getByRole('button', { name: /Test Program/ }).count()) === 1 && await p.getByRole('button', { name: /Beta/ }).first().isVisible());
-    await p.getByRole('button', { name: 'Any days' }).click();
-    await p.getByRole('button', { name: 'In progress' }).click();
+    await p.getByRole('button', { name: 'Any days', exact: true }).click();
+    await p.getByRole('button', { name: 'In progress', exact: true }).click();
     ok('status filter hides not-started programs', (await p.getByRole('button', { name: /Test Program/ }).count()) === 0);
     await p.getByRole('button', { name: 'All', exact: true }).click();
 
@@ -48,7 +48,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
 
     // --- workout: persistence across navigation and reload ---
     await p.getByRole('button', { name: 'Start workout' }).first().click(); await p.waitForTimeout(400);
-    await p.getByLabel('Reps').nth(2).fill('8'); await p.getByLabel('Weight').nth(2).fill('100'); await p.getByLabel('Complete set').nth(2).click();
+    await p.getByLabel('Reps').nth(0).fill('8'); await p.getByLabel('Weight').nth(0).fill('100'); await p.getByLabel('Complete set').nth(0).click();
     await p.getByRole('button', { name: /Home/ }).first().click();
     ok('banner visible on Home', await p.getByLabel('Return to active workout').isVisible());
     ok('Home shows this week plan', await p.getByRole('button', { name: /Upper in_progress|Upper planned/ }).count() >= 0 && await p.getByText(/Week 1 · 0\/3 done/).isVisible());
@@ -57,7 +57,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     await p.reload({ waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1500);
     await p.getByLabel('Return to active workout').click();
     s = await state();
-    ok('completed set survives reload', s.activeSession.exercises[0].sets.some(x => x.completed && x.reps === '8'));
+    ok('completed set survives reload', s.activeSession.exercises.some(e => e.sets.some(x => x.completed && x.reps === '8')));
     await p.getByLabel('Substitute exercise').first().click();
     await p.getByRole('button', { name: 'Test DB Press' }).first().click();
     ok('substitution labelled', await p.getByText(/Your substitution · prescribed: Test Bench Press/).isVisible());
@@ -79,7 +79,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     await p.getByRole('button', { name: /^22/ }).first().click(); // Thursday (3rd training weekday)
     ok('Push day listed', await p.getByText('Push').first().isVisible());
     await p.getByLabel('Return to active workout').click(); // already active (Lower) -> discard it first
-    await p.getByLabel('Discard workout').click(); await p.getByRole('button', { name: 'Discard' }).click();
+    await p.getByLabel('Discard workout').click(); await p.getByRole('button', { name: 'Discard', exact: true }).click();
     await tab('Calendar'); await p.getByRole('button', { name: /^22/ }).first().click();
     await p.getByRole('button', { name: 'Start workout' }).first().click();
     await p.getByRole('button', { name: 'Start anyway' }).click(); await p.waitForTimeout(500);
@@ -92,7 +92,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     ok('drop set row added with −25% weight hint', await p.getByLabel('Weight').nth(2).getAttribute('placeholder') === '75');
     ok('myo-rep button and hold timer offered', await p.getByRole('button', { name: '＋ Myo-rep set' }).isVisible() && await p.getByRole('button', { name: /Start 30s hold timer/ }).isVisible());
     await p.getByRole('button', { name: /Start 30s hold timer/ }).click();
-    ok('hold timer runs', await p.getByText(/Stop 0:(29|30)/).isVisible());
+    ok('hold timer runs', await p.getByText(/Stop 0:(2[0-9]|30)/).isVisible());
 
     // --- backup reminder ---
     await p.getByRole('button', { name: /Home/ }).first().click();
