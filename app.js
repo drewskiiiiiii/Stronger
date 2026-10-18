@@ -173,7 +173,7 @@ const ProgramCard = ({
   const flagged = program.flags.length;
   return React.createElement("button", {
     onClick: onOpen,
-    className: "w-full text-left bg-th-card border border-th-line rounded-2xl p-4 space-y-2.5 active:bg-th-elevated"
+    className: "w-full text-left bg-th-card border border-th-line rounded-xl p-4 space-y-2.5 active:bg-th-elevated"
   }, React.createElement("div", {
     className: "flex items-start justify-between gap-2"
   }, React.createElement("h3", {
@@ -242,7 +242,7 @@ const ProgramDetail = ({
     className: "bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-3 space-y-2"
   }, React.createElement("button", {
     onClick: () => setShowFlags(!showFlags),
-    className: "w-full min-h-[36px] flex items-center justify-between text-xs font-bold text-[#F59E0B]"
+    className: "w-full min-h-[44px] flex items-center justify-between text-xs font-bold text-[#F59E0B]"
   }, React.createElement("span", null, "\u26A0 ", program.flags.length, " item(s) flagged for review"), React.createElement("span", null, showFlags ? '▲' : '▼')), showFlags && program.flags.map((f, i) => React.createElement("div", {
     key: i,
     className: "text-[11px] text-th-ink leading-snug"
@@ -255,14 +255,14 @@ const ProgramDetail = ({
   }, program.weeks.map(w => React.createElement("button", {
     key: w.week,
     onClick: () => setWeek(w.week),
-    className: `min-h-[40px] px-4 rounded-xl text-xs font-bold shrink-0 border ${w.week === week ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`
+    className: `min-h-[44px] px-4 rounded-xl text-xs font-bold shrink-0 border ${w.week === week ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`
   }, "Week ", w.week, w.deload ? ' ↓' : ''))), wk && (wk.phase || wk.deload) && React.createElement("div", {
     className: "text-[11px] text-th-muted"
   }, wk.phase, wk.deload ? ' · deload week (from the source)' : ''), wk && wk.note && React.createElement("div", {
     className: "text-[11px] text-th-ink/80 bg-th-card border border-th-line rounded-xl p-3"
   }, wk.note), wk && wk.days.map(d => React.createElement("div", {
     key: d.day,
-    className: "bg-th-card border border-th-line rounded-2xl p-4 space-y-3"
+    className: "bg-th-card border border-th-line rounded-xl p-4 space-y-3"
   }, React.createElement("div", {
     className: "flex items-center justify-between"
   }, React.createElement("div", null, React.createElement("div", {
@@ -277,13 +277,13 @@ const ProgramDetail = ({
   }, React.createElement("div", {
     className: "flex items-start justify-between gap-2"
   }, React.createElement("div", {
-    className: "text-[13px] font-bold text-white"
+    className: "text-sm font-bold text-white"
   }, React.createElement("span", {
     className: "text-th-muted mr-1.5"
   }, e.order, "."), e.name, e.flags.length > 0 && React.createElement("span", {
     className: "ml-1.5 text-[#F59E0B]"
   }, "\u26A0")), React.createElement("div", {
-    className: "text-[12px] font-bold text-white tabular-nums shrink-0"
+    className: "text-xs font-bold text-white tabular-nums shrink-0"
   }, e.workingSets ?? '?', " \xD7 ", e.reps ?? '?')), React.createElement("div", {
     className: "text-[11px] text-th-muted"
   }, e.warmupText ? `${e.warmupText} warm-up set(s) · ` : e.warmupSets != null ? `${e.warmupSets} warm-up set(s) · ` : '', "Intensity ", intensityLabel(e.intensity), " \xB7 Rest: ", restLabel(e.rest)), e.technique && React.createElement("div", {
@@ -309,7 +309,7 @@ const ProgramDetail = ({
     className: "bg-th-card border border-th-line rounded-xl"
   }, React.createElement("button", {
     onClick: () => setOpenSection(openSection === si ? null : si),
-    className: "w-full min-h-[44px] px-3 flex items-center justify-between text-left text-xs font-semibold text-white"
+    className: "w-full min-h-[44px] px-4 flex items-center justify-between text-left text-xs font-bold text-white"
   }, React.createElement("span", {
     className: "truncate"
   }, sec.title || sec.lines[0]), React.createElement("span", {
@@ -406,7 +406,7 @@ const StartProgramSheet = ({
   return React.createElement("div", {
     className: "fixed inset-0 z-[60] bg-black/80 flex items-end justify-center"
   }, React.createElement("div", {
-    className: "bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom"
+    className: "bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-4 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom"
   }, React.createElement("div", {
     className: "flex items-center justify-between"
   }, React.createElement("h3", {
@@ -429,7 +429,7 @@ const StartProgramSheet = ({
   }, WEEKDAYS.map((n, d) => React.createElement("button", {
     key: d,
     onClick: () => toggle(d),
-    className: `min-h-[44px] rounded-lg text-[11px] font-bold border ${weekdays.includes(d) ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-bg border-th-line text-th-muted'}`
+    className: `min-h-[44px] rounded-xl text-xs font-bold border ${weekdays.includes(d) ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-bg border-th-line text-th-muted'}`
   }, n))), !valid && React.createElement("div", {
     className: "text-[11px] text-[#F59E0B] mt-1.5"
   }, "Select exactly ", need, " days (", weekdays.length, " selected).")), missing.length > 0 && React.createElement("div", {
@@ -509,14 +509,14 @@ const CalendarView = ({
   }, React.createElement("h2", {
     className: "text-lg font-black text-white"
   }, "Calendar"), !program ? React.createElement("div", {
-    className: "bg-th-card border border-dashed border-th-line rounded-2xl p-5 text-center space-y-3"
+    className: "bg-th-card border border-dashed border-th-line rounded-xl p-5 text-center space-y-3"
   }, React.createElement("p", {
     className: "text-xs text-th-muted"
   }, "No program is active. Start one from the Program Library to see its schedule here."), React.createElement("button", {
     onClick: onOpenProgram,
-    className: "min-h-[44px] px-5 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold"
+    className: "min-h-[44px] px-4 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold"
   }, "Open Program Library")) : React.createElement("div", {
-    className: "bg-th-card border border-th-line rounded-2xl p-4 space-y-1"
+    className: "bg-th-card border border-th-line rounded-xl p-4 space-y-1"
   }, React.createElement("div", {
     className: "text-[10px] font-bold uppercase tracking-wider text-th-accent"
   }, "Active program"), React.createElement("div", {
@@ -524,7 +524,7 @@ const CalendarView = ({
   }, program.name), React.createElement("div", {
     className: "text-[11px] text-th-muted"
   }, "Week ", wkNow, " of ", program.weeks.length, " \xB7 ", doneCount, "/", sessions.length, " workouts completed")), React.createElement("div", {
-    className: "bg-th-card border border-th-line rounded-2xl p-3"
+    className: "bg-th-card border border-th-line rounded-xl p-3"
   }, React.createElement("div", {
     className: "flex items-center justify-between mb-2"
   }, React.createElement("button", {
@@ -549,7 +549,7 @@ const CalendarView = ({
   }, cells.map((ds, i) => ds ? React.createElement("button", {
     key: ds,
     onClick: () => setSelected(ds),
-    className: `min-h-[46px] rounded-lg flex flex-col items-center justify-center gap-1 text-xs font-semibold border ${selected === ds ? 'border-th-accent bg-th-accent/10' : 'border-transparent'} ${ds === today ? 'text-th-accent' : 'text-white'}`
+    className: `min-h-[44px] rounded-xl flex flex-col items-center justify-center gap-1 text-xs font-bold border ${selected === ds ? 'border-th-accent bg-th-accent/10' : 'border-transparent'} ${ds === today ? 'text-th-accent' : 'text-white'}`
   }, React.createElement("span", null, parseInt(ds.slice(8), 10)), React.createElement("span", {
     className: "flex gap-0.5 h-1.5"
   }, (byDate[ds] || []).slice(0, 3).map(s => React.createElement("span", {
@@ -595,12 +595,12 @@ const CalendarView = ({
   }, "Skipped by you")), s.key === nextKey && React.createElement("span", {
     className: "text-[10px] font-bold text-th-accent uppercase"
   }, "Up next")), s.status === 'planned' && React.createElement("div", {
-    className: "flex flex-wrap items-center gap-2"
+    className: "grid grid-cols-[1fr_auto] gap-2"
   }, React.createElement("button", {
     onClick: () => onStart(s),
-    className: "min-h-[44px] px-4 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold"
+    className: "col-span-2 min-h-[48px] px-4 rounded-xl bg-th-accent text-th-on-accent text-sm font-bold"
   }, hasActiveWorkout ? 'Return to workout' : 'Start workout'), React.createElement("label", {
-    className: "min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold flex items-center gap-2"
+    className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold flex items-center gap-2"
   }, "Move to", React.createElement("input", {
     type: "date",
     value: s.plannedDate || '',
@@ -608,7 +608,7 @@ const CalendarView = ({
     className: "bg-transparent text-white w-[130px]"
   })), React.createElement("button", {
     onClick: () => onSkip(s),
-    className: "min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-th-muted text-xs font-bold"
+    className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-th-muted text-xs font-bold"
   }, "Skip")), s.status === 'skipped' && React.createElement("button", {
     onClick: () => onUnskip(s),
     className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold"
@@ -633,7 +633,7 @@ const SubstituteModal = ({
   return React.createElement("div", {
     className: "fixed inset-0 z-[60] bg-black/80 flex items-end justify-center"
   }, React.createElement("div", {
-    className: "bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom"
+    className: "bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-4 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom"
   }, React.createElement("div", {
     className: "flex items-center justify-between"
   }, React.createElement("h3", {
@@ -673,7 +673,7 @@ const SubstituteModal = ({
       exerciseId: (library.find(x => normName(x.name) === normName(n)) || {}).id || null,
       origin: 'program-pdf'
     }),
-    className: "w-full text-left min-h-[44px] px-3 rounded-xl bg-th-bg border border-th-line text-xs text-white"
+    className: "w-full text-left min-h-[44px] px-4 rounded-xl bg-th-bg border border-th-line text-xs text-white"
   }, n))), library.length > 0 && React.createElement("div", {
     className: "space-y-1.5"
   }, React.createElement("div", {
@@ -694,7 +694,7 @@ const SubstituteModal = ({
       exerciseId: x.id,
       origin: 'library'
     }),
-    className: "w-full text-left min-h-[44px] px-3 rounded-xl bg-th-bg border border-th-line text-xs text-white flex justify-between gap-2"
+    className: "w-full text-left min-h-[44px] px-4 rounded-xl bg-th-bg border border-th-line text-xs text-white flex justify-between gap-2"
   }, React.createElement("span", null, x.name), React.createElement("span", {
     className: "text-th-muted"
   }, x.equipment))), matches.length === 0 && React.createElement("div", {
@@ -753,7 +753,7 @@ const HistoryView = ({
   }, "History"), React.createElement("p", {
     className: "text-[11px] text-th-muted"
   }, "Every workout you finished, with the sets you actually logged.")), logs.length === 0 && React.createElement("div", {
-    className: "bg-th-card border border-dashed border-th-line rounded-2xl p-6 text-center text-xs text-th-muted"
+    className: "bg-th-card border border-dashed border-th-line rounded-xl p-5 text-center text-xs text-th-muted"
   }, "No workouts logged yet. Finish a workout and it will appear here."), logs.map(l => React.createElement("div", {
     key: l.id,
     className: "bg-th-card border border-th-line rounded-xl"
@@ -834,7 +834,7 @@ const ProgramProgress = ({
     key: id,
     value: id
   }, library.programs[id] ? library.programs[id].name : id))), program && React.createElement("div", {
-    className: "bg-th-card border border-th-line rounded-2xl p-4 space-y-2"
+    className: "bg-th-card border border-th-line rounded-xl p-4 space-y-2"
   }, React.createElement("div", {
     className: "flex items-center justify-between"
   }, React.createElement("div", {
@@ -857,7 +857,7 @@ const ProgramProgress = ({
   }, sessions.length ? Math.round(done / sessions.length * 100) : 0, "% complete"), React.createElement("div", {
     className: "text-[11px] text-th-muted"
   }, "Deload / progression: ", deloadLines.length ? deloadLines.join(' · ') : 'no deload instructions found in the imported text; weekly changes follow the prescriptions in the program detail.')), React.createElement("div", {
-    className: "bg-th-card border border-th-line rounded-2xl p-4 space-y-2"
+    className: "bg-th-card border border-th-line rounded-xl p-4 space-y-2"
   }, React.createElement("div", {
     className: "text-xs font-bold text-white"
   }, "Training volume (working sets you logged)"), weekKeys.length === 0 ? React.createElement("div", {
@@ -873,11 +873,11 @@ const ProgramProgress = ({
       height: `${Math.max(4, byWeek[k] / maxVol * 80)}%`
     }
   }), React.createElement("div", {
-    className: "text-[9px] text-th-muted"
+    className: "text-[10px] text-th-muted"
   }, k)))), weekKeys.length > 0 && React.createElement("div", {
     className: "text-[10px] text-th-muted"
   }, "Total ", Math.round(toUnit(Object.values(byWeek).reduce((a, b) => a + b, 0))).toLocaleString(), " ", unit)), React.createElement("div", {
-    className: "bg-th-card border border-th-line rounded-2xl p-4 space-y-2"
+    className: "bg-th-card border border-th-line rounded-xl p-4 space-y-2"
   }, React.createElement("div", {
     className: "text-xs font-bold text-white"
   }, "Exercise performance"), exNames.length === 0 ? React.createElement("div", {
@@ -1560,7 +1560,7 @@ function App() {
     const canAddWarm = !!pr.warmupText && !pr.warmupSets;
     const addWarmBtn = React.createElement("button", {
       onClick: () => addSet(exIdx, 'warmup'),
-      className: "w-full min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted"
+      className: "w-full min-h-[44px] rounded-xl border border-dashed border-th-line text-xs font-bold text-th-muted"
     }, "\uFF0B Add warm-up set");
     const tech = pr.technique || '';
     const holdSec = (tech.match(/static hold[^0-9]*(\d+)\s*sec/i) || [])[1];
@@ -1569,7 +1569,7 @@ function App() {
     const dropHint = lastDone && dropPct ? String(Math.round(parseFloat(lastDone.weight) * (1 - parseInt(dropPct, 10) / 100) * 2) / 2) : userSettings.unit;
     return React.createElement("div", {
       key: exIdx,
-      className: "bg-th-card border border-th-line rounded-2xl p-4 space-y-3"
+      className: "bg-th-card border border-th-line rounded-xl p-4 space-y-3"
     }, React.createElement("div", {
       className: "flex items-start justify-between gap-2"
     }, React.createElement("div", {
@@ -1583,11 +1583,11 @@ function App() {
     }, "Your substitution \xB7 prescribed: ", item.name)), React.createElement("button", {
       onClick: () => setSubModalIdx(exIdx),
       "aria-label": "Substitute exercise",
-      className: "min-w-[44px] min-h-[44px] rounded-lg bg-th-elevated text-th-muted text-base shrink-0"
+      className: "min-w-[44px] min-h-[44px] rounded-xl bg-th-elevated text-th-muted text-base shrink-0"
     }, "\u21C4")), React.createElement("div", {
       className: "bg-th-bg border border-th-line rounded-xl p-2.5 text-[11px] space-y-0.5"
     }, React.createElement("div", {
-      className: "text-th-muted uppercase text-[9px] font-bold tracking-wide"
+      className: "text-th-muted uppercase text-[10px] font-bold tracking-wide"
     }, "Prescribed by program"), React.createElement("div", {
       className: "text-white font-bold"
     }, pr.workingSets ?? '?', " \xD7 ", pr.reps ?? '?', pr.warmupText ? ` · ${pr.warmupText} warm-up` : pr.warmupSets ? ` · ${pr.warmupSets} warm-up` : '', " \xB7 ", intensityLabel(pr.intensity), pr.rest ? ` · rest ${restLabel(pr.rest)}` : ''), pr.technique && React.createElement("div", {
@@ -1596,7 +1596,7 @@ function App() {
       className: "text-th-ink/80 leading-snug"
     }, pr.notes), pr.rest && pr.rest.maxSeconds && React.createElement("button", {
       onClick: () => startRest(pr.rest.maxSeconds),
-      className: "min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[11px] font-semibold text-white"
+      className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-xs font-bold text-white"
     }, "\u23F1 Start prescribed rest (", restLabel(pr.rest), ")"), pr.videoUrl && React.createElement("a", {
       href: pr.videoUrl,
       target: "_blank",
@@ -1612,7 +1612,7 @@ function App() {
       className: "text-[11px] text-th-muted"
     }, "Last time \xB7 ", prev), lastSets.length > 0 && React.createElement("button", {
       onClick: fillLast,
-      className: "min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[10px] font-bold text-white shrink-0"
+      className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-xs font-bold text-white shrink-0"
     }, "Use last weights")), React.createElement("div", {
       className: "space-y-2"
     }, canAddWarm && !item.sets.some(x => x.type === 'warmup') && React.createElement(React.Fragment, null, React.createElement("div", {
@@ -1644,7 +1644,7 @@ function App() {
       }, React.createElement("span", {
         className: "leading-tight"
       }, React.createElement("span", {
-        className: `block text-[9px] font-black uppercase tracking-wide ${wordCls}`
+        className: `block text-[10px] font-black uppercase tracking-wide ${wordCls}`
       }, word), React.createElement("span", {
         className: "block text-sm font-black text-white"
       }, st.setNumber)), React.createElement("input", {
@@ -1656,7 +1656,7 @@ function App() {
         onChange: e => updateSet(exIdx, setIdx, {
           weight: e.target.value
         }),
-        className: "w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold"
+        className: "w-full min-w-0 min-h-[44px] bg-th-card border border-th-line rounded-xl px-2 text-center text-white tabular-nums font-bold"
       }), React.createElement("input", {
         type: "number",
         inputMode: "numeric",
@@ -1666,41 +1666,41 @@ function App() {
         onChange: e => updateSet(exIdx, setIdx, {
           reps: e.target.value
         }),
-        className: "w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold"
+        className: "w-full min-w-0 min-h-[44px] bg-th-card border border-th-line rounded-xl px-2 text-center text-white tabular-nums font-bold"
       }), React.createElement("button", {
         onClick: () => toggleProgramSet(exIdx, setIdx),
         "aria-label": `Complete set (${word} ${st.setNumber})`,
-        className: `h-11 w-11 rounded-lg text-base font-black ${st.completed ? doneCls : 'bg-th-elevated text-th-muted'}`
+        className: `h-11 w-11 rounded-xl text-base font-black ${st.completed ? doneCls : 'bg-th-elevated text-th-muted'}`
       }, "\u2713")), isWarm && canAddWarm && (!item.sets[setIdx + 1] || item.sets[setIdx + 1].type !== 'warmup') && addWarmBtn);
     }), (/myo/i.test(tech) || /drop/i.test(tech) || holdSec) && React.createElement("div", {
       className: "flex gap-2 flex-wrap"
     }, /myo/i.test(tech) && React.createElement("button", {
       onClick: () => addSet(exIdx, 'myo'),
-      className: "flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]"
+      className: "flex-1 min-h-[44px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-xs font-bold text-[#F59E0B]"
     }, "\uFF0B Myo-rep set"), /drop/i.test(tech) && React.createElement("button", {
       onClick: () => addSet(exIdx, 'drop'),
-      className: "flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]"
+      className: "flex-1 min-h-[44px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-xs font-bold text-[#F59E0B]"
     }, "\uFF0B Drop set", dropPct ? ` (−${dropPct}%)` : ''), holdSec && React.createElement("button", {
       onClick: () => startRest(parseInt(holdSec, 10)),
-      className: "flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]"
+      className: "flex-1 min-h-[44px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-xs font-bold text-[#F59E0B]"
     }, "\u23F1 Start ", holdSec, "s hold timer")), React.createElement("div", {
       className: "flex gap-2"
     }, React.createElement("button", {
       onClick: () => addSet(exIdx),
-      className: "flex-1 min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted"
+      className: "flex-1 min-h-[44px] rounded-xl border border-dashed border-th-line text-xs font-bold text-th-muted"
     }, "\uFF0B Add extra set"))));
   };
   return React.createElement("div", {
     className: "bg-th-bg text-th-ink min-h-screen flex flex-col w-full font-sans antialiased pb-24 md:pb-0"
   }, React.createElement("header", {
-    className: "px-4 py-3.5 border-b border-th-line bg-th-bg2/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3 safe-top"
+    className: "px-4 py-2.5 border-b border-th-line bg-th-bg2/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3 safe-top"
   }, React.createElement("div", {
     className: "flex items-center gap-2.5"
   }, React.createElement("div", {
-    className: "w-8 h-8 rounded-xl bg-gradient-to-br from-th-accent to-th-accent-dark flex items-center justify-center shadow-md shadow-th-accent/25 shrink-0"
+    className: "w-11 h-11 rounded-xl bg-gradient-to-br from-th-accent to-th-accent-dark flex items-center justify-center shadow-md shadow-th-accent/25 shrink-0"
   }, React.createElement(Icon, {
     name: "dumbbell",
-    className: "w-4 h-4 text-th-on-accent"
+    className: "w-5 h-5 text-th-on-accent"
   })), React.createElement("div", null, React.createElement("h1", {
     className: "text-xs font-black tracking-wider text-white"
   }, "STRONGER"), React.createElement("p", {
@@ -1710,13 +1710,13 @@ function App() {
   }, React.createElement("button", {
     onClick: () => setActiveNav('Settings'),
     "aria-label": "Settings",
-    className: "w-8 h-8 rounded-xl bg-th-accent text-th-on-accent font-bold flex items-center justify-center text-xs shadow cursor-pointer"
+    className: "w-11 h-11 rounded-xl bg-th-accent text-th-on-accent font-bold flex items-center justify-center text-xs shadow cursor-pointer"
   }, (userSettings.name || 'S')[0].toUpperCase()))), activeSession && workoutOpen && React.createElement("div", {
     className: "fixed inset-0 z-50 bg-th-bg/95 backdrop-blur-xl flex flex-col p-4 overflow-y-auto safe-top safe-bottom"
   }, React.createElement("div", {
     className: "max-w-xl mx-auto w-full space-y-4"
   }, React.createElement("div", {
-    className: "bg-th-card border border-th-line rounded-2xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl"
+    className: "bg-th-card border border-th-line rounded-xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl"
   }, React.createElement("div", null, React.createElement("div", {
     className: "text-[10px] font-bold uppercase tracking-wider text-th-accent"
   }, "Active Workout"), React.createElement("h2", {
@@ -1737,10 +1737,10 @@ function App() {
       setActiveNav('Home');
     },
     "aria-label": "Back to Home, keep workout running",
-    className: "min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold"
+    className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold"
   }, "\u2302 Home"), React.createElement("button", {
     onClick: requestFinish,
-    className: "px-3.5 py-2 rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-th-bg text-xs font-black shadow cursor-pointer"
+    className: "px-4 min-h-[44px] rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-th-bg text-xs font-black shadow cursor-pointer"
   }, "Finish"), React.createElement("button", {
     onClick: () => setConfirmDiscard(true),
     "aria-label": "Discard workout",
@@ -1752,10 +1752,10 @@ function App() {
   }, "Rest timer"), [60, 90, 120, 180].map(sec => React.createElement("button", {
     key: sec,
     onClick: () => startRest(sec),
-    className: "min-h-[40px] px-3.5 rounded-lg bg-th-elevated border border-th-line text-[11px] font-semibold text-white shrink-0"
+    className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-xs font-bold text-white shrink-0"
   }, sec >= 120 ? `${sec / 60} min` : `${sec}s`)), timerRunning && React.createElement("button", {
     onClick: () => setRestEndsAt(null),
-    className: "min-h-[40px] px-3.5 rounded-lg bg-th-elevated border border-[#F43F5E]/40 text-[11px] font-semibold text-[#F43F5E] shrink-0"
+    className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-[#F43F5E]/40 text-xs font-bold text-[#F43F5E] shrink-0"
   }, "Stop ", fmtClock(timerSeconds))), React.createElement("div", {
     className: "space-y-4"
   }, activeSession.exercises.map((item, exIdx) => renderProgramExercise(item, exIdx))))), React.createElement("main", {
@@ -1780,14 +1780,14 @@ function App() {
     }),
     className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold"
   }, "Later"))), !activeProgram && React.createElement("div", {
-    className: "bg-th-card border border-dashed border-th-line rounded-2xl p-5 text-center space-y-3"
+    className: "bg-th-card border border-dashed border-th-line rounded-xl p-5 text-center space-y-3"
   }, React.createElement("p", {
     className: "text-xs text-th-muted"
   }, Object.keys(library.programs).length ? 'No program is active. Pick one from your library to put it on the calendar.' : 'Import a program (PDF or Excel) to follow it here, step by step.'), React.createElement("button", {
     onClick: () => setActiveNav('Program'),
-    className: "min-h-[44px] px-5 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold"
+    className: "min-h-[44px] px-4 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold"
   }, "Open Program Library")), activeProgram && React.createElement("div", {
-    className: "bg-th-card border border-th-accent/40 rounded-2xl p-4 space-y-2"
+    className: "bg-th-card border border-th-accent/40 rounded-xl p-4 space-y-2"
   }, React.createElement("div", {
     className: "text-[10px] font-bold uppercase tracking-wider text-th-accent"
   }, "Active program \xB7 ", activeProgram.name), nextProgramSession ? React.createElement(React.Fragment, null, React.createElement("div", {
@@ -1798,7 +1798,7 @@ function App() {
     className: "flex gap-2 pt-1"
   }, React.createElement("button", {
     onClick: () => startProgramWorkout(nextProgramSession),
-    className: "flex-1 min-h-[44px] rounded-xl bg-th-accent text-th-on-accent text-xs font-bold"
+    className: "flex-1 min-h-[48px] rounded-xl bg-th-accent text-th-on-accent text-sm font-bold"
   }, activeSession ? 'Return to workout' : 'Start workout'), React.createElement("button", {
     onClick: () => setActiveNav('Calendar'),
     className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold"
@@ -1820,7 +1820,7 @@ function App() {
       key: ws.key,
       onClick: () => setActiveNav('Calendar'),
       "aria-label": `${ws.label} ${ws.status}`,
-      className: `min-h-[52px] rounded-lg border px-1 py-1 flex flex-col items-center justify-center text-[9px] leading-tight ${cls}`
+      className: `min-h-[52px] rounded-xl border px-1 py-1 flex flex-col items-center justify-center text-[10px] leading-tight ${cls}`
     }, React.createElement("span", {
       className: "font-black text-[11px]"
     }, ws.status === 'completed' ? '✓' : `D${ws.day}`), React.createElement("span", {
@@ -1829,7 +1829,7 @@ function App() {
   })))), activeProgram && React.createElement("div", {
     className: "grid grid-cols-2 gap-3"
   }, React.createElement("div", {
-    className: "p-3.5 rounded-xl bg-th-card border border-th-line space-y-2"
+    className: "p-4 rounded-xl bg-th-card border border-th-line space-y-2"
   }, React.createElement("div", {
     className: "flex items-center justify-between text-[11px] text-th-muted"
   }, React.createElement("span", null, "Program progress"), React.createElement(Icon, {
@@ -1845,7 +1845,7 @@ function App() {
       width: `${activeSessions.length ? programDone / activeSessions.length * 100 : 0}%`
     }
   }))), React.createElement("div", {
-    className: "p-3.5 rounded-xl bg-th-card border border-th-line space-y-2"
+    className: "p-4 rounded-xl bg-th-card border border-th-line space-y-2"
   }, React.createElement("div", {
     className: "flex items-center justify-between text-[11px] text-th-muted"
   }, React.createElement("span", null, "This week"), React.createElement(Icon, {
@@ -1915,10 +1915,10 @@ function App() {
     className: `text-[11px] leading-snug ${r.ok ? 'text-[#31D583]' : 'text-[#F43F5E]'}`
   }, r.ok ? '✓' : '✕', " ", r.file, ": ", r.msg)), React.createElement("button", {
     onClick: () => setImportReport(null),
-    className: "text-[10px] text-th-muted min-h-[32px]"
+    className: "text-xs text-th-muted min-h-[44px]"
   }, "Dismiss")), Object.keys(library.programs).length > 1 && (() => {
     const dayOpts = [...new Set(Object.values(library.programs).map(pr => pr.metadata.daysPerWeek).filter(Boolean))].sort((a, b) => a - b);
-    const chip = on => `min-h-[40px] px-3.5 rounded-full border text-[11px] font-bold shrink-0 ${on ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`;
+    const chip = on => `min-h-[44px] px-4 rounded-xl border text-xs font-bold shrink-0 ${on ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`;
     return React.createElement("div", {
       className: "space-y-2"
     }, React.createElement("input", {
@@ -1949,9 +1949,9 @@ function App() {
     className: "flex justify-end"
   }, React.createElement("button", {
     onClick: () => setManageMode(!manageMode),
-    className: `min-h-[40px] px-4 rounded-lg border text-[11px] font-bold ${manageMode ? 'bg-[#F43F5E] border-[#F43F5E] text-white' : 'bg-th-card border-th-line text-th-muted'}`
+    className: `min-h-[44px] px-4 rounded-xl border text-xs font-bold ${manageMode ? 'bg-[#F43F5E] border-[#F43F5E] text-white' : 'bg-th-card border-th-line text-th-muted'}`
   }, manageMode ? 'Done' : 'Manage / remove')), Object.keys(library.programs).length === 0 && !importing && React.createElement("div", {
-    className: "bg-th-card border border-dashed border-th-line rounded-2xl p-6 text-center text-xs text-th-muted"
+    className: "bg-th-card border border-dashed border-th-line rounded-xl p-5 text-center text-xs text-th-muted"
   }, "No programs imported yet. Tap \u201CImport program file(s)\u201D to add one."), Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase()) && (libDays === 'all' || pr.metadata.daysPerWeek === libDays) && (libStatus === 'all' || progressOf(pr.id).status === libStatus)).map(pr => React.createElement("div", {
     key: pr.id,
     className: "space-y-1.5"
@@ -2004,7 +2004,7 @@ function App() {
       ...userSettings,
       name: e.target.value
     }),
-    className: "w-full bg-th-bg border border-th-line rounded-lg px-3 py-2 text-white text-xs"
+    className: "w-full bg-th-bg border border-th-line rounded-xl px-3 min-h-[44px] text-white"
   })), React.createElement("div", null, React.createElement("label", {
     className: "text-[11px] text-th-muted block mb-1"
   }, "Weight Unit"), React.createElement("select", {
@@ -2013,7 +2013,7 @@ function App() {
       ...userSettings,
       unit: e.target.value
     }),
-    className: "w-full bg-th-bg border border-th-line rounded-lg px-3 py-2 text-white text-xs"
+    className: "w-full bg-th-bg border border-th-line rounded-xl px-3 min-h-[44px] text-white"
   }, React.createElement("option", {
     value: "lb"
   }, "Pounds (lb)"), React.createElement("option", {
@@ -2126,7 +2126,7 @@ function App() {
     return React.createElement("button", {
       key: item.id,
       onClick: () => setActiveNav(item.id),
-      className: `flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${isActive ? 'text-th-accent' : 'text-th-muted hover:text-white'}`
+      className: `flex flex-col items-center justify-center py-1 px-4 rounded-xl transition-all cursor-pointer ${isActive ? 'text-th-accent' : 'text-th-muted hover:text-white'}`
     }, React.createElement(Icon, {
       name: item.icon,
       className: "w-5 h-5"
@@ -2136,7 +2136,7 @@ function App() {
   }))), confirmDiscard && React.createElement("div", {
     className: "fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4"
   }, React.createElement("div", {
-    className: "bg-th-card border border-th-line rounded-2xl max-w-sm w-full p-5 space-y-4"
+    className: "bg-th-card border border-th-line rounded-xl max-w-sm w-full p-4 space-y-4"
   }, React.createElement("h3", {
     className: "text-sm font-bold text-white"
   }, "Discard this workout?"), React.createElement("p", {
@@ -2168,7 +2168,7 @@ function App() {
   }), confirmDialog && React.createElement("div", {
     className: "fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4"
   }, React.createElement("div", {
-    className: "bg-th-card border border-th-line rounded-2xl max-w-sm w-full p-5 space-y-4"
+    className: "bg-th-card border border-th-line rounded-xl max-w-sm w-full p-4 space-y-4"
   }, React.createElement("h3", {
     className: "text-sm font-bold text-white"
   }, confirmDialog.title), React.createElement("p", {

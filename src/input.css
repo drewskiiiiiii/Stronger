@@ -28,6 +28,7 @@
 
 /* Performance look: bold uppercase headings and primary actions, crisp edges, accent rule under the header */
 h2 { text-transform: uppercase; letter-spacing: 0.06em; }
-.bg-th-accent { text-transform: uppercase; letter-spacing: 0.05em; font-weight: 900; }
+/* primary actions only: solid accent buttons without a border (selected chips/tabs keep normal case) */
+button.bg-th-accent:not([class*="border"]) { text-transform: uppercase; letter-spacing: 0.05em; font-weight: 900; }
 header.sticky { position: sticky; }
 header.sticky::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, rgb(var(--c-accent)) 0%, rgb(var(--c-accent) / 0.0) 70%); pointer-events: none; }

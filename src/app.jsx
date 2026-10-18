@@ -63,7 +63,7 @@
             const m = program.metadata;
             const flagged = program.flags.length;
             return (
-                <button onClick={onOpen} className="w-full text-left bg-th-card border border-th-line rounded-2xl p-4 space-y-2.5 active:bg-th-elevated">
+                <button onClick={onOpen} className="w-full text-left bg-th-card border border-th-line rounded-xl p-4 space-y-2.5 active:bg-th-elevated">
                     <div className="flex items-start justify-between gap-2">
                         <h3 className="text-sm font-black text-white leading-snug">{program.name}</h3>
                         <StatusBadge status={state.status} />
@@ -105,7 +105,7 @@
                     {children}
                     {program.flags.length > 0 && (
                         <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-3 space-y-2">
-                            <button onClick={() => setShowFlags(!showFlags)} className="w-full min-h-[36px] flex items-center justify-between text-xs font-bold text-[#F59E0B]">
+                            <button onClick={() => setShowFlags(!showFlags)} className="w-full min-h-[44px] flex items-center justify-between text-xs font-bold text-[#F59E0B]">
                                 <span>⚠ {program.flags.length} item(s) flagged for review</span><span>{showFlags ? '▲' : '▼'}</span>
                             </button>
                             {showFlags && program.flags.map((f, i) => (
@@ -115,13 +115,13 @@
                     )}
                     <div className="flex gap-2 overflow-x-auto pb-1">
                         {program.weeks.map(w => (
-                            <button key={w.week} onClick={() => setWeek(w.week)} className={`min-h-[40px] px-4 rounded-xl text-xs font-bold shrink-0 border ${w.week === week ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`}>Week {w.week}{w.deload ? ' ↓' : ''}</button>
+                            <button key={w.week} onClick={() => setWeek(w.week)} className={`min-h-[44px] px-4 rounded-xl text-xs font-bold shrink-0 border ${w.week === week ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`}>Week {w.week}{w.deload ? ' ↓' : ''}</button>
                         ))}
                     </div>
                     {wk && (wk.phase || wk.deload) && <div className="text-[11px] text-th-muted">{wk.phase}{wk.deload ? ' · deload week (from the source)' : ''}</div>}
                     {wk && wk.note && <div className="text-[11px] text-th-ink/80 bg-th-card border border-th-line rounded-xl p-3">{wk.note}</div>}
                     {wk && wk.days.map(d => (
-                        <div key={d.day} className="bg-th-card border border-th-line rounded-2xl p-4 space-y-3">
+                        <div key={d.day} className="bg-th-card border border-th-line rounded-xl p-4 space-y-3">
                             <div className="flex items-center justify-between">
                                 <div><div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Day {d.day}</div><h3 className="text-sm font-black text-white">{d.label}</h3></div>
                                 <span className="text-[10px] text-th-muted">{d.page ? `PDF p.${d.page}` : d.ref}</span>
@@ -129,8 +129,8 @@
                             {d.exercises.map(e => (
                                 <div key={e.order} className="border-t border-th-line pt-2.5 space-y-1">
                                     <div className="flex items-start justify-between gap-2">
-                                        <div className="text-[13px] font-bold text-white"><span className="text-th-muted mr-1.5">{e.order}.</span>{e.name}{e.flags.length > 0 && <span className="ml-1.5 text-[#F59E0B]">⚠</span>}</div>
-                                        <div className="text-[12px] font-bold text-white tabular-nums shrink-0">{e.workingSets ?? '?'} × {e.reps ?? '?'}</div>
+                                        <div className="text-sm font-bold text-white"><span className="text-th-muted mr-1.5">{e.order}.</span>{e.name}{e.flags.length > 0 && <span className="ml-1.5 text-[#F59E0B]">⚠</span>}</div>
+                                        <div className="text-xs font-bold text-white tabular-nums shrink-0">{e.workingSets ?? '?'} × {e.reps ?? '?'}</div>
                                     </div>
                                     <div className="text-[11px] text-th-muted">
                                         {e.warmupText ? `${e.warmupText} warm-up set(s) · ` : e.warmupSets != null ? `${e.warmupSets} warm-up set(s) · ` : ''}Intensity {intensityLabel(e.intensity)} · Rest: {restLabel(e.rest)}
@@ -148,7 +148,7 @@
                             <button onClick={() => setShowInstr(!showInstr)} className="w-full min-h-[44px] flex items-center justify-between text-xs font-bold text-white"><span>Instructions from the source ({program.instructions.length} {program.source.kind === 'spreadsheet' ? 'notes' : 'pages'})</span><span className="text-th-muted">{showInstr ? '▲' : '▼'}</span></button>
                             {showInstr && program.instructions.map((sec, si) => (
                                 <div key={si} className="bg-th-card border border-th-line rounded-xl">
-                                    <button onClick={() => setOpenSection(openSection === si ? null : si)} className="w-full min-h-[44px] px-3 flex items-center justify-between text-left text-xs font-semibold text-white">
+                                    <button onClick={() => setOpenSection(openSection === si ? null : si)} className="w-full min-h-[44px] px-4 flex items-center justify-between text-left text-xs font-bold text-white">
                                         <span className="truncate">{sec.title || sec.lines[0]}</span><span className="text-th-muted ml-2 shrink-0">{sec.page ? `p.${sec.page} ` : ''}{openSection === si ? '▲' : '▼'}</span>
                                     </button>
                                     {openSection === si && <div className="px-3 pb-3 text-[11px] text-th-ink/80 leading-relaxed whitespace-pre-line">{sec.lines.join('\n')}</div>}
@@ -208,7 +208,7 @@
             const lastDate = preview.length ? preview[preview.length - 1].plannedDate : null;
             return (
                 <div className="fixed inset-0 z-[60] bg-black/80 flex items-end justify-center">
-                    <div className="bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
+                    <div className="bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-4 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Start: {program.name}</h3>
                             <button onClick={onCancel} aria-label="Close" className="min-w-[44px] min-h-[44px] text-th-muted">✕</button>
@@ -221,7 +221,7 @@
                             <label className="text-[11px] text-th-muted block mb-1">Training weekdays — choose {need}{fromPdf ? ` (pre-selected from the PDF's example week: ${program.metadata.suggestedSchedule})` : ' (the PDF does not say which days)'}</label>
                             <div className="grid grid-cols-7 gap-1.5">
                                 {WEEKDAYS.map((n, d) => (
-                                    <button key={d} onClick={() => toggle(d)} className={`min-h-[44px] rounded-lg text-[11px] font-bold border ${weekdays.includes(d) ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-bg border-th-line text-th-muted'}`}>{n}</button>
+                                    <button key={d} onClick={() => toggle(d)} className={`min-h-[44px] rounded-xl text-xs font-bold border ${weekdays.includes(d) ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-bg border-th-line text-th-muted'}`}>{n}</button>
                                 ))}
                             </div>
                             {!valid && <div className="text-[11px] text-[#F59E0B] mt-1.5">Select exactly {need} days ({weekdays.length} selected).</div>}
@@ -273,18 +273,18 @@
                 <div className="space-y-4">
                     <h2 className="text-lg font-black text-white">Calendar</h2>
                     {!program ? (
-                        <div className="bg-th-card border border-dashed border-th-line rounded-2xl p-5 text-center space-y-3">
+                        <div className="bg-th-card border border-dashed border-th-line rounded-xl p-5 text-center space-y-3">
                             <p className="text-xs text-th-muted">No program is active. Start one from the Program Library to see its schedule here.</p>
-                            <button onClick={onOpenProgram} className="min-h-[44px] px-5 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">Open Program Library</button>
+                            <button onClick={onOpenProgram} className="min-h-[44px] px-4 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">Open Program Library</button>
                         </div>
                     ) : (
-                        <div className="bg-th-card border border-th-line rounded-2xl p-4 space-y-1">
+                        <div className="bg-th-card border border-th-line rounded-xl p-4 space-y-1">
                             <div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Active program</div>
                             <div className="text-sm font-black text-white">{program.name}</div>
                             <div className="text-[11px] text-th-muted">Week {wkNow} of {program.weeks.length} · {doneCount}/{sessions.length} workouts completed</div>
                         </div>
                     )}
-                    <div className="bg-th-card border border-th-line rounded-2xl p-3">
+                    <div className="bg-th-card border border-th-line rounded-xl p-3">
                         <div className="flex items-center justify-between mb-2">
                             <button aria-label="Previous month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="min-w-[44px] min-h-[44px] text-white text-lg">‹</button>
                             <div className="text-sm font-bold text-white">{month.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</div>
@@ -293,7 +293,7 @@
                         <div className="grid grid-cols-7 text-center text-[10px] text-th-muted mb-1">{WEEKDAYS.map(w => <div key={w}>{w}</div>)}</div>
                         <div className="grid grid-cols-7 gap-1">
                             {cells.map((ds, i) => ds ? (
-                                <button key={ds} onClick={() => setSelected(ds)} className={`min-h-[46px] rounded-lg flex flex-col items-center justify-center gap-1 text-xs font-semibold border ${selected === ds ? 'border-th-accent bg-th-accent/10' : 'border-transparent'} ${ds === today ? 'text-th-accent' : 'text-white'}`}>
+                                <button key={ds} onClick={() => setSelected(ds)} className={`min-h-[44px] rounded-xl flex flex-col items-center justify-center gap-1 text-xs font-bold border ${selected === ds ? 'border-th-accent bg-th-accent/10' : 'border-transparent'} ${ds === today ? 'text-th-accent' : 'text-white'}`}>
                                     <span>{parseInt(ds.slice(8), 10)}</span>
                                     <span className="flex gap-0.5 h-1.5">
                                         {(byDate[ds] || []).slice(0, 3).map(s => <span key={s.key} className={`w-1.5 h-1.5 rounded-full ${dotCls(s)}`}></span>)}
@@ -326,12 +326,12 @@
                                     {s.key === nextKey && <span className="text-[10px] font-bold text-th-accent uppercase">Up next</span>}
                                 </div>
                                 {s.status === 'planned' && (
-                                    <div className="flex flex-wrap items-center gap-2">
-                                        <button onClick={() => onStart(s)} className="min-h-[44px] px-4 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">{hasActiveWorkout ? 'Return to workout' : 'Start workout'}</button>
-                                        <label className="min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold flex items-center gap-2">Move to
+                                    <div className="grid grid-cols-[1fr_auto] gap-2">
+                                        <button onClick={() => onStart(s)} className="col-span-2 min-h-[48px] px-4 rounded-xl bg-th-accent text-th-on-accent text-sm font-bold">{hasActiveWorkout ? 'Return to workout' : 'Start workout'}</button>
+                                        <label className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold flex items-center gap-2">Move to
                                             <input type="date" value={s.plannedDate || ''} onChange={e => e.target.value && onReschedule(s, e.target.value)} className="bg-transparent text-white w-[130px]" />
                                         </label>
-                                        <button onClick={() => onSkip(s)} className="min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-th-muted text-xs font-bold">Skip</button>
+                                        <button onClick={() => onSkip(s)} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-th-muted text-xs font-bold">Skip</button>
                                     </div>
                                 )}
                                 {s.status === 'skipped' && <button onClick={() => onUnskip(s)} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">Undo skip</button>}
@@ -353,7 +353,7 @@
             const matches = library.filter(x => (x.name + ' ' + x.equipment + ' ' + x.primaryMuscle).toLowerCase().includes(q.toLowerCase()));
             return (
                 <div className="fixed inset-0 z-[60] bg-black/80 flex items-end justify-center">
-                    <div className="bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
+                    <div className="bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-4 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Substitute exercise</h3>
                             <button onClick={onClose} aria-label="Close" className="min-w-[44px] min-h-[44px] text-th-muted">✕</button>
@@ -373,7 +373,7 @@
                         {suggestions.length > 0 && (
                             <div className="space-y-1.5">
                                 <div className="text-[11px] font-bold text-white">Alternatives listed in the program PDF</div>
-                                {suggestions.map(n => <button key={n} onClick={() => onPick({ name: n, exerciseId: (library.find(x => normName(x.name) === normName(n)) || {}).id || null, origin: 'program-pdf' })} className="w-full text-left min-h-[44px] px-3 rounded-xl bg-th-bg border border-th-line text-xs text-white">{n}</button>)}
+                                {suggestions.map(n => <button key={n} onClick={() => onPick({ name: n, exerciseId: (library.find(x => normName(x.name) === normName(n)) || {}).id || null, origin: 'program-pdf' })} className="w-full text-left min-h-[44px] px-4 rounded-xl bg-th-bg border border-th-line text-xs text-white">{n}</button>)}
                             </div>
                         )}
                         {library.length > 0 && (
@@ -381,7 +381,7 @@
                             <div className="text-[11px] font-bold text-white">Your exercise library <span className="text-th-muted font-normal">(not verified as equivalent — your choice)</span></div>
                             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by name, equipment, muscle" className="w-full min-h-[44px] bg-th-bg border border-th-line rounded-xl px-3 text-white" />
                             <div className="max-h-44 overflow-y-auto space-y-1.5">
-                                {matches.map(x => <button key={x.id} onClick={() => onPick({ name: x.name, exerciseId: x.id, origin: 'library' })} className="w-full text-left min-h-[44px] px-3 rounded-xl bg-th-bg border border-th-line text-xs text-white flex justify-between gap-2"><span>{x.name}</span><span className="text-th-muted">{x.equipment}</span></button>)}
+                                {matches.map(x => <button key={x.id} onClick={() => onPick({ name: x.name, exerciseId: x.id, origin: 'library' })} className="w-full text-left min-h-[44px] px-4 rounded-xl bg-th-bg border border-th-line text-xs text-white flex justify-between gap-2"><span>{x.name}</span><span className="text-th-muted">{x.equipment}</span></button>)}
                                 {matches.length === 0 && <div className="text-[11px] text-th-muted">No match. Type a custom exercise below.</div>}
                             </div>
                         </div>
@@ -425,7 +425,7 @@
             return (
                 <div className="space-y-4">
                     <div><h2 className="text-lg font-black text-white">History</h2><p className="text-[11px] text-th-muted">Every workout you finished, with the sets you actually logged.</p></div>
-                    {logs.length === 0 && <div className="bg-th-card border border-dashed border-th-line rounded-2xl p-6 text-center text-xs text-th-muted">No workouts logged yet. Finish a workout and it will appear here.</div>}
+                    {logs.length === 0 && <div className="bg-th-card border border-dashed border-th-line rounded-xl p-5 text-center text-xs text-th-muted">No workouts logged yet. Finish a workout and it will appear here.</div>}
                     {logs.map(l => (
                         <div key={l.id} className="bg-th-card border border-th-line rounded-xl">
                             <button onClick={() => setOpen(open === l.id ? null : l.id)} className="w-full min-h-[56px] p-3 flex items-start justify-between gap-2 text-left">
@@ -487,7 +487,7 @@
                         {ids.map(id => <option key={id} value={id}>{library.programs[id] ? library.programs[id].name : id}</option>)}
                     </select>
                     {program && (
-                        <div className="bg-th-card border border-th-line rounded-2xl p-4 space-y-2">
+                        <div className="bg-th-card border border-th-line rounded-xl p-4 space-y-2">
                             <div className="flex items-center justify-between"><div className="text-sm font-black text-white">{program.name}</div><StatusBadge status={prog.status} /></div>
                             <div className="text-[11px] text-th-muted">Week {(sessions.find(x => x.status === 'planned') || { week: program.weeks.length }).week} of {program.weeks.length} · {done} of {sessions.length} workouts completed{skipped ? ` · ${skipped} skipped` : ''}</div>
                             <div className="w-full bg-th-bg h-2 rounded-full overflow-hidden"><div className="bg-[#31D583] h-full" style={{ width: `${sessions.length ? (done / sessions.length) * 100 : 0}%` }}></div></div>
@@ -495,18 +495,18 @@
                             <div className="text-[11px] text-th-muted">Deload / progression: {deloadLines.length ? deloadLines.join(' · ') : 'no deload instructions found in the imported text; weekly changes follow the prescriptions in the program detail.'}</div>
                         </div>
                     )}
-                    <div className="bg-th-card border border-th-line rounded-2xl p-4 space-y-2">
+                    <div className="bg-th-card border border-th-line rounded-xl p-4 space-y-2">
                         <div className="text-xs font-bold text-white">Training volume (working sets you logged)</div>
                         {weekKeys.length === 0 ? <div className="text-[11px] text-th-muted">No logged workouts yet.</div> : (
                             <div className="h-32 flex items-end gap-2">
                                 {weekKeys.map(k => <div key={k} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
                                     <div className="w-full bg-th-accent rounded-t-sm" style={{ height: `${Math.max(4, (byWeek[k] / maxVol) * 80)}%` }}></div>
-                                    <div className="text-[9px] text-th-muted">{k}</div></div>)}
+                                    <div className="text-[10px] text-th-muted">{k}</div></div>)}
                             </div>
                         )}
                         {weekKeys.length > 0 && <div className="text-[10px] text-th-muted">Total {Math.round(toUnit(Object.values(byWeek).reduce((a, b) => a + b, 0))).toLocaleString()} {unit}</div>}
                     </div>
-                    <div className="bg-th-card border border-th-line rounded-2xl p-4 space-y-2">
+                    <div className="bg-th-card border border-th-line rounded-xl p-4 space-y-2">
                         <div className="text-xs font-bold text-white">Exercise performance</div>
                         {exNames.length === 0 ? <div className="text-[11px] text-th-muted">Log a workout to see exercise trends.</div> : (<>
                             <select value={chosen} onChange={e => setExName(e.target.value)} className="w-full min-h-[44px] bg-th-bg border border-th-line rounded-xl px-3 text-white">{exNames.map(n => <option key={n} value={n}>{n}</option>)}</select>
@@ -843,33 +843,33 @@
                 const placeholderWeight = (st, setIdx) => (st.type === 'working' && lastSets.length ? String(lastSets[Math.min(workIdx(setIdx), lastSets.length - 1)].weight || userSettings.unit) : userSettings.unit);
                 const fillLast = () => item.sets.forEach((st, i) => { if (st.type === 'working' && st.weight === '' && lastSets.length) updateSet(exIdx, i, { weight: String(lastSets[Math.min(workIdx(i), lastSets.length - 1)].weight || '') }); });
                 const canAddWarm = !!pr.warmupText && !pr.warmupSets; // warm-ups given as a range: you decide how many
-                const addWarmBtn = <button onClick={() => addSet(exIdx, 'warmup')} className="w-full min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted">＋ Add warm-up set</button>;
+                const addWarmBtn = <button onClick={() => addSet(exIdx, 'warmup')} className="w-full min-h-[44px] rounded-xl border border-dashed border-th-line text-xs font-bold text-th-muted">＋ Add warm-up set</button>;
                 const tech = pr.technique || '';
                 const holdSec = (tech.match(/static hold[^0-9]*(\d+)\s*sec/i) || [])[1];
                 const dropPct = (tech.match(/(\d+)\s*%/) || [])[1];
                 const lastDone = [...item.sets].reverse().find(x => x.completed && x.type !== 'warmup' && x.weight !== '');
                 const dropHint = lastDone && dropPct ? String(Math.round(parseFloat(lastDone.weight) * (1 - parseInt(dropPct, 10) / 100) * 2) / 2) : userSettings.unit;
                 return (
-                    <div key={exIdx} className="bg-th-card border border-th-line rounded-2xl p-4 space-y-3">
+                    <div key={exIdx} className="bg-th-card border border-th-line rounded-xl p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                                 <div className="text-[10px] text-th-muted">Exercise {exIdx + 1} of {activeSession.exercises.length}</div>
                                 <h3 className="text-sm font-bold text-white">{display}</h3>
                                 {item.substitution && <div className="text-[10px] text-[#F59E0B]">Your substitution · prescribed: {item.name}</div>}
                             </div>
-                            <button onClick={() => setSubModalIdx(exIdx)} aria-label="Substitute exercise" className="min-w-[44px] min-h-[44px] rounded-lg bg-th-elevated text-th-muted text-base shrink-0">⇄</button>
+                            <button onClick={() => setSubModalIdx(exIdx)} aria-label="Substitute exercise" className="min-w-[44px] min-h-[44px] rounded-xl bg-th-elevated text-th-muted text-base shrink-0">⇄</button>
                         </div>
                         <div className="bg-th-bg border border-th-line rounded-xl p-2.5 text-[11px] space-y-0.5">
-                            <div className="text-th-muted uppercase text-[9px] font-bold tracking-wide">Prescribed by program</div>
+                            <div className="text-th-muted uppercase text-[10px] font-bold tracking-wide">Prescribed by program</div>
                             <div className="text-white font-bold">{pr.workingSets ?? '?'} × {pr.reps ?? '?'}{pr.warmupText ? ` · ${pr.warmupText} warm-up` : pr.warmupSets ? ` · ${pr.warmupSets} warm-up` : ''} · {intensityLabel(pr.intensity)}{pr.rest ? ` · rest ${restLabel(pr.rest)}` : ''}</div>
                             {pr.technique && <div className="text-[#F59E0B] font-semibold">Last-set technique: {pr.technique}</div>}
                             {pr.notes && <div className="text-th-ink/80 leading-snug">{pr.notes}</div>}
-                            {pr.rest && pr.rest.maxSeconds && <button onClick={() => startRest(pr.rest.maxSeconds)} className="min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[11px] font-semibold text-white">⏱ Start prescribed rest ({restLabel(pr.rest)})</button>}
+                            {pr.rest && pr.rest.maxSeconds && <button onClick={() => startRest(pr.rest.maxSeconds)} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-xs font-bold text-white">⏱ Start prescribed rest ({restLabel(pr.rest)})</button>}
                             {pr.videoUrl && <a href={pr.videoUrl} target="_blank" rel="noopener noreferrer" className="block text-[11px] font-semibold text-th-accent">▶ Technique video</a>}
                             {!item.substitution && equipmentFor(item.name) && !ownedEquipment.includes(equipmentFor(item.name)) && <div className="text-[#F59E0B]">⚠ May need {equipmentFor(item.name)} (not in your equipment list) — tap ⇄ to substitute</div>}
                             {pr.flags.length > 0 && <div className="text-[#F59E0B]">⚠ Uncertain extraction — check {pr.page ? `PDF p.${pr.page}` : pr.ref}</div>}
                         </div>
-                        {prev && <div className="flex items-center justify-between gap-2"><div className="text-[11px] text-th-muted">Last time · {prev}</div>{lastSets.length > 0 && <button onClick={fillLast} className="min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[10px] font-bold text-white shrink-0">Use last weights</button>}</div>}
+                        {prev && <div className="flex items-center justify-between gap-2"><div className="text-[11px] text-th-muted">Last time · {prev}</div>{lastSets.length > 0 && <button onClick={fillLast} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-xs font-bold text-white shrink-0">Use last weights</button>}</div>}
                         <div className="space-y-2">
                             {canAddWarm && !item.sets.some(x => x.type === 'warmup') && (
                                 <>
@@ -899,10 +899,10 @@
                                             </div>
                                         )}
                                         <div className={`grid grid-cols-[56px_1fr_1fr_44px] gap-2 items-center p-2 rounded-xl border ${rowCls}`}>
-                                            <span className="leading-tight"><span className={`block text-[9px] font-black uppercase tracking-wide ${wordCls}`}>{word}</span><span className="block text-sm font-black text-white">{st.setNumber}</span></span>
-                                            <input type="number" inputMode="decimal" value={st.weight} placeholder={st.type === 'drop' ? dropHint : placeholderWeight(st, setIdx)} aria-label={`${word} set ${st.setNumber} weight`} onChange={e => updateSet(exIdx, setIdx, { weight: e.target.value })} className="w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold" />
-                                            <input type="number" inputMode="numeric" value={st.reps} placeholder={isWarm ? 'reps' : (pr.reps || 'reps')} aria-label={`${word} set ${st.setNumber} reps`} onChange={e => updateSet(exIdx, setIdx, { reps: e.target.value })} className="w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold" />
-                                            <button onClick={() => toggleProgramSet(exIdx, setIdx)} aria-label={`Complete set (${word} ${st.setNumber})`} className={`h-11 w-11 rounded-lg text-base font-black ${st.completed ? doneCls : 'bg-th-elevated text-th-muted'}`}>✓</button>
+                                            <span className="leading-tight"><span className={`block text-[10px] font-black uppercase tracking-wide ${wordCls}`}>{word}</span><span className="block text-sm font-black text-white">{st.setNumber}</span></span>
+                                            <input type="number" inputMode="decimal" value={st.weight} placeholder={st.type === 'drop' ? dropHint : placeholderWeight(st, setIdx)} aria-label={`${word} set ${st.setNumber} weight`} onChange={e => updateSet(exIdx, setIdx, { weight: e.target.value })} className="w-full min-w-0 min-h-[44px] bg-th-card border border-th-line rounded-xl px-2 text-center text-white tabular-nums font-bold" />
+                                            <input type="number" inputMode="numeric" value={st.reps} placeholder={isWarm ? 'reps' : (pr.reps || 'reps')} aria-label={`${word} set ${st.setNumber} reps`} onChange={e => updateSet(exIdx, setIdx, { reps: e.target.value })} className="w-full min-w-0 min-h-[44px] bg-th-card border border-th-line rounded-xl px-2 text-center text-white tabular-nums font-bold" />
+                                            <button onClick={() => toggleProgramSet(exIdx, setIdx)} aria-label={`Complete set (${word} ${st.setNumber})`} className={`h-11 w-11 rounded-xl text-base font-black ${st.completed ? doneCls : 'bg-th-elevated text-th-muted'}`}>✓</button>
                                         </div>
                                         {isWarm && canAddWarm && (!item.sets[setIdx + 1] || item.sets[setIdx + 1].type !== 'warmup') && addWarmBtn}
                                     </React.Fragment>
@@ -910,13 +910,13 @@
                             })}
                             {(/myo/i.test(tech) || /drop/i.test(tech) || holdSec) && (
                                 <div className="flex gap-2 flex-wrap">
-                                    {/myo/i.test(tech) && <button onClick={() => addSet(exIdx, 'myo')} className="flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]">＋ Myo-rep set</button>}
-                                    {/drop/i.test(tech) && <button onClick={() => addSet(exIdx, 'drop')} className="flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]">＋ Drop set{dropPct ? ` (−${dropPct}%)` : ''}</button>}
-                                    {holdSec && <button onClick={() => startRest(parseInt(holdSec, 10))} className="flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]">⏱ Start {holdSec}s hold timer</button>}
+                                    {/myo/i.test(tech) && <button onClick={() => addSet(exIdx, 'myo')} className="flex-1 min-h-[44px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-xs font-bold text-[#F59E0B]">＋ Myo-rep set</button>}
+                                    {/drop/i.test(tech) && <button onClick={() => addSet(exIdx, 'drop')} className="flex-1 min-h-[44px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-xs font-bold text-[#F59E0B]">＋ Drop set{dropPct ? ` (−${dropPct}%)` : ''}</button>}
+                                    {holdSec && <button onClick={() => startRest(parseInt(holdSec, 10))} className="flex-1 min-h-[44px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-xs font-bold text-[#F59E0B]">⏱ Start {holdSec}s hold timer</button>}
                                 </div>
                             )}
                             <div className="flex gap-2">
-                                <button onClick={() => addSet(exIdx)} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted">＋ Add extra set</button>
+                                <button onClick={() => addSet(exIdx)} className="flex-1 min-h-[44px] rounded-xl border border-dashed border-th-line text-xs font-bold text-th-muted">＋ Add extra set</button>
                             </div>
                         </div>
                     </div>
@@ -927,10 +927,10 @@
                 <div className="bg-th-bg text-th-ink min-h-screen flex flex-col w-full font-sans antialiased pb-24 md:pb-0">
                     
                     {/* TOP HEADER (Optimized for iPhone notch & touch) */}
-                    <header className="px-4 py-3.5 border-b border-th-line bg-th-bg2/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3 safe-top">
+                    <header className="px-4 py-2.5 border-b border-th-line bg-th-bg2/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3 safe-top">
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-th-accent to-th-accent-dark flex items-center justify-center shadow-md shadow-th-accent/25 shrink-0">
-                                <Icon name="dumbbell" className="w-4 h-4 text-th-on-accent" />
+                            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-th-accent to-th-accent-dark flex items-center justify-center shadow-md shadow-th-accent/25 shrink-0">
+                                <Icon name="dumbbell" className="w-5 h-5 text-th-on-accent" />
                             </div>
                             <div>
                                 <h1 className="text-xs font-black tracking-wider text-white">STRONGER</h1>
@@ -939,7 +939,7 @@
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <button onClick={() => setActiveNav('Settings')} aria-label="Settings" className="w-8 h-8 rounded-xl bg-th-accent text-th-on-accent font-bold flex items-center justify-center text-xs shadow cursor-pointer">
+                            <button onClick={() => setActiveNav('Settings')} aria-label="Settings" className="w-11 h-11 rounded-xl bg-th-accent text-th-on-accent font-bold flex items-center justify-center text-xs shadow cursor-pointer">
                                 {(userSettings.name || 'S')[0].toUpperCase()}
                             </button>
                         </div>
@@ -949,7 +949,7 @@
                     {activeSession && workoutOpen && (
                         <div className="fixed inset-0 z-50 bg-th-bg/95 backdrop-blur-xl flex flex-col p-4 overflow-y-auto safe-top safe-bottom">
                             <div className="max-w-xl mx-auto w-full space-y-4">
-                                <div className="bg-th-card border border-th-line rounded-2xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl">
+                                <div className="bg-th-card border border-th-line rounded-xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl">
                                     <div>
                                         <div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Active Workout</div>
                                         <h2 className="text-lg font-black text-white">{activeSession.workoutName}</h2>
@@ -961,8 +961,8 @@
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => { setWorkoutOpen(false); setActiveNav('Home'); }} aria-label="Back to Home, keep workout running" className="min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">⌂ Home</button>
-                                        <button onClick={requestFinish} className="px-3.5 py-2 rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-th-bg text-xs font-black shadow cursor-pointer">
+                                        <button onClick={() => { setWorkoutOpen(false); setActiveNav('Home'); }} aria-label="Back to Home, keep workout running" className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">⌂ Home</button>
+                                        <button onClick={requestFinish} className="px-4 min-h-[44px] rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-th-bg text-xs font-black shadow cursor-pointer">
                                             Finish
                                         </button>
                                         <button onClick={() => setConfirmDiscard(true)} aria-label="Discard workout" className="min-w-[44px] min-h-[44px] rounded-xl bg-th-elevated text-[#F43F5E] text-sm font-black">✕</button>
@@ -971,8 +971,8 @@
 
                                 <div className="flex items-center gap-2 overflow-x-auto pb-1">
                                     <span className="text-[11px] text-th-muted shrink-0">Rest timer</span>
-                                    {[60, 90, 120, 180].map(sec => <button key={sec} onClick={() => startRest(sec)} className="min-h-[40px] px-3.5 rounded-lg bg-th-elevated border border-th-line text-[11px] font-semibold text-white shrink-0">{sec >= 120 ? `${sec / 60} min` : `${sec}s`}</button>)}
-                                    {timerRunning && <button onClick={() => setRestEndsAt(null)} className="min-h-[40px] px-3.5 rounded-lg bg-th-elevated border border-[#F43F5E]/40 text-[11px] font-semibold text-[#F43F5E] shrink-0">Stop {fmtClock(timerSeconds)}</button>}
+                                    {[60, 90, 120, 180].map(sec => <button key={sec} onClick={() => startRest(sec)} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-xs font-bold text-white shrink-0">{sec >= 120 ? `${sec / 60} min` : `${sec}s`}</button>)}
+                                    {timerRunning && <button onClick={() => setRestEndsAt(null)} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-[#F43F5E]/40 text-xs font-bold text-[#F43F5E] shrink-0">Stop {fmtClock(timerSeconds)}</button>}
                                 </div>
 
                                 <div className="space-y-4">
@@ -997,19 +997,19 @@
                                     </div>
                                 )}
                                 {!activeProgram && (
-                                    <div className="bg-th-card border border-dashed border-th-line rounded-2xl p-5 text-center space-y-3">
+                                    <div className="bg-th-card border border-dashed border-th-line rounded-xl p-5 text-center space-y-3">
                                         <p className="text-xs text-th-muted">{Object.keys(library.programs).length ? 'No program is active. Pick one from your library to put it on the calendar.' : 'Import a program (PDF or Excel) to follow it here, step by step.'}</p>
-                                        <button onClick={() => setActiveNav('Program')} className="min-h-[44px] px-5 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">Open Program Library</button>
+                                        <button onClick={() => setActiveNav('Program')} className="min-h-[44px] px-4 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">Open Program Library</button>
                                     </div>
                                 )}
                                 {activeProgram && (
-                                    <div className="bg-th-card border border-th-accent/40 rounded-2xl p-4 space-y-2">
+                                    <div className="bg-th-card border border-th-accent/40 rounded-xl p-4 space-y-2">
                                         <div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Active program · {activeProgram.name}</div>
                                         {nextProgramSession ? (<>
                                             <div className="text-sm font-black text-white">Week {nextProgramSession.week} · Day {nextProgramSession.day} · {nextProgramSession.label}</div>
                                             <div className="text-[11px] text-th-muted">{nextProgramSession.plannedDate ? (nextProgramSession.plannedDate === todayStr() ? 'Scheduled today' : nextProgramSession.missed ? `Missed — was planned ${fmtShort(nextProgramSession.plannedDate)} (still pending)` : `Planned ${fmtShort(nextProgramSession.plannedDate)}`) : ''}</div>
                                             <div className="flex gap-2 pt-1">
-                                                <button onClick={() => startProgramWorkout(nextProgramSession)} className="flex-1 min-h-[44px] rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">{activeSession ? 'Return to workout' : 'Start workout'}</button>
+                                                <button onClick={() => startProgramWorkout(nextProgramSession)} className="flex-1 min-h-[48px] rounded-xl bg-th-accent text-th-on-accent text-sm font-bold">{activeSession ? 'Return to workout' : 'Start workout'}</button>
                                                 <button onClick={() => setActiveNav('Calendar')} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">Calendar</button>
                                             </div>
                                         </>) : <div className="text-xs text-th-muted">No pending workouts left in this program.</div>}
@@ -1021,7 +1021,7 @@
                                                         const isToday = ws.plannedDate === todayStr();
                                                         const cls = ws.status === 'completed' ? 'bg-[#31D583]/20 border-[#31D583]/50 text-[#31D583]' : ws.status === 'skipped' ? 'bg-th-elevated border-th-line text-th-muted' : ws.missed ? 'bg-[#F43F5E]/15 border-[#F43F5E]/50 text-[#F43F5E]' : isToday ? 'bg-th-accent/20 border-th-accent text-white' : 'bg-th-bg border-th-line text-th-muted';
                                                         return (
-                                                            <button key={ws.key} onClick={() => setActiveNav('Calendar')} aria-label={`${ws.label} ${ws.status}`} className={`min-h-[52px] rounded-lg border px-1 py-1 flex flex-col items-center justify-center text-[9px] leading-tight ${cls}`}>
+                                                            <button key={ws.key} onClick={() => setActiveNav('Calendar')} aria-label={`${ws.label} ${ws.status}`} className={`min-h-[52px] rounded-xl border px-1 py-1 flex flex-col items-center justify-center text-[10px] leading-tight ${cls}`}>
                                                                 <span className="font-black text-[11px]">{ws.status === 'completed' ? '✓' : `D${ws.day}`}</span>
                                                                 <span className="truncate w-full text-center">{ws.plannedDate ? fmtShort(ws.plannedDate).split(' ')[0] : ''}</span>
                                                             </button>
@@ -1036,12 +1036,12 @@
                                 {/* SUMMARY METRICS (real data) */}
                                 {activeProgram && (
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="p-3.5 rounded-xl bg-th-card border border-th-line space-y-2">
+                                        <div className="p-4 rounded-xl bg-th-card border border-th-line space-y-2">
                                             <div className="flex items-center justify-between text-[11px] text-th-muted"><span>Program progress</span><Icon name="layers" className="w-3.5 h-3.5 text-th-accent" /></div>
                                             <div className="text-lg font-extrabold text-white tabular-nums">{programDone} / {activeSessions.length}</div>
                                             <div className="w-full bg-th-bg h-1.5 rounded-full overflow-hidden"><div className="bg-th-accent h-full rounded-full" style={{ width: `${activeSessions.length ? (programDone / activeSessions.length) * 100 : 0}%` }}></div></div>
                                         </div>
-                                        <div className="p-3.5 rounded-xl bg-th-card border border-th-line space-y-2">
+                                        <div className="p-4 rounded-xl bg-th-card border border-th-line space-y-2">
                                             <div className="flex items-center justify-between text-[11px] text-th-muted"><span>This week</span><Icon name="check-circle-2" className="w-3.5 h-3.5 text-[#31D583]" /></div>
                                             <div className="text-lg font-extrabold text-white tabular-nums">{weekSessions.filter(x => x.status === 'completed').length} / {weekSessions.length}</div>
                                             <div className="flex items-center gap-1">{weekSessions.map(x => <div key={x.key} className={`h-1.5 flex-1 rounded-full ${x.status === 'completed' ? 'bg-[#31D583]' : 'bg-th-line'}`}></div>)}</div>
@@ -1083,12 +1083,12 @@
                                 {importReport && (
                                     <div className="bg-th-card border border-th-line rounded-xl p-3 space-y-1.5">
                                         {importReport.map((r, i) => <div key={i} className={`text-[11px] leading-snug ${r.ok ? 'text-[#31D583]' : 'text-[#F43F5E]'}`}>{r.ok ? '✓' : '✕'} {r.file}: {r.msg}</div>)}
-                                        <button onClick={() => setImportReport(null)} className="text-[10px] text-th-muted min-h-[32px]">Dismiss</button>
+                                        <button onClick={() => setImportReport(null)} className="text-xs text-th-muted min-h-[44px]">Dismiss</button>
                                     </div>
                                 )}
                                 {Object.keys(library.programs).length > 1 && (() => {
                                     const dayOpts = [...new Set(Object.values(library.programs).map(pr => pr.metadata.daysPerWeek).filter(Boolean))].sort((a, b) => a - b);
-                                    const chip = (on) => `min-h-[40px] px-3.5 rounded-full border text-[11px] font-bold shrink-0 ${on ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`;
+                                    const chip = (on) => `min-h-[44px] px-4 rounded-xl border text-xs font-bold shrink-0 ${on ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`;
                                     return (
                                         <div className="space-y-2">
                                             <input type="search" value={libraryQuery} onChange={e => setLibraryQuery(e.target.value)} placeholder="Search programs" className="w-full min-h-[44px] bg-th-card border border-th-line rounded-xl px-3 text-white" />
@@ -1103,10 +1103,10 @@
                                     );
                                 })()}
                                 {Object.keys(library.programs).length > 0 && (
-                                    <div className="flex justify-end"><button onClick={() => setManageMode(!manageMode)} className={`min-h-[40px] px-4 rounded-lg border text-[11px] font-bold ${manageMode ? 'bg-[#F43F5E] border-[#F43F5E] text-white' : 'bg-th-card border-th-line text-th-muted'}`}>{manageMode ? 'Done' : 'Manage / remove'}</button></div>
+                                    <div className="flex justify-end"><button onClick={() => setManageMode(!manageMode)} className={`min-h-[44px] px-4 rounded-xl border text-xs font-bold ${manageMode ? 'bg-[#F43F5E] border-[#F43F5E] text-white' : 'bg-th-card border-th-line text-th-muted'}`}>{manageMode ? 'Done' : 'Manage / remove'}</button></div>
                                 )}
                                 {Object.keys(library.programs).length === 0 && !importing && (
-                                    <div className="bg-th-card border border-dashed border-th-line rounded-2xl p-6 text-center text-xs text-th-muted">No programs imported yet. Tap “Import program file(s)” to add one.</div>
+                                    <div className="bg-th-card border border-dashed border-th-line rounded-xl p-5 text-center text-xs text-th-muted">No programs imported yet. Tap “Import program file(s)” to add one.</div>
                                 )}
                                 {Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase()) && (libDays === 'all' || pr.metadata.daysPerWeek === libDays) && (libStatus === 'all' || progressOf(pr.id).status === libStatus)).map(pr => (
                                     <div key={pr.id} className="space-y-1.5">
@@ -1132,11 +1132,11 @@
                                 <div className="bg-th-card border border-th-line rounded-xl p-4 space-y-3">
                                     <div>
                                         <label className="text-[11px] text-th-muted block mb-1">Your name</label>
-                                        <input type="text" value={userSettings.name} placeholder="Your name (optional)" onChange={e => setUserSettings({ ...userSettings, name: e.target.value })} className="w-full bg-th-bg border border-th-line rounded-lg px-3 py-2 text-white text-xs" />
+                                        <input type="text" value={userSettings.name} placeholder="Your name (optional)" onChange={e => setUserSettings({ ...userSettings, name: e.target.value })} className="w-full bg-th-bg border border-th-line rounded-xl px-3 min-h-[44px] text-white" />
                                     </div>
                                     <div>
                                         <label className="text-[11px] text-th-muted block mb-1">Weight Unit</label>
-                                        <select value={userSettings.unit} onChange={e => setUserSettings({ ...userSettings, unit: e.target.value })} className="w-full bg-th-bg border border-th-line rounded-lg px-3 py-2 text-white text-xs">
+                                        <select value={userSettings.unit} onChange={e => setUserSettings({ ...userSettings, unit: e.target.value })} className="w-full bg-th-bg border border-th-line rounded-xl px-3 min-h-[44px] text-white">
                                             <option value="lb">Pounds (lb)</option>
                                             <option value="kg">Kilograms (kg)</option>
                                         </select>
@@ -1202,7 +1202,7 @@
                                 <button
                                     key={item.id}
                                     onClick={() => setActiveNav(item.id)}
-                                    className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
+                                    className={`flex flex-col items-center justify-center py-1 px-4 rounded-xl transition-all cursor-pointer ${
                                         isActive ? 'text-th-accent' : 'text-th-muted hover:text-white'
                                     }`}
                                 >
@@ -1216,7 +1216,7 @@
 
                     {confirmDiscard && (
                         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
-                            <div className="bg-th-card border border-th-line rounded-2xl max-w-sm w-full p-5 space-y-4">
+                            <div className="bg-th-card border border-th-line rounded-xl max-w-sm w-full p-4 space-y-4">
                                 <h3 className="text-sm font-bold text-white">Discard this workout?</h3>
                                 <p className="text-xs text-th-muted">All sets logged in this session will be lost. Nothing will be saved to your history.</p>
                                 <div className="flex gap-2">
@@ -1234,7 +1234,7 @@
                     )}
                     {confirmDialog && (
                         <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4">
-                            <div className="bg-th-card border border-th-line rounded-2xl max-w-sm w-full p-5 space-y-4">
+                            <div className="bg-th-card border border-th-line rounded-xl max-w-sm w-full p-4 space-y-4">
                                 <h3 className="text-sm font-bold text-white">{confirmDialog.title}</h3>
                                 <p className="text-xs text-th-muted">{confirmDialog.body}</p>
                                 <div className={confirmDialog.secondaryLabel ? 'flex flex-col gap-2' : 'flex gap-2'}>
