@@ -39,6 +39,13 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     ok('status filter hides not-started programs', (await p.getByRole('button', { name: /Test Program/ }).count()) === 0);
     await p.getByRole('button', { name: 'All', exact: true }).click();
 
+    // any file type can be picked (no filter, so cloud files such as Google Drive are not greyed out); unsupported ones get a clear message
+    const fs = require('fs'); const os = require('os'); const path = require('path');
+    const txt = path.join(os.tmpdir(), 'notes.txt'); fs.writeFileSync(txt, 'hello');
+    await p.locator('input[type=file]').setInputFiles(txt); await p.waitForTimeout(800);
+    ok('unsupported file type explains what to choose', await p.getByText(/Unsupported file type/).first().isVisible());
+    ok('import picker has no accept filter', (await p.locator('input[type=file]').getAttribute('accept')) === null);
+
     // --- detail + start ---
     await p.getByRole('button', { name: /Alpha/ }).first().click();
     ok('detail shows exercises, rest and technique', await p.getByText('Test Bench Press').first().isVisible() && await p.getByText(/Rest: 3-5 min/).first().isVisible() && await p.getByText(/Last-set technique: Myo-reps/).first().isVisible());

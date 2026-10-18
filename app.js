@@ -1901,7 +1901,6 @@ function App() {
   }, importing ? 'Reading file…' : '＋ Import program file(s) (PDF or Excel)'), React.createElement("input", {
     ref: pdfInputRef,
     type: "file",
-    accept: "application/pdf,.pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     multiple: true,
     className: "hidden",
     onChange: e => {

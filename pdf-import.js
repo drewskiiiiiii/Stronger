@@ -489,7 +489,11 @@
         });
         return parseSpreadsheetProgram(sheets, { fileName: file.name, sha256 });
     }
-    const importFile = (file) => (/\.xlsx?$/i.test(file.name) ? importXlsxFile(file) : importPdfFile(file));
+    const importFile = (file) => {
+        if (/\.xlsx?$/i.test(file.name)) return importXlsxFile(file);
+        if (/\.pdf$/i.test(file.name) || file.type === 'application/pdf') return importPdfFile(file);
+        return Promise.reject(new Error('Unsupported file type. Choose a PDF or an Excel (.xlsx) program file.'));
+    };
 
     const api = { parseProgramPdf, parseSpreadsheetProgram, importPdfFile, importXlsxFile, importFile, SCHEMA_VERSION, PARSER_VERSION };
     if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.StrongerImport = api;

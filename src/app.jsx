@@ -1079,7 +1079,7 @@
                                     <p className="text-[11px] text-th-muted mt-0.5">Import your Jeff Nippard program PDFs or spreadsheets. Each program is followed exactly as written.</p>
                                 </div>
                                 <button onClick={() => pdfInputRef.current && pdfInputRef.current.click()} disabled={importing} className="w-full min-h-[48px] rounded-xl bg-th-accent text-th-on-accent text-sm font-black disabled:opacity-60">{importing ? 'Reading file…' : '＋ Import program file(s) (PDF or Excel)'}</button>
-                                <input ref={pdfInputRef} type="file" accept="application/pdf,.pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple className="hidden" onChange={e => { handlePdfFiles(e.target.files); e.target.value = ''; }} />
+                                <input ref={pdfInputRef} type="file" multiple className="hidden" onChange={e => { handlePdfFiles(e.target.files); e.target.value = ''; }} />
                                 {importReport && (
                                     <div className="bg-th-card border border-th-line rounded-xl p-3 space-y-1.5">
                                         {importReport.map((r, i) => <div key={i} className={`text-[11px] leading-snug ${r.ok ? 'text-[#31D583]' : 'text-[#F43F5E]'}`}>{r.ok ? '✓' : '✕'} {r.file}: {r.msg}</div>)}
