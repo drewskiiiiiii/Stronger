@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STRONGER Strength Training Platform</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+        ::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.3); }
+    </style>
+</head>
+<body class="bg-[#080E16] text-[#F3F6FA] min-h-screen flex flex-col antialiased selection:bg-[#1685F8] selection:text-white">
+
+    <div id="root" class="flex flex-col md:flex-row min-h-screen"></div>
+
+    <!-- React & ReactDOM CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for in-browser JSX compilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef, useMemo } = React;
+
+        const IMAGES = {
+            benchPress: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=300&q=80',
+            pullUps: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=300&q=80',
+            overheadPress: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=300&q=80',
+            barbellRow: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=300&q=80',
+            heroDeadlift: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
+            squat: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=300&q=80',
+            inclineDumbbell: 'https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?auto=format&fit=crop&w=300&q=80',
+            romanianDeadlift: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=300&q=80',
+            legRaises: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=300&q=80'
+        };
+
+        const INITIAL_EXERCISES = [
+            { id: 'ex-bench', name: 'Barbell Bench Press', shortName: 'Barbell Bench Press', primaryMuscle: 'Chest', secondaryMuscles: ['Anterior Deltoids', 'Triceps'], equipment: 'Barbell', pattern: 'Horizontal Push', thumbnail: IMAGES.benchPress },
+            { id: 'ex-pullup', name: 'Weighted Pull-Ups', shortName: 'Pull-Up', primaryMuscle: 'Back (Latissimus Dorsi)', secondaryMuscles: ['Biceps', 'Rear Deltoids', 'Core'], equipment: 'Dip Belt / Pull-Up Bar', pattern: 'Vertical Pull', thumbnail: IMAGES.pullUps },
+            { id: 'ex-db-ohp', name: 'DB Overhead Press', shortName: 'DB Overhead Press', primaryMuscle: 'Shoulders', secondaryMuscles: ['Triceps', 'Upper Traps', 'Core'], equipment: 'Dumbbells', pattern: 'Vertical Push', thumbnail: IMAGES.overheadPress },
+            { id: 'ex-row', name: 'Barbell Row', shortName: 'Barbell Row', primaryMuscle: 'Back', secondaryMuscles: ['Rhomboids', 'Lats', 'Biceps'], equipment: 'Barbell', pattern: 'Horizontal Pull', thumbnail: IMAGES.barbellRow },
+            { id: 'ex-leg-raise', name: 'Hanging Leg Raises', shortName: 'Hanging Leg Raises', primaryMuscle: 'Core', secondaryMuscles: ['Hip Flexors', 'Forearms'], equipment: 'Pull-Up Bar', pattern: 'Core Flexion', thumbnail: IMAGES.legRaises },
+            { id: 'ex-deadlift', name: 'Deadlift', shortName: 'Deadlift', primaryMuscle: 'Posterior Chain', secondaryMuscles: ['Hamstrings', 'Glutes', 'Spinal Erectors'], equipment: 'Barbell', pattern: 'Hip Hinge', thumbnail: IMAGES.heroDeadlift },
+            { id: 'ex-ohp', name: 'Overhead Press', shortName: 'Overhead Press', primaryMuscle: 'Shoulders', secondaryMuscles: ['Triceps', 'Core'], equipment: 'Barbell', pattern: 'Vertical Push', thumbnail: IMAGES.overheadPress },
+            { id: 'ex-squat', name: 'Barbell Back Squat', shortName: 'Squat', primaryMuscle: 'Quadriceps', secondaryMuscles: ['Glutes', 'Core'], equipment: 'Barbell', pattern: 'Squat', thumbnail: IMAGES.squat },
+            { id: 'ex-incline-db', name: 'Incline Dumbbell Press', shortName: 'Incline DB Press', primaryMuscle: 'Chest (Clavicular)', secondaryMuscles: ['Anterior Deltoids', 'Triceps'], equipment: 'Dumbbells', pattern: 'Horizontal Push', thumbnail: IMAGES.inclineDumbbell },
+            { id: 'ex-rdl', name: 'Romanian Deadlift', shortName: 'Romanian Deadlift', primaryMuscle: 'Hamstrings', secondaryMuscles: ['Glutes', 'Erectors'], equipment: 'Barbell', pattern: 'Hip Hinge', thumbnail: IMAGES.romanianDeadlift },
+            { id: 'ex-db-row', name: 'Single-Arm Dumbbell Row', shortName: 'DB Row', primaryMuscle: 'Back', secondaryMuscles: ['Lats', 'Biceps'], equipment: 'Dumbbells', pattern: 'Horizontal Pull', thumbnail: IMAGES.barbellRow },
+            { id: 'ex-goblet-squat', name: 'Heels-Elevated Goblet Squat', shortName: 'Goblet Squat', primaryMuscle: 'Quadriceps', secondaryMuscles: ['Glutes', 'Core'], equipment: 'Dumbbells', pattern: 'Squat', thumbnail: IMAGES.squat },
+            { id: 'ex-db-rdl', name: 'Dumbbell Romanian Deadlift', shortName: 'DB RDL', primaryMuscle: 'Hamstrings', secondaryMuscles: ['Glutes'], equipment: 'Dumbbells', pattern: 'Hip Hinge', thumbnail: IMAGES.romanianDeadlift },
+            { id: 'ex-pushup', name: 'Deficit Tempo Push-Ups', shortName: 'Deficit Push-Up', primaryMuscle: 'Chest', secondaryMuscles: ['Triceps', 'Core'], equipment: 'Bodyweight', pattern: 'Horizontal Push', thumbnail: IMAGES.benchPress },
+            { id: 'ex-split-squat', name: 'Bulgarian Split Squat', shortName: 'Split Squat', primaryMuscle: 'Quadriceps', secondaryMuscles: ['Glutes'], equipment: 'Dumbbells / Bodyweight', pattern: 'Squat', thumbnail: IMAGES.squat },
+            { id: 'ex-plank-reach', name: 'Hollow Body Core Hold', shortName: 'Hollow Body Core', primaryMuscle: 'Core', secondaryMuscles: ['Rectus Abdominis'], equipment: 'Bodyweight', pattern: 'Core Flexion', thumbnail: IMAGES.legRaises }
+        ];
+
+        const THEMES = {
+            blue: { name: 'Athletic Blue (Default)', bgPrimary: '#080E16', bgSecondary: '#0D1622', bgCard: '#101C2B', bgElevated: '#142235', border: '#203147', accent: '#1685F8', accentHover: '#2992FF', textPrimary: '#F3F6FA', textSecondary: '#A4B3C5', success: '#31D583' },
+            emerald: { name: 'Volt Emerald', bgPrimary: '#090E14', bgSecondary: '#0F1722', bgCard: '#12202E', bgElevated: '#182A3D', border: '#22384D', accent: '#10B981', accentHover: '#059669', textPrimary: '#F0FDF4', textSecondary: '#94A3B8', success: '#34D399' },
+            crimson: { name: 'Crimson Force', bgPrimary: '#0B0A0C', bgSecondary: '#141217', bgCard: '#1E1B22', bgElevated: '#28242E', border: '#3B3542', accent: '#F43F5E', accentHover: '#E11D48', textPrimary: '#FFF1F2', textSecondary: '#A1A1AA', success: '#31D583' },
+            gold: { name: 'Titan Gold', bgPrimary: '#0D0C0A', bgSecondary: '#161410', bgCard: '#211E18', bgElevated: '#2C2821', border: '#3F3930', accent: '#F59E0B', accentHover: '#D97706', textPrimary: '#FFFBEB', textSecondary: '#A8A29E', success: '#31D583' },
+            violet: { name: 'Cyber Violet', bgPrimary: '#0A0812', bgSecondary: '#120F1D', bgCard: '#1A162B', bgElevated: '#241F3B', border: '#362F54', accent: '#8B5CF6', accentHover: '#7C3AED', textPrimary: '#F5F3FF', textSecondary: '#A78BFA', success: '#31D583' }
+        };
+
+        const INITIAL_PROGRAM = {
+            name: '12 Week Strength Builder',
+            totalWeeks: 12,
+            currentWeek: 4,
+            phase: 'Phase 2 · Intensification',
+            days: [
+                { id: 'day-1', name: 'Upper Body Strength', emphasis: 'Push · Pull · Core', durationMin: 60, location: 'Gym', exercises: [
+                    { exerciseId: 'ex-bench', sets: 4, reps: 5, targetWeightLb: 225, restSeconds: 180, completed: false },
+                    { exerciseId: 'ex-pullup', sets: 4, reps: 6, targetWeightLb: 10, restSeconds: 120, completed: false, isWeightedAddition: true },
+                    { exerciseId: 'ex-db-ohp', sets: 3, reps: 8, targetWeightLb: 65, restSeconds: 90, completed: false },
+                    { exerciseId: 'ex-row', sets: 3, reps: 8, targetWeightLb: 185, restSeconds: 90, completed: false },
+                    { exerciseId: 'ex-leg-raise', sets: 3, reps: 12, targetWeightLb: 0, restSeconds: 60, completed: false }
+                ]},
+                { id: 'day-2', name: 'Lower Body Power', emphasis: 'Squat · Hinge · Posterior', durationMin: 65, location: 'Gym', exercises: [
+                    { exerciseId: 'ex-squat', sets: 4, reps: 5, targetWeightLb: 315, restSeconds: 180, completed: false },
+                    { exerciseId: 'ex-rdl', sets: 3, reps: 8, targetWeightLb: 245, restSeconds: 120, completed: false },
+                    { exerciseId: 'ex-db-row', sets: 3, reps: 10, targetWeightLb: 80, restSeconds: 90, completed: false }
+                ]},
+                { id: 'day-3', name: 'Hypertrophy & Accessories', emphasis: 'Shoulders · Arms · Back', durationMin: 55, location: 'Gym', exercises: [
+                    { exerciseId: 'ex-ohp', sets: 4, reps: 6, targetWeightLb: 145, restSeconds: 120, completed: false },
+                    { exerciseId: 'ex-incline-db', sets: 3, reps: 10, targetWeightLb: 75, restSeconds: 90, completed: false },
+                    { exerciseId: 'ex-pullup', sets: 3, reps: 8, targetWeightLb: 0, restSeconds: 90, completed: false }
+                ]}
+            ]
+        };
+
+        const INITIAL_WORKOUT_LOGS = [
+            { id: 'log-1', date: '2026-09-20', workoutName: 'Upper Body Strength', durationMin: 58, totalVolumeLb: 18450, exercises: [
+                { exerciseId: 'ex-bench', name: 'Barbell Bench Press', sets: [{ setNumber: 1, weight: 225, reps: 5, rpe: 8 }, { setNumber: 2, weight: 225, reps: 5, rpe: 8.5 }, { setNumber: 3, weight: 225, reps: 5, rpe: 9 }, { setNumber: 4, weight: 225, reps: 5, rpe: 9.5 }] }
+            ]}
+        ];
+
+        function App() {
+            const [activeNav, setActiveNav] = useState('Home');
+            const [selectedTheme, setSelectedTheme] = useState('blue');
+            const theme = THEMES[selectedTheme];
+
+            const [exercises, setExercises] = useState(INITIAL_EXERCISES);
+            const exerciseMap = useMemo(() => {
+                const map = {};
+                exercises.forEach(ex => { map[ex.id] = ex; });
+                return map;
+            }, [exercises]);
+
+            const [program, setProgram] = useState(INITIAL_PROGRAM);
+            const [selectedDayId, setSelectedDayId] = useState(INITIAL_PROGRAM.days[0].id);
+            const todaysWorkout = program.days.find(d => d.id === selectedDayId) || program.days[0];
+
+            const [workoutLogs, setWorkoutLogs] = useState(INITIAL_WORKOUT_LOGS);
+            const [userSettings, setUserSettings] = useState({ name: 'John', unit: 'lb', targetCalories: 2400, targetProtein: 180 });
+
+            const [activeSession, setActiveSession] = useState(null);
+            const [timerSeconds, setTimerSeconds] = useState(120);
+            const [timerRunning, setTimerRunning] = useState(false);
+
+            const [swapModalConfig, setSwapModalConfig] = useState(null);
+            const [showPlanGeneratorModal, setShowPlanGeneratorModal] = useState(false);
+            const [planGenConfig, setPlanGenConfig] = useState({ weeks: 12, daysPerWeek: 4, goal: 'Powerbuilding', equipment: 'Barbell & Rack' });
+
+            const [toast, setToast] = useState(null);
+            const triggerToast = (title, message) => {
+                setToast({ title, message });
+                setTimeout(() => setToast(null), 3500);
+            };
+
+            const formatWeight = (lb, unit, isWeightedAddition = false) => {
+                if (lb === 0) return 'Bodyweight';
+                if (isWeightedAddition) {
+                    if (unit === 'kg') return `+${Math.round(lb * 0.453592 * 2)/2} kg`;
+                    return `+${lb} lb`;
+                }
+                if (unit === 'kg') return `${Math.round(lb * 0.453592)} kg`;
+                return `${lb} lb`;
+            };
+
+            const getSimilarAlternatives = (sourceExerciseId, equipCategory = 'All') => {
+                const source = exerciseMap[sourceExerciseId];
+                if (!source) return exercises;
+                return exercises.filter(ex => ex.id !== sourceExerciseId).map(ex => {
+                    const isExplicitAlt = true;
+                    const samePattern = ex.pattern === source.pattern;
+                    const sameMuscle = ex.primaryMuscle.toLowerCase().includes(source.primaryMuscle.toLowerCase().split(' ')[0]);
+                    let matchScore = (samePattern ? 40 : 0) + (sameMuscle ? 30 : 0);
+                    return { ...ex, matchScore };
+                }).filter(ex => {
+                    if (equipCategory === 'All') return true;
+                    if (equipCategory === 'Dumbbells') return ex.equipment.toLowerCase().includes('dumbbell') || ex.equipment.toLowerCase().includes('bodyweight');
+                    if (equipCategory === 'Barbell') return ex.equipment.toLowerCase().includes('barbell') || ex.equipment.toLowerCase().includes('pull-up');
+                    if (equipCategory === 'Bodyweight') return ex.equipment.toLowerCase().includes('bodyweight') || ex.equipment.toLowerCase().includes('pull-up');
+                    return true;
+                }).sort((a,b) => b.matchScore - a.matchScore);
+            };
+
+            const convertTargetWeightForSwap = (oldWeightLb, oldEx, newEx) => {
+                if (!newEx) return oldWeightLb;
+                if (newEx.equipment.toLowerCase().includes('bodyweight') && !newEx.equipment.toLowerCase().includes('dumbbell')) return 0;
+                const oldIsBarbell = oldEx?.equipment?.toLowerCase().includes('barbell');
+                const newIsDumbbell = newEx?.equipment?.toLowerCase().includes('dumbbell');
+                if (oldIsBarbell && newIsDumbbell && oldWeightLb > 0) return Math.max(20, Math.round((oldWeightLb * 0.36) / 5) * 5);
+                return oldWeightLb > 0 ? oldWeightLb : 65;
+            };
+
+            const handleReplaceSingleExercise = (newExerciseId) => {
+                if (!swapModalConfig) return;
+                const { dayId, exerciseId, activeExIdx } = swapModalConfig;
+                const oldEx = exerciseMap[exerciseId];
+                const newEx = exerciseMap[newExerciseId];
+                if (!newEx) return;
+
+                if (dayId && exerciseId) {
+                    setProgram(prev => ({
+                        ...prev,
+                        days: prev.days.map(d => {
+                            if (d.id !== dayId) return d;
+                            return {
+                                ...d,
+                                exercises: d.exercises.map(item => {
+                                    if (item.exerciseId !== exerciseId) return item;
+                                    const adjustedWeight = convertTargetWeightForSwap(item.targetWeightLb, oldEx, newEx);
+                                    return { ...item, exerciseId: newExerciseId, targetWeightLb: adjustedWeight, isWeightedAddition: newEx.id === 'ex-pullup' };
+                                })
+                            };
+                        })
+                    }));
+                }
+
+                if (activeSession && typeof activeExIdx === 'number') {
+                    setActiveSession(prev => {
+                        if (!prev) return prev;
+                        const updated = prev.exercises.map((item, idx) => {
+                            if (idx !== activeExIdx) return item;
+                            const baseSet = item.sets[0];
+                            const adjustedWeight = convertTargetWeightForSwap(baseSet?.prescribedWeightLb || 135, oldEx, newEx);
+                            return {
+                                ...item,
+                                exerciseId: newExerciseId,
+                                isWeightedAddition: newEx.id === 'ex-pullup',
+                                sets: item.sets.map(s => ({ ...s, prescribedWeightLb: adjustedWeight, actualWeightLb: adjustedWeight }))
+                            };
+                        });
+                        return { ...prev, exercises: updated };
+                    });
+                }
+
+                setSwapModalConfig(null);
+                triggerToast(`Swapped to ${newEx.name}`, `Matched pattern and scaled target load.`);
+            };
+
+            const handleAdaptEntireWorkoutByEquipment = (targetDayId, equipmentProfileKey) => {
+                const profileMap = {
+                    dumbbells_only: { label: 'Dumbbells & Bench Only', location: 'Home / Hotel DBs', replacements: { 'ex-bench': 'ex-incline-db', 'ex-pullup': 'ex-db-row', 'ex-ohp': 'ex-db-ohp', 'ex-row': 'ex-db-row', 'ex-deadlift': 'ex-db-rdl', 'ex-squat': 'ex-goblet-squat', 'ex-rdl': 'ex-db-rdl', 'ex-leg-raise': 'ex-plank-reach' } },
+                    bodyweight_minimal: { label: 'Bodyweight & Pull-Up Bar', location: 'Calisthenics / Travel', replacements: { 'ex-bench': 'ex-pushup', 'ex-incline-db': 'ex-pushup', 'ex-db-ohp': 'ex-pushup', 'ex-ohp': 'ex-pushup', 'ex-row': 'ex-pullup', 'ex-db-row': 'ex-pullup', 'ex-deadlift': 'ex-split-squat', 'ex-squat': 'ex-split-squat', 'ex-rdl': 'ex-split-squat', 'ex-leg-raise': 'ex-plank-reach' } },
+                    barbell_rack: { label: 'Barbell & Power Rack', location: 'Barbell Garage Gym', replacements: { 'ex-incline-db': 'ex-bench', 'ex-pushup': 'ex-bench', 'ex-db-ohp': 'ex-ohp', 'ex-db-row': 'ex-row', 'ex-goblet-squat': 'ex-squat', 'ex-db-rdl': 'ex-rdl', 'ex-plank-reach': 'ex-leg-raise' } }
+                };
+
+                const chosenProfile = profileMap[equipmentProfileKey];
+                if (!chosenProfile) return;
+
+                setProgram(prev => ({
+                    ...prev,
+                    days: prev.days.map(d => {
+                        if (d.id !== targetDayId) return d;
+                        const adaptedExercises = d.exercises.map(item => {
+                            const oldEx = exerciseMap[item.exerciseId];
+                            const mappedId = chosenProfile.replacements[item.exerciseId] || item.exerciseId;
+                            const newEx = exerciseMap[mappedId] || oldEx;
+                            const newWeight = convertTargetWeightForSwap(item.targetWeightLb, oldEx, newEx);
+                            return { ...item, exerciseId: mappedId, targetWeightLb: newWeight, isWeightedAddition: mappedId === 'ex-pullup' && equipmentProfileKey !== 'bodyweight_minimal' };
+                        });
+                        return { ...d, location: chosenProfile.location, exercises: adaptedExercises };
+                    })
+                }));
+
+                setSwapModalConfig(null);
+                triggerToast(`Workout Adapted: ${chosenProfile.label}`, 'All movements and target weights matched.');
+            };
+
+            const handleGeneratePlan = () => {
+                const newProgramName = `${planGenConfig.weeks} Week ${planGenConfig.goal} Program`;
+                const newDays = [
+                    { id: 'gen-1', name: 'Upper Strength & Power', emphasis: 'Push · Pull', durationMin: 60, location: planGenConfig.equipment, exercises: [
+                        { exerciseId: 'ex-bench', sets: 4, reps: 5, targetWeightLb: 225, restSeconds: 180, completed: false },
+                        { exerciseId: 'ex-pullup', sets: 4, reps: 6, targetWeightLb: 10, restSeconds: 120, completed: false, isWeightedAddition: true },
+                        { exerciseId: 'ex-row', sets: 3, reps: 8, targetWeightLb: 185, restSeconds: 90, completed: false }
+                    ]},
+                    { id: 'gen-2', name: 'Lower Posterior Chain', emphasis: 'Squat · Hinge', durationMin: 65, location: planGenConfig.equipment, exercises: [
+                        { exerciseId: 'ex-squat', sets: 4, reps: 5, targetWeightLb: 315, restSeconds: 180, completed: false },
+                        { exerciseId: 'ex-rdl', sets: 3, reps: 8, targetWeightLb: 245, restSeconds: 120, completed: false },
+                        { exerciseId: 'ex-leg-raise', sets: 3, reps: 12, targetWeightLb: 0, restSeconds: 60, completed: false }
+                    ]}
+                ];
+
+                setProgram({ name: newProgramName, totalWeeks: Number(planGenConfig.weeks), currentWeek: 1, phase: 'Phase 1 · Accumulation', days: newDays });
+                setSelectedDayId(newDays[0].id);
+                setShowPlanGeneratorModal(false);
+                triggerToast('Program Generated', `Created ${newProgramName} successfully.`);
+            };
+
+            const startWorkoutSession = (workoutTemplate = todaysWorkout) => {
+                const sessionExercises = workoutTemplate.exercises.map(item => {
+                    const setsArr = [];
+                    for (let i = 1; i <= item.sets; i++) {
+                        setsArr.push({
+                            id: `${item.exerciseId}-set-${i}-${Date.now()}`,
+                            setNumber: i,
+                            type: i === 1 && item.targetWeightLb >= 180 ? 'warmup' : 'working',
+                            prescribedReps: item.reps,
+                            prescribedWeightLb: item.targetWeightLb,
+                            actualWeightLb: item.targetWeightLb,
+                            actualReps: item.reps,
+                            rpe: 8.0,
+                            completed: false
+                        });
+                    }
+                    return { exerciseId: item.exerciseId, restSeconds: item.restSeconds || 90, isWeightedAddition: item.isWeightedAddition || false, sets: setsArr };
+                });
+
+                setActiveSession({ dayId: workoutTemplate.id, workoutName: workoutTemplate.name, startTime: Date.now(), elapsedSeconds: 0, exercises: sessionExercises });
+                triggerToast('Workout Started', `Live tracking active for ${workoutTemplate.name}.`);
+            };
+
+            useEffect(() => {
+                let interval = null;
+                if (activeSession) {
+                    interval = setInterval(() => {
+                        setActiveSession(prev => prev ? { ...prev, elapsedSeconds: prev.elapsedSeconds + 1 } : null);
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [activeSession]);
+
+            useEffect(() => {
+                let interval = null;
+                if (timerRunning && timerSeconds > 0) {
+                    interval = setInterval(() => {
+                        setTimerSeconds(prev => {
+                            if (prev <= 1) { setTimerRunning(false); return 0; }
+                            return prev - 1;
+                        });
+                    }, 1000);
+                }
+                return () => clearInterval(interval);
+            }, [timerRunning, timerSeconds]);
+
+            const finishActiveWorkout = () => {
+                if (!activeSession) return;
+                let totalVol = 0;
+                activeSession.exercises.forEach(ex => {
+                    ex.sets.forEach(s => {
+                        if (s.completed && s.type === 'working') totalVol += (s.actualWeightLb || 0) * (s.actualReps || 0);
+                    });
+                });
+
+                const newLog = {
+                    id: `log-${Date.now()}`,
+                    date: new Date().toISOString().split('T')[0],
+                    workoutName: activeSession.workoutName,
+                    durationMin: Math.round(activeSession.elapsedSeconds / 60) || 45,
+                    totalVolumeLb: totalVol || 15000,
+                    exercises: activeSession.exercises.map(e => ({ exerciseId: e.exerciseId, name: exerciseMap[e.exerciseId]?.name || 'Exercise', sets: e.sets.map(s => ({ setNumber: s.setNumber, weight: s.actualWeightLb, reps: s.actualReps, rpe: s.rpe })) }))
+                };
+
+                setWorkoutLogs([newLog, ...workoutLogs]);
+                setActiveSession(null);
+                triggerToast('Workout Completed!', `Logged ${newLog.workoutName} with ${totalVol.toLocaleString()} lb volume.`);
+            };
+
+            return (
+                <div style={{ backgroundColor: theme.bgPrimary, color: theme.textPrimary }} className="min-h-screen flex flex-col md:flex-row w-full font-sans antialiased">
+                    
+                    {/* LEFT SIDEBAR */}
+                    <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-[#203147] bg-[#0D1622] flex flex-col justify-between shrink-0">
+                        <div>
+                            <div className="p-6 flex items-center gap-3 border-b border-[#203147]">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[#1685F8] to-[#0A529B] flex items-center justify-center shadow-lg shadow-[#1685F8]/20">
+                                    <i data-lucide="dumbbell" className="w-5 h-5 text-white"></i>
+                                </div>
+                                <div>
+                                    <h1 className="text-base font-black tracking-wider text-white">STRONGER</h1>
+                                    <p className="text-[10px] uppercase font-semibold text-[#8FA2B8] tracking-widest">TRAIN. PROGRESS. REPEAT.</p>
+                                </div>
+                            </div>
+
+                            <nav className="p-3 space-y-1">
+                                {[
+                                    { id: 'Home', label: 'Home', icon: 'home' },
+                                    { id: 'Workouts', label: 'Workouts', icon: 'dumbbell' },
+                                    { id: 'Program', label: 'Program', icon: 'layers' },
+                                    { id: 'Progress', label: 'Progress', icon: 'bar-chart-3' },
+                                    { id: 'Nutrition', label: 'Nutrition', icon: 'utensils' },
+                                    { id: 'Recovery', label: 'Recovery', icon: 'activity' },
+                                    { id: 'Calendar', label: 'Calendar', icon: 'calendar' },
+                                    { id: 'Settings', label: 'Settings', icon: 'settings' }
+                                ].map(item => {
+                                    const isActive = activeNav === item.id;
+                                    return (
+                                        <button
+                                            key={item.id}
+                                            onClick={() => setActiveNav(item.id)}
+                                            className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                                                isActive ? 'bg-[#1685F8] text-white shadow-md shadow-[#1685F8]/25' : 'text-[#8FA2B8] hover:text-white hover:bg-[#142235]'
+                                            }`}
+                                        >
+                                            <i data-lucide={item.icon} className={`w-4 h-4 ${isActive ? 'text-white' : 'text-[#8FA2B8]'}`}></i>
+                                            <span>{item.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </nav>
+                        </div>
+
+                        <div className="p-4 m-3 rounded-xl bg-gradient-to-b from-[#101C2B] to-[#0D1622] border border-[#203147] relative overflow-hidden">
+                            <p className="text-[11px] font-medium text-[#C5D1E0] italic leading-relaxed">"Discipline today builds the strength you want tomorrow."</p>
+                            <div className="mt-2 text-[10px] uppercase font-bold text-[#59A5FF] tracking-wider">— STRONGER Engine</div>
+                        </div>
+                    </aside>
+
+                    {/* MAIN CONTAINER */}
+                    <main className="flex-1 flex flex-col min-w-0 overflow-y-auto">
+                        {/* TOP HEADER */}
+                        <header className="px-6 py-4 border-b border-[#203147] bg-[#0D1622]/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-lg font-bold text-white">Good morning, {userSettings.name}</h2>
+                                <p className="text-xs text-[#8FA2B8]">Stronger than yesterday.</p>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1.5 bg-[#101C2B] border border-[#203147] rounded-lg px-2.5 py-1 text-xs">
+                                    <span className="text-[#8FA2B8]">Theme:</span>
+                                    <select
+                                        value={selectedTheme}
+                                        onChange={(e) => setSelectedTheme(e.target.value)}
+                                        className="bg-transparent text-white font-semibold outline-none cursor-pointer"
+                                    >
+                                        {Object.entries(THEMES).map(([key, t]) => (
+                                            <option key={key} value={key} className="bg-[#101C2B] text-white">{t.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div className="w-9 h-9 rounded-xl bg-[#1685F8] text-white font-bold flex items-center justify-center text-xs shadow-md shadow-[#1685F8]/30">
+                                    {userSettings.name[0]}
+                                </div>
+                            </div>
+                        </header>
+
+                        {/* ACTIVE WORKOUT OVERLAY */}
+                        {activeSession && (
+                            <div className="fixed inset-0 z-50 bg-[#080E16]/95 backdrop-blur-xl flex flex-col p-4 md:p-8 overflow-y-auto">
+                                <div className="max-w-4xl mx-auto w-full space-y-6">
+                                    <div className="flex flex-wrap items-center justify-between gap-4 bg-[#101C2B] border border-[#203147] rounded-2xl p-5">
+                                        <div>
+                                            <div className="text-[11px] font-bold uppercase tracking-wider text-[#1685F8]">Active Workout Session</div>
+                                            <h2 className="text-2xl font-black text-white mt-0.5">{activeSession.workoutName}</h2>
+                                            <div className="text-xs text-[#8FA2B8] mt-1 flex items-center gap-3">
+                                                <span>Elapsed: <strong className="text-white tabular-nums">{Math.floor(activeSession.elapsedSeconds / 60)}m {activeSession.elapsedSeconds % 60}s</strong></span>
+                                                <span>·</span>
+                                                <span>Rest Timer: <strong className="text-[#31D583] tabular-nums">{Math.floor(timerSeconds / 60)}:{String(timerSeconds % 60).padStart(2, '0')}</strong></span>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center gap-3">
+                                            <button onClick={() => { setTimerSeconds(90); setTimerRunning(true); }} className="px-3.5 py-2 rounded-xl bg-[#142235] hover:bg-[#1A2C44] border border-[#203147] text-xs font-semibold text-white flex items-center gap-1.5 cursor-pointer">
+                                                <i data-lucide="clock" className="w-4 h-4 text-[#1685F8]"></i>
+                                                <span>Rest 90s</span>
+                                            </button>
+                                            <button onClick={finishActiveWorkout} className="px-5 py-2 rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-[#080E16] text-xs font-extrabold shadow-lg shadow-[#31D583]/20 cursor-pointer">
+                                                Finish Workout
+                                            </button>
+                                            <button onClick={() => setActiveSession(null)} className="p-2 rounded-xl bg-[#142235] text-[#8FA2B8] hover:text-white">
+                                                <i data-lucide="x" className="w-5 h-5"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-4">
+                                        {activeSession.exercises.map((item, exIdx) => {
+                                            const ex = exerciseMap[item.exerciseId];
+                                            return (
+                                                <div key={item.exerciseId} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-5 space-y-4">
+                                                    <div className="flex items-center justify-between">
+                                                        <div className="flex items-center gap-3">
+                                                            <img src={ex?.thumbnail} alt={ex?.name} className="w-12 h-10 rounded-lg object-cover border border-[#203147]" />
+                                                            <div>
+                                                                <h3 className="text-base font-bold text-white">{ex?.name}</h3>
+                                                                <p className="text-xs text-[#8FA2B8]">{ex?.primaryMuscle} · {ex?.equipment}</p>
+                                                            </div>
+                                                        </div>
+                                                        <button onClick={() => setSwapModalConfig({ mode: 'exercise', dayId: activeSession.dayId, exerciseId: item.exerciseId, activeExIdx: exIdx })} className="px-3 py-1.5 rounded-lg bg-[#142235] hover:bg-[#1A2C44] border border-[#203147] text-xs font-semibold text-[#1685F8] flex items-center gap-1.5 cursor-pointer">
+                                                            <i data-lucide="refresh-cw" className="w-3.5 h-3.5"></i>
+                                                            <span>Swap Movement</span>
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="overflow-x-auto">
+                                                        <table className="w-full text-left text-xs">
+                                                            <thead>
+                                                                <tr className="text-[#8FA2B8] uppercase tracking-wider border-b border-[#182638]">
+                                                                    <th className="py-2 px-3">Set</th>
+                                                                    <th className="py-2 px-3">Type</th>
+                                                                    <th className="py-2 px-3">Load ({userSettings.unit})</th>
+                                                                    <th className="py-2 px-3">Reps</th>
+                                                                    <th className="py-2 px-3">RPE</th>
+                                                                    <th className="py-2 px-3 text-right">Complete</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody className="divide-y divide-[#182638]">
+                                                                {item.sets.map((setObj, setIdx) => (
+                                                                    <tr key={setObj.id} className={setObj.completed ? 'bg-[#31D583]/5' : ''}>
+                                                                        <td className="py-2.5 px-3 font-bold text-white">#{setObj.setNumber}</td>
+                                                                        <td className="py-2.5 px-3"><span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-[#1685F8]/20 text-[#1685F8]">{setObj.type}</span></td>
+                                                                        <td className="py-2.5 px-3">
+                                                                            <input type="number" value={setObj.actualWeightLb} onChange={e => {
+                                                                                const val = Number(e.target.value);
+                                                                                setActiveSession(prev => {
+                                                                                    const updated = [...prev.exercises];
+                                                                                    updated[exIdx].sets[setIdx].actualWeightLb = val;
+                                                                                    return { ...prev, exercises: updated };
+                                                                                });
+                                                                            }} className="w-20 bg-[#0D1622] border border-[#203147] rounded px-2 py-1 text-white tabular-nums" />
+                                                                        </td>
+                                                                        <td className="py-2.5 px-3">
+                                                                            <input type="number" value={setObj.actualReps} onChange={e => {
+                                                                                const val = Number(e.target.value);
+                                                                                setActiveSession(prev => {
+                                                                                    const updated = [...prev.exercises];
+                                                                                    updated[exIdx].sets[setIdx].actualReps = val;
+                                                                                    return { ...prev, exercises: updated };
+                                                                                });
+                                                                            }} className="w-16 bg-[#0D1622] border border-[#203147] rounded px-2 py-1 text-white tabular-nums" />
+                                                                        </td>
+                                                                        <td className="py-2.5 px-3">
+                                                                            <input type="number" step="0.5" value={setObj.rpe} onChange={e => {
+                                                                                const val = Number(e.target.value);
+                                                                                setActiveSession(prev => {
+                                                                                    const updated = [...prev.exercises];
+                                                                                    updated[exIdx].sets[setIdx].rpe = val;
+                                                                                    return { ...prev, exercises: updated };
+                                                                                });
+                                                                            }} className="w-16 bg-[#0D1622] border border-[#203147] rounded px-2 py-1 text-white tabular-nums" />
+                                                                        </td>
+                                                                        <td className="py-2.5 px-3 text-right">
+                                                                            <button onClick={() => {
+                                                                                setActiveSession(prev => {
+                                                                                    const updated = [...prev.exercises];
+                                                                                    updated[exIdx].sets[setIdx].completed = !updated[exIdx].sets[setIdx].completed;
+                                                                                    return { ...prev, exercises: updated };
+                                                                                });
+                                                                                setTimerSeconds(item.restSeconds || 90);
+                                                                                setTimerRunning(true);
+                                                                            }} className={`p-2 rounded-lg cursor-pointer ${setObj.completed ? 'bg-[#31D583] text-[#080E16]' : 'bg-[#142235] text-[#8FA2B8] hover:text-white'}`}>
+                                                                                <i data-lucide="check" className="w-4 h-4"></i>
+                                                                            </button>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PAGE VIEWS */}
+                        <div className="p-6 md:p-8 max-w-[1600px] w-full mx-auto space-y-8">
+                            {activeNav === 'Home' && (
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                                    <div className="lg:col-span-7 space-y-6">
+                                        {/* HERO WORKOUT CARD */}
+                                        <div className="relative rounded-2xl overflow-hidden border border-[#203147] bg-[#101C2B] shadow-2xl group">
+                                            <div className="absolute inset-0 z-0">
+                                                <img src={IMAGES.heroDeadlift} alt="Hero athlete" className="w-full h-full object-cover opacity-35" />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-[#080E16] via-[#080E16]/80 to-transparent"></div>
+                                            </div>
+                                            <div className="relative z-10 p-6 md:p-8 space-y-6">
+                                                <div className="flex items-center justify-between">
+                                                    <span className="px-3 py-1 rounded-full bg-[#1685F8]/20 text-[#1685F8] border border-[#1685F8]/30 text-[11px] font-extrabold uppercase tracking-widest">Today's Workout</span>
+                                                    <span className="text-xs text-[#8FA2B8] font-medium">Scheduled Today</span>
+                                                </div>
+                                                <div>
+                                                    <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">{todaysWorkout.name}</h2>
+                                                    <p className="text-xs md:text-sm text-[#A4B3C5] font-medium mt-1">{todaysWorkout.emphasis}</p>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-4 text-xs text-[#C5D1E0]">
+                                                    <div className="flex items-center gap-1.5 bg-[#080E16]/70 px-3 py-1.5 rounded-xl border border-[#203147]">
+                                                        <i data-lucide="clock" className="w-3.5 h-3.5 text-[#1685F8]"></i><span>{todaysWorkout.durationMin} min</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 bg-[#080E16]/70 px-3 py-1.5 rounded-xl border border-[#203147]">
+                                                        <i data-lucide="dumbbell" className="w-3.5 h-3.5 text-[#1685F8]"></i><span>{todaysWorkout.location}</span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-wrap items-center gap-3 pt-2">
+                                                    <button onClick={() => startWorkoutSession(todaysWorkout)} className="flex-1 min-w-[160px] py-3 rounded-xl bg-[#1685F8] hover:bg-[#2992FF] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#1685F8]/30 cursor-pointer">
+                                                        <i data-lucide="play" className="w-4 h-4 fill-white"></i><span>Start Workout</span>
+                                                    </button>
+                                                    <button onClick={() => setSwapModalConfig({ mode: 'day', dayId: todaysWorkout.id })} className="px-4 py-3 rounded-xl bg-[#142235]/90 hover:bg-[#1A2C44] text-[#31D583] border border-[#203147] font-semibold text-xs flex items-center gap-2 cursor-pointer">
+                                                        <i data-lucide="refresh-cw" className="w-4 h-4"></i><span>Swap for Equipment</span>
+                                                    </button>
+                                                    <button onClick={() => setShowPlanGeneratorModal(true)} className="px-4 py-3 rounded-xl bg-[#142235]/90 hover:bg-[#1A2C44] text-[#1685F8] border border-[#203147] font-semibold text-xs flex items-center gap-2 cursor-pointer">
+                                                        <i data-lucide="sparkles" className="w-4 h-4"></i><span>Generate Multi-Week Plan</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* 4 SUMMARY CARDS */}
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="p-4 rounded-2xl bg-[#101C2B] border border-[#203147] space-y-3">
+                                                <div className="flex items-center justify-between text-xs text-[#8FA2B8]">
+                                                    <span>Current Program</span><i data-lucide="layers" className="w-4 h-4 text-[#1685F8]"></i>
+                                                </div>
+                                                <div>
+                                                    <div className="text-sm font-bold text-white truncate">{program.name}</div>
+                                                    <div className="text-[11px] text-[#A4B3C5] mt-0.5">{program.phase}</div>
+                                                </div>
+                                                <div className="w-full bg-[#080E16] h-1.5 rounded-full overflow-hidden">
+                                                    <div className="bg-[#1685F8] h-full rounded-full" style={{ width: `${(program.currentWeek / program.totalWeeks) * 100}%` }}></div>
+                                                </div>
+                                            </div>
+
+                                            <div className="p-4 rounded-2xl bg-[#101C2B] border border-[#203147] space-y-3">
+                                                <div className="flex items-center justify-between text-xs text-[#8FA2B8]">
+                                                    <span>Weekly Training</span><i data-lucide="check-circle-2" className="w-4 h-4 text-[#31D583]"></i>
+                                                </div>
+                                                <div className="flex items-baseline gap-2">
+                                                    <span className="text-xl font-extrabold text-white">4 / 5</span>
+                                                    <span className="text-xs text-[#8FA2B8]">Completed</span>
+                                                </div>
+                                                <div className="flex items-center gap-1.5">
+                                                    {[true, true, true, true, false].map((done, i) => (
+                                                        <div key={i} className={`h-2 flex-1 rounded-full ${done ? 'bg-[#31D583]' : 'bg-[#203147]'}`}></div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* TODAY'S EXERCISE STACK */}
+                                        <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 space-y-5">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2.5">
+                                                    <i data-lucide="dumbbell" className="w-4 h-4 text-[#1685F8]"></i>
+                                                    <h3 className="text-sm font-bold text-white">Today's Workout Exercises</h3>
+                                                </div>
+                                                <button onClick={() => setSwapModalConfig({ mode: 'day', dayId: todaysWorkout.id })} className="text-xs font-semibold text-[#31D583] hover:underline flex items-center gap-1 cursor-pointer">
+                                                    <i data-lucide="refresh-cw" className="w-3 h-3"></i><span>Adapt Equipment</span>
+                                                </button>
+                                            </div>
+                                            <div className="divide-y divide-[#182638]">
+                                                {todaysWorkout.exercises.map(item => {
+                                                    const ex = exerciseMap[item.exerciseId];
+                                                    if (!ex) return null;
+                                                    return (
+                                                        <div key={item.exerciseId} className="py-3.5 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
+                                                            <div className="flex items-center gap-3.5 min-w-0">
+                                                                <div className="w-16 h-12 rounded-lg overflow-hidden border border-[#203147] shrink-0 bg-[#080E16]">
+                                                                    <img src={ex.thumbnail} alt={ex.name} className="w-full h-full object-cover" />
+                                                                </div>
+                                                                <div className="min-w-0">
+                                                                    <div className="text-xs font-bold truncate text-white">{ex.name}</div>
+                                                                    <div className="text-[11px] text-[#8FA2B8] tabular-nums mt-0.5 flex items-center gap-2">
+                                                                        <span>{item.sets} sets × {item.reps} reps</span>
+                                                                        {item.targetWeightLb > 0 && <span>· <span>{formatWeight(item.targetWeightLb, userSettings.unit, item.isWeightedAddition)}</span></span>}
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <button onClick={() => setSwapModalConfig({ mode: 'exercise', dayId: todaysWorkout.id, exerciseId: item.exerciseId })} className="px-2.5 py-1 rounded-lg bg-[#142235] hover:bg-[#1A2C44] border border-[#203147] text-[11px] font-semibold text-[#1685F8] flex items-center gap-1 cursor-pointer">
+                                                                <i data-lucide="refresh-cw" className="w-3 h-3"></i><span>Swap</span>
+                                                            </button>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* RIGHT ANALYTICS COLUMN */}
+                                    <div className="lg:col-span-5 space-y-6">
+                                        <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <i data-lucide="bar-chart-3" className="w-4 h-4 text-[#1685F8]"></i>
+                                                    <h3 className="text-sm font-bold text-white">Recent Progress</h3>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="text-xs text-[#8FA2B8]">Total Lift Volume</div>
+                                                <div className="text-lg font-black text-white mt-0.5">18,450 lb <span className="text-xs text-[#31D583] font-bold">+12%</span></div>
+                                            </div>
+                                            <div className="h-44 w-full bg-[#080E16] rounded-xl border border-[#203147] p-3 flex items-end gap-2">
+                                                {[35, 42, 50, 48, 62, 70, 75, 88].map((h, idx) => (
+                                                    <div key={idx} className="flex-1 bg-gradient-to-t from-[#1685F8]/40 to-[#1685F8] rounded-t-sm" style={{ height: `${h}%` }}></div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 space-y-4">
+                                            <div className="flex items-center gap-2">
+                                                <i data-lucide="award" className="w-4 h-4 text-[#1685F8]"></i>
+                                                <h3 className="text-sm font-bold text-white">Latest PRs</h3>
+                                            </div>
+                                            <div className="divide-y divide-[#182638]">
+                                                {[
+                                                    { name: 'Barbell Bench Press', weight: '225 lb × 5', date: 'Sep 20' },
+                                                    { name: 'Deadlift', weight: '405 lb × 3', date: 'Sep 17' },
+                                                    { name: 'Overhead Press', weight: '135 lb × 5', date: 'Sep 10' }
+                                                ].map((pr, i) => (
+                                                    <div key={i} className="py-2.5 first:pt-0 last:pb-0 flex items-center justify-between text-xs">
+                                                        <div>
+                                                            <div className="font-bold text-white">{pr.name}</div>
+                                                            <div className="text-[11px] text-[#8FA2B8] tabular-nums">{pr.weight}</div>
+                                                        </div>
+                                                        <span className="text-[11px] text-[#8FA2B8]">{pr.date}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 space-y-4">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <i data-lucide="utensils" className="w-4 h-4 text-[#1685F8]"></i>
+                                                    <h3 className="text-sm font-bold text-white">Nutrition Today</h3>
+                                                </div>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4 items-center">
+                                                <div className="bg-[#080E16] border border-[#203147] rounded-xl p-4 text-center">
+                                                    <div className="text-xl font-black text-white">1,850</div>
+                                                    <div className="text-[11px] text-[#8FA2B8]">of 2,400 kcal</div>
+                                                </div>
+                                                <div className="space-y-2 text-xs">
+                                                    <div>
+                                                        <div className="flex justify-between mb-1 text-[11px]">
+                                                            <span className="text-[#8FA2B8]">Protein</span>
+                                                            <span className="text-white font-bold">145 / 180 g</span>
+                                                        </div>
+                                                        <div className="w-full bg-[#080E16] h-1.5 rounded-full overflow-hidden">
+                                                            <div className="bg-[#1685F8] h-full" style={{ width: '80%' }}></div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeNav === 'Workouts' && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h2 className="text-xl font-black text-white">Workout Library & Builder</h2>
+                                            <p className="text-xs text-[#8FA2B8]">Manage your training sessions and equipment setups.</p>
+                                        </div>
+                                        <button onClick={() => setShowPlanGeneratorModal(true)} className="px-4 py-2.5 rounded-xl bg-[#1685F8] text-white text-xs font-bold flex items-center gap-2 cursor-pointer">
+                                            <i data-lucide="sparkles" className="w-4 h-4"></i><span>Generate New Plan</span>
+                                        </button>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                                        {program.days.map(day => (
+                                            <div key={day.id} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 flex flex-col justify-between gap-6">
+                                                <div className="space-y-3">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="px-2.5 py-1 rounded-full bg-[#1685F8]/15 text-[#1685F8] text-[10px] font-bold uppercase">{day.location}</span>
+                                                        <span className="text-xs text-[#8FA2B8]">{day.durationMin} min</span>
+                                                    </div>
+                                                    <h3 className="text-base font-bold text-white">{day.name}</h3>
+                                                    <p className="text-xs text-[#8FA2B8]">{day.emphasis}</p>
+                                                    <div className="pt-2 space-y-2 border-t border-[#182638]">
+                                                        {day.exercises.map((item, idx) => (
+                                                            <div key={idx} className="flex items-center justify-between text-xs">
+                                                                <span className="text-[#C5D1E0] font-medium">{exerciseMap[item.exerciseId]?.name}</span>
+                                                                <span className="text-[#8FA2B8]">{item.sets} × {item.reps}</span>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                                <div className="flex items-center gap-2 pt-2 border-t border-[#182638]">
+                                                    <button onClick={() => startWorkoutSession(day)} className="flex-1 py-2.5 rounded-xl bg-[#1685F8] text-white text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer">
+                                                        <i data-lucide="play" className="w-3.5 h-3.5 fill-white"></i><span>Start</span>
+                                                    </button>
+                                                    <button onClick={() => setSwapModalConfig({ mode: 'day', dayId: day.id })} className="px-3 py-2.5 rounded-xl bg-[#142235] border border-[#203147] text-[#31D583] text-xs font-semibold flex items-center gap-1 cursor-pointer">
+                                                        <i data-lucide="refresh-cw" className="w-3.5 h-3.5"></i><span>Adapt</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeNav === 'Program' && (
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h2 className="text-xl font-black text-white">{program.name}</h2>
+                                            <p className="text-xs text-[#8FA2B8]">Week {program.currentWeek} of {program.totalWeeks} · {program.phase}</p>
+                                        </div>
+                                        <button onClick={() => setShowPlanGeneratorModal(true)} className="px-4 py-2 rounded-xl bg-[#1685F8] text-white text-xs font-bold cursor-pointer">Configure Program</button>
+                                    </div>
+                                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 space-y-4">
+                                        <div className="text-sm font-bold text-white">Periodized Roadmap</div>
+                                        <div className="grid grid-cols-4 md:grid-cols-12 gap-2">
+                                            {Array.from({ length: program.totalWeeks }).map((_, i) => {
+                                                const wkNum = i + 1;
+                                                const isCurrent = wkNum === program.currentWeek;
+                                                return (
+                                                    <div key={wkNum} onClick={() => setProgram(prev => ({ ...prev, currentWeek: wkNum }))} className={`p-3 rounded-xl border text-center cursor-pointer ${isCurrent ? 'bg-[#1685F8] border-[#1685F8] text-white font-extrabold shadow-md' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]'}`}>
+                                                        <div className="text-[10px] uppercase">Wk</div>
+                                                        <div className="text-base font-black">{wkNum}</div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeNav === 'Progress' && (
+                                <div className="space-y-6">
+                                    <h2 className="text-xl font-black text-white">Strength & Volume Analytics</h2>
+                                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 space-y-4">
+                                        <div className="text-sm font-bold text-white">Estimated 1RM Trends</div>
+                                        <div className="h-64 w-full bg-[#080E16] rounded-xl border border-[#203147] p-4 flex items-end gap-3">
+                                            {[45, 52, 60, 68, 72, 80, 85, 92, 98].map((val, i) => (
+                                                <div key={i} className="flex-1 bg-[#1685F8] rounded-t-md" style={{ height: `${val}%` }}></div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeNav === 'Nutrition' && (
+                                <div className="space-y-6">
+                                    <h2 className="text-xl font-black text-white">Nutrition Tracker</h2>
+                                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 space-y-4">
+                                        <div className="text-sm font-bold text-white">Daily Macro Goals</div>
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                            <div className="bg-[#080E16] p-4 rounded-xl border border-[#203147]">
+                                                <div className="text-xs text-[#8FA2B8]">Calories</div>
+                                                <div className="text-2xl font-black text-white mt-1">1,850 / {userSettings.targetCalories}</div>
+                                            </div>
+                                            <div className="bg-[#080E16] p-4 rounded-xl border border-[#203147]">
+                                                <div className="text-xs text-[#8FA2B8]">Protein</div>
+                                                <div className="text-2xl font-black text-white mt-1">145 / {userSettings.targetProtein}g</div>
+                                            </div>
+                                            <div className="bg-[#080E16] p-4 rounded-xl border border-[#203147]">
+                                                <div className="text-xs text-[#8FA2B8]">Carbs / Fats</div>
+                                                <div className="text-2xl font-black text-white mt-1">160g / 52g</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeNav === 'Recovery' && (
+                                <div className="space-y-6">
+                                    <h2 className="text-xl font-black text-white">Recovery & Sleep Biometrics</h2>
+                                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 space-y-4">
+                                        <div className="text-sm font-bold text-white">Sleep Quality Last Night</div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="bg-[#080E16] p-4 rounded-xl border border-[#203147]">
+                                                <div className="text-xs text-[#8FA2B8]">Sleep Duration</div>
+                                                <div className="text-2xl font-black text-white mt-1">7h 28m</div>
+                                            </div>
+                                            <div className="bg-[#080E16] p-4 rounded-xl border border-[#203147]">
+                                                <div className="text-xs text-[#8FA2B8]">Sleep Score</div>
+                                                <div className="text-2xl font-black text-[#31D583] mt-1">82 / 100</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeNav === 'Calendar' && (
+                                <div className="space-y-6">
+                                    <h2 className="text-xl font-black text-white">Training Calendar</h2>
+                                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 text-center text-[#8FA2B8]">
+                                        Calendar Schedule Synchronized with Week {program.currentWeek}
+                                    </div>
+                                </div>
+                            )}
+
+                            {activeNav === 'Settings' && (
+                                <div className="space-y-6">
+                                    <h2 className="text-xl font-black text-white">Settings & Preferences</h2>
+                                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-6 space-y-4 max-w-xl">
+                                        <div>
+                                            <label className="text-xs text-[#8FA2B8] block mb-1">Athlete Name</label>
+                                            <input type="text" value={userSettings.name} onChange={e => setUserSettings({ ...userSettings, name: e.target.value })} className="w-full bg-[#080E16] border border-[#203147] rounded-xl px-4 py-2.5 text-white text-xs font-semibold" />
+                                        </div>
+                                        <div>
+                                            <label className="text-xs text-[#8FA2B8] block mb-1">Preferred Weight Unit</label>
+                                            <select value={userSettings.unit} onChange={e => setUserSettings({ ...userSettings, unit: e.target.value })} className="w-full bg-[#080E16] border border-[#203147] rounded-xl px-4 py-2.5 text-white text-xs font-semibold">
+                                                <option value="lb">Pounds (lb)</option>
+                                                <option value="kg">Kilograms (kg)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    </main>
+
+                    {/* MODALS & OVERLAYS */}
+                    {swapModalConfig && (
+                        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+                            <div className="bg-[#101C2B] border border-[#203147] rounded-2xl max-w-2xl w-full p-6 space-y-5 max-h-[90vh] overflow-y-auto">
+                                <div className="flex items-start justify-between gap-4 border-b border-[#203147] pb-4">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white">{swapModalConfig.mode === 'day' ? 'Equipment Workout Adapter' : 'Movement Substitution'}</h3>
+                                        <p className="text-xs text-[#8FA2B8] mt-1">Convert workout movements to match available equipment.</p>
+                                    </div>
+                                    <button onClick={() => setSwapModalConfig(null)} className="p-2 rounded-xl bg-[#142235] text-[#8FA2B8] hover:text-white"><i data-lucide="x" className="w-5 h-5"></i></button>
+                                </div>
+                                {swapModalConfig.mode === 'day' ? (
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                        {[
+                                            { key: 'dumbbells_only', title: 'Dumbbells & Bench', desc: 'Convert barbell lifts to dumbbells.' },
+                                            { key: 'bodyweight_minimal', title: 'Bodyweight & Bar', desc: 'Convert to calisthenics & pull-ups.' },
+                                            { key: 'barbell_rack', title: 'Barbell & Rack', desc: 'Standard barbell power lifts.' }
+                                        ].map(prof => (
+                                            <div key={prof.key} className="p-4 rounded-xl bg-[#080E16] border border-[#203147] flex flex-col justify-between gap-4">
+                                                <div>
+                                                    <h4 className="text-xs font-bold text-white">{prof.title}</h4>
+                                                    <p className="text-[11px] text-[#8FA2B8] mt-1">{prof.desc}</p>
+                                                </div>
+                                                <button onClick={() => handleAdaptEntireWorkoutByEquipment(swapModalConfig.dayId, prof.key)} className="py-2 rounded-lg bg-[#1685F8] text-white text-xs font-bold cursor-pointer">Apply Profile</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {getSimilarAlternatives(swapModalConfig.exerciseId).map(altEx => (
+                                            <div key={altEx.id} className="p-3 rounded-xl bg-[#080E16] border border-[#203147] flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <img src={altEx.thumbnail} alt={altEx.name} className="w-12 h-10 rounded-lg object-cover" />
+                                                    <div>
+                                                        <div className="text-xs font-bold text-white">{altEx.name}</div>
+                                                        <div className="text-[11px] text-[#8FA2B8]">{altEx.equipment} · {altEx.primaryMuscle}</div>
+                                                    </div>
+                                                </div>
+                                                <button onClick={() => handleReplaceSingleExercise(altEx.id)} className="px-3 py-1.5 rounded-lg bg-[#1685F8] text-white text-xs font-bold cursor-pointer">Replace</button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {showPlanGeneratorModal && (
+                        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4">
+                            <div className="bg-[#101C2B] border border-[#203147] rounded-2xl max-w-lg w-full p-6 space-y-5">
+                                <div className="flex items-start justify-between gap-4 border-b border-[#203147] pb-4">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-white">Generate Multi-Week Plan</h3>
+                                        <p className="text-xs text-[#8FA2B8] mt-1">Configure your periodized training block.</p>
+                                    </div>
+                                    <button onClick={() => setShowPlanGeneratorModal(false)} className="p-2 rounded-xl bg-[#142235] text-[#8FA2B8] hover:text-white"><i data-lucide="x" className="w-5 h-5"></i></button>
+                                </div>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="text-xs text-[#8FA2B8] block mb-1">Program Duration (Weeks)</label>
+                                        <select value={planGenConfig.weeks} onChange={e => setPlanGenConfig({ ...planGenConfig, weeks: Number(e.target.value) })} className="w-full bg-[#080E16] border border-[#203147] rounded-xl px-4 py-2.5 text-white text-xs">
+                                            <option value="4">4 Weeks (Peaking Block)</option>
+                                            <option value="8">8 Weeks (Strength & Size)</option>
+                                            <option value="12">12 Weeks (Full Periodization)</option>
+                                            <option value="16">16 Weeks (Advanced Hypertrophy)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="text-xs text-[#8FA2B8] block mb-1">Training Goal</label>
+                                        <select value={planGenConfig.goal} onChange={e => setPlanGenConfig({ ...planGenConfig, goal: e.target.value })} className="w-full bg-[#080E16] border border-[#203147] rounded-xl px-4 py-2.5 text-white text-xs">
+                                            <option value="Powerbuilding">Powerbuilding (Strength + Hypertrophy)</option>
+                                            <option value="Maximal Strength">Maximal Strength (Powerlifting)</option>
+                                            <option value="Athletic Hypertrophy">Athletic Hypertrophy</option>
+                                        </select>
+                                    </div>
+                                    <button onClick={handleGeneratePlan} className="w-full py-3 rounded-xl bg-[#1685F8] text-white text-xs font-bold shadow-lg shadow-[#1685F8]/25 cursor-pointer">Generate & Load Program</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {toast && (
+                        <div className="fixed bottom-6 right-6 z-50 bg-[#101C2B] border border-[#1685F8] text-white px-5 py-3.5 rounded-2xl shadow-2xl flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-[#1685F8] animate-ping"></div>
+                            <div>
+                                <div className="text-xs font-bold">{toast.title}</div>
+                                <div className="text-[11px] text-[#8FA2B8]">{toast.message}</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        ReactDOM.render(<App />, document.getElementById('root'));
+        setTimeout(() => { if (window.lucide) lucide.createIcons(); }, 100);
+    </script>
+</body>
+</html>
