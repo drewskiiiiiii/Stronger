@@ -127,7 +127,7 @@
 
         // ---- Program library components ----
         const restLabel = (r) => r ? r.raw.replace(/MIN$/i, ' min').toLowerCase().replace(/\s+/g, ' ') : 'unspecified';
-        const intensityLabel = (i) => i ? (i.type === 'RPE' ? `RPE ${i.raw}` : i.type === '%1RM' ? `${i.raw} 1RM` : i.raw) : 'unspecified';
+        const intensityLabel = (i) => i ? (i.type === 'RPE' ? `RPE ${i.raw}` : i.type === 'RIR' ? `RIR ${i.raw}` : i.type === '%1RM' ? `${i.raw} 1RM` : i.raw) : 'unspecified';
         const STATUS_META = {
             not_started: { label: 'Not Started', cls: 'bg-[#142235] text-[#8FA2B8]' },
             in_progress: { label: 'In Progress', cls: 'bg-[#1685F8]/20 text-[#1685F8]' },
@@ -189,21 +189,21 @@
                                 <span>⚠ {program.flags.length} item(s) flagged for review</span><span>{showFlags ? '▲' : '▼'}</span>
                             </button>
                             {showFlags && program.flags.map((f, i) => (
-                                <div key={i} className="text-[11px] text-[#F3F6FA] leading-snug">{f.page ? <span className="text-[#8FA2B8]">p.{f.page} · </span> : null}{f.msg}</div>
+                                <div key={i} className="text-[11px] text-[#F3F6FA] leading-snug">{f.page ? <span className="text-[#8FA2B8]">p.{f.page} · </span> : f.ref ? <span className="text-[#8FA2B8]">{f.ref} · </span> : null}{f.msg}</div>
                             ))}
                         </div>
                     )}
                     <div className="flex gap-2 overflow-x-auto pb-1">
                         {program.weeks.map(w => (
-                            <button key={w.week} onClick={() => setWeek(w.week)} className={`min-h-[40px] px-4 rounded-xl text-xs font-bold shrink-0 border ${w.week === week ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#101C2B] border-[#203147] text-[#8FA2B8]'}`}>Week {w.week}</button>
+                            <button key={w.week} onClick={() => setWeek(w.week)} className={`min-h-[40px] px-4 rounded-xl text-xs font-bold shrink-0 border ${w.week === week ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#101C2B] border-[#203147] text-[#8FA2B8]'}`}>Week {w.week}{w.deload ? ' ↓' : ''}</button>
                         ))}
                     </div>
-                    {wk && wk.phase && <div className="text-[11px] text-[#8FA2B8]">{wk.phase}</div>}
+                    {wk && (wk.phase || wk.deload) && <div className="text-[11px] text-[#8FA2B8]">{wk.phase}{wk.deload ? ' · deload week (from the source)' : ''}</div>}
                     {wk && wk.days.map(d => (
                         <div key={d.day} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
                             <div className="flex items-center justify-between">
                                 <div><div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Day {d.day}</div><h3 className="text-sm font-black text-white">{d.label}</h3></div>
-                                <span className="text-[10px] text-[#8FA2B8]">PDF p.{d.page}</span>
+                                <span className="text-[10px] text-[#8FA2B8]">{d.page ? `PDF p.${d.page}` : d.ref}</span>
                             </div>
                             {d.exercises.map(e => (
                                 <div key={e.order} className="border-t border-[#203147] pt-2.5 space-y-1">
@@ -212,9 +212,11 @@
                                         <div className="text-[12px] font-bold text-white tabular-nums shrink-0">{e.workingSets ?? '?'} × {e.reps ?? '?'}</div>
                                     </div>
                                     <div className="text-[11px] text-[#8FA2B8]">
-                                        {e.warmupSets != null ? `${e.warmupSets} warm-up set(s) · ` : ''}Intensity {intensityLabel(e.intensity)} · Rest: {restLabel(e.rest)}
+                                        {e.warmupText ? `${e.warmupText} warm-up set(s) · ` : e.warmupSets != null ? `${e.warmupSets} warm-up set(s) · ` : ''}Intensity {intensityLabel(e.intensity)} · Rest: {restLabel(e.rest)}
                                     </div>
+                                    {e.technique && <div className="text-[11px] font-semibold text-[#F59E0B]">Last-set technique: {e.technique}</div>}
                                     {e.notes && <div className="text-[11px] text-[#C7D3E0] leading-snug">{e.notes}</div>}
+                                    {e.sourceSubstitutions && e.sourceSubstitutions.length > 0 && !e.sourceGuidance && <div className="text-[10px] text-[#8FA2B8]">Substitutes in source: {e.sourceSubstitutions.join(' · ')}</div>}
                                     {e.videoUrl && <a href={e.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-[11px] font-semibold text-[#1685F8]">▶ Technique video (from PDF)</a>}
                                 </div>
                             ))}
@@ -222,13 +224,13 @@
                     ))}
                     {program.instructions.length > 0 && (
                         <div className="space-y-2">
-                            <button onClick={() => setShowInstr(!showInstr)} className="w-full min-h-[44px] flex items-center justify-between text-xs font-bold text-white"><span>Instructions from the PDF ({program.instructions.length} pages)</span><span className="text-[#8FA2B8]">{showInstr ? '▲' : '▼'}</span></button>
-                            {showInstr && program.instructions.map(sec => (
-                                <div key={sec.page} className="bg-[#101C2B] border border-[#203147] rounded-xl">
-                                    <button onClick={() => setOpenSection(openSection === sec.page ? null : sec.page)} className="w-full min-h-[44px] px-3 flex items-center justify-between text-left text-xs font-semibold text-white">
-                                        <span className="truncate">{sec.lines[0]}</span><span className="text-[#8FA2B8] ml-2 shrink-0">p.{sec.page} {openSection === sec.page ? '▲' : '▼'}</span>
+                            <button onClick={() => setShowInstr(!showInstr)} className="w-full min-h-[44px] flex items-center justify-between text-xs font-bold text-white"><span>Instructions from the source ({program.instructions.length} {program.source.kind === 'spreadsheet' ? 'notes' : 'pages'})</span><span className="text-[#8FA2B8]">{showInstr ? '▲' : '▼'}</span></button>
+                            {showInstr && program.instructions.map((sec, si) => (
+                                <div key={si} className="bg-[#101C2B] border border-[#203147] rounded-xl">
+                                    <button onClick={() => setOpenSection(openSection === si ? null : si)} className="w-full min-h-[44px] px-3 flex items-center justify-between text-left text-xs font-semibold text-white">
+                                        <span className="truncate">{sec.title || sec.lines[0]}</span><span className="text-[#8FA2B8] ml-2 shrink-0">{sec.page ? `p.${sec.page} ` : ''}{openSection === si ? '▲' : '▼'}</span>
                                     </button>
-                                    {openSection === sec.page && <div className="px-3 pb-3 text-[11px] text-[#C7D3E0] leading-relaxed whitespace-pre-line">{sec.lines.join('\n')}</div>}
+                                    {openSection === si && <div className="px-3 pb-3 text-[11px] text-[#C7D3E0] leading-relaxed whitespace-pre-line">{sec.lines.join('\n')}</div>}
                                 </div>
                             ))}
                         </div>
@@ -264,7 +266,7 @@
                     const status = rec.status || 'planned';
                     const basePlanned = windowDates[k] || windowDates[windowDates.length - 1] || null;
                     const plannedDate = rec.plannedDate || basePlanned;
-                    out.push({ key, week: w.week, day: d.day, label: d.label, page: d.page, exercises: d.exercises, status, plannedDate,
+                    out.push({ key, week: w.week, deload: !!w.deload, day: d.day, label: d.label, page: d.page, exercises: d.exercises, status, plannedDate,
                         rescheduled: !!rec.plannedDate && rec.plannedDate !== basePlanned, completedDate: rec.completedDate || null, logId: rec.logId || null,
                         missed: status === 'planned' && !!plannedDate && plannedDate < today });
                 });
@@ -394,7 +396,7 @@
                                 <div className="flex items-start justify-between gap-2">
                                     <div>
                                         <div className="text-sm font-bold text-white">{s.label}</div>
-                                        <div className="text-[11px] text-[#8FA2B8]">Week {s.week} · Day {s.day} · {s.exercises.length} exercises</div>
+                                        <div className="text-[11px] text-[#8FA2B8]">Week {s.week}{s.deload ? ' (deload)' : ''} · Day {s.day} · {s.exercises.length} exercises</div>
                                         {s.rescheduled && <div className="text-[10px] text-[#F59E0B]">Rescheduled</div>}
                                         {s.status === 'completed' && <div className="text-[10px] text-[#31D583]">Completed {s.completedDate}{s.completedDate !== s.plannedDate ? ` (planned ${s.plannedDate})` : ''}</div>}
                                         {s.missed && <div className="text-[10px] text-[#F43F5E]">Missed — still pending; nothing was skipped automatically</div>}
@@ -520,7 +522,7 @@
             const chosen = perf[exName] ? exName : exNames[0];
             const series = chosen ? perf[chosen] : [];
             const prWeight = series.length ? Math.max(...series.map(x => x.weight)) : 0;
-            const deloadLines = program ? program.instructions.flatMap(sec => sec.lines.filter(l => /deload/i.test(l)).map(l => `p.${sec.page}: ${l}`)) : [];
+            const deloadLines = program ? [...(program.weeks.filter(w => w.deload).length ? [`Deload week(s): ${program.weeks.filter(w => w.deload).map(w => w.week).join(', ')}`] : []), ...program.instructions.flatMap(sec => sec.lines.filter(l => /deload/i.test(l)).map(l => `${sec.page ? 'p.' + sec.page : (sec.title || 'note')}: ${l}`))] : [];
             return (
                 <div className="space-y-4">
                     <h2 className="text-lg font-black text-white">Progress</h2>
@@ -686,7 +688,7 @@
                         for (let i = 1; i <= (e.workingSets || 0); i++) sets.push(mk('working', i));
                         const lib = exercises.find(x => normName(x.name) === normName(e.name));
                         return { exerciseId: lib ? lib.id : null, name: e.name, key: normName(e.name), substitution: null,
-                            prescribed: { warmupSets: e.warmupSets, workingSets: e.workingSets, reps: e.reps, intensity: e.intensity, rest: e.rest || null, notes: e.notes, page: e.page, flags: e.flags, sourceSubstitutions: e.sourceSubstitutions || [], sourceGuidance: e.sourceGuidance || [], videoUrl: e.videoUrl || null }, sets };
+                            prescribed: { warmupText: e.warmupText || null, technique: e.technique || null, ref: e.ref || null, warmupSets: e.warmupSets, workingSets: e.workingSets, reps: e.reps, intensity: e.intensity, rest: e.rest || null, notes: e.notes, page: e.page, flags: e.flags, sourceSubstitutions: e.sourceSubstitutions || [], sourceGuidance: e.sourceGuidance || [], videoUrl: e.videoUrl || null }, sets };
                     });
                     setRestEndsAt(null);
                     setActiveSession({ id: `session-${Date.now()}`, dayId: null, workoutName: sess.label, startTime: Date.now(), exercises: exs,
@@ -698,7 +700,15 @@
                 else go();
             };
             const updateSet = (exIdx, setIdx, patch) => setActiveSession(prev => ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : { ...e, sets: e.sets.map((st, j) => j !== setIdx ? st : { ...st, ...patch }) }) }));
-            const addSet = (exIdx) => setActiveSession(prev => ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : { ...e, sets: [...e.sets, { id: `${e.key}-extra-${Date.now()}`, setNumber: e.sets.filter(x => x.type === 'working').length + 1, type: 'working', extra: true, completed: false, weight: '', reps: '', rpe: '' }] }) }));
+            const addSet = (exIdx, type = 'working') => setActiveSession(prev => ({ ...prev, exercises: prev.exercises.map((e, i) => {
+                if (i !== exIdx) return e;
+                const blank = { completed: false, weight: '', reps: '', rpe: '' };
+                if (type === 'warmup') { // warm-ups stay at the top of the list
+                    const w = e.sets.filter(x => x.type === 'warmup');
+                    return { ...e, sets: [...w, { ...blank, id: `${e.key}-wu-${Date.now()}`, setNumber: w.length + 1, type: 'warmup' }, ...e.sets.filter(x => x.type !== 'warmup')] };
+                }
+                return { ...e, sets: [...e.sets, { ...blank, id: `${e.key}-extra-${Date.now()}`, setNumber: e.sets.filter(x => x.type === 'working').length + 1, type: 'working', extra: true }] };
+            }) }));
             const setSubstitution = (exIdx, sub) => { setActiveSession(prev => ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : { ...e, substitution: sub }) })); setSubModalIdx(null); };
             const toggleProgramSet = (exIdx, setIdx) => {
                 const st = activeSession.exercises[exIdx].sets[setIdx];
@@ -714,7 +724,7 @@
                 let next = library;
                 for (const file of files) {
                     try {
-                        const { programs, flags } = await window.StrongerImport.importPdfFile(file);
+                        const { programs, flags } = await window.StrongerImport.importFile(file);
                         if (!programs.length) { report.push({ file: file.name, ok: false, msg: flags.map(f => f.msg).join('; ') }); continue; }
                         for (const prog of programs) {
                             const existing = next.programs[prog.id];
@@ -1018,12 +1028,13 @@
                         </div>
                         <div className="bg-[#080E16] border border-[#203147] rounded-xl p-2.5 text-[11px] space-y-0.5">
                             <div className="text-[#8FA2B8] uppercase text-[9px] font-bold tracking-wide">Prescribed by program</div>
-                            <div className="text-white font-bold">{pr.workingSets ?? '?'} × {pr.reps ?? '?'}{pr.warmupSets ? ` · ${pr.warmupSets} warm-up` : ''} · {intensityLabel(pr.intensity)}{pr.rest ? ` · rest ${restLabel(pr.rest)}` : ''}</div>
+                            <div className="text-white font-bold">{pr.workingSets ?? '?'} × {pr.reps ?? '?'}{pr.warmupText ? ` · ${pr.warmupText} warm-up` : pr.warmupSets ? ` · ${pr.warmupSets} warm-up` : ''} · {intensityLabel(pr.intensity)}{pr.rest ? ` · rest ${restLabel(pr.rest)}` : ''}</div>
+                            {pr.technique && <div className="text-[#F59E0B] font-semibold">Last-set technique: {pr.technique}</div>}
                             {pr.notes && <div className="text-[#C7D3E0] leading-snug">{pr.notes}</div>}
                             {pr.rest && pr.rest.maxSeconds && <button onClick={() => startRest(pr.rest.maxSeconds)} className="min-h-[36px] px-3 rounded-lg bg-[#142235] border border-[#203147] text-[11px] font-semibold text-white">⏱ Start prescribed rest ({restLabel(pr.rest)})</button>}
                             {pr.videoUrl && <a href={pr.videoUrl} target="_blank" rel="noopener noreferrer" className="block text-[11px] font-semibold text-[#1685F8]">▶ Technique video</a>}
                             {!item.substitution && equipmentFor(item.name) && !ownedEquipment.includes(equipmentFor(item.name)) && <div className="text-[#F59E0B]">⚠ May need {equipmentFor(item.name)} (not in your equipment list) — tap ⇄ to substitute</div>}
-                            {pr.flags.length > 0 && <div className="text-[#F59E0B]">⚠ Uncertain extraction — check PDF p.{pr.page}</div>}
+                            {pr.flags.length > 0 && <div className="text-[#F59E0B]">⚠ Uncertain extraction — check {pr.page ? `PDF p.${pr.page}` : pr.ref}</div>}
                         </div>
                         {prev && <div className="text-[11px] text-[#8FA2B8]">Last time · {prev}</div>}
                         <div className="space-y-2">
@@ -1035,7 +1046,10 @@
                                     <button onClick={() => toggleProgramSet(exIdx, setIdx)} aria-label="Complete set" className={`h-11 w-11 rounded-lg text-base font-black ${st.completed ? 'bg-[#31D583] text-[#080E16]' : 'bg-[#142235] text-[#8FA2B8]'}`}>✓</button>
                                 </div>
                             ))}
-                            <button onClick={() => addSet(exIdx)} className="w-full min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]">＋ Add extra set</button>
+                            <div className="flex gap-2">
+                                {pr.warmupText && !pr.warmupSets && <button onClick={() => addSet(exIdx, 'warmup')} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]">＋ Warm-up set</button>}
+                                <button onClick={() => addSet(exIdx)} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]">＋ Add extra set</button>
+                            </div>
                         </div>
                     </div>
                 );
@@ -1340,10 +1354,10 @@
                             <div className="space-y-4">
                                 <div>
                                     <h2 className="text-lg font-black text-white">Program Library</h2>
-                                    <p className="text-[11px] text-[#8FA2B8] mt-0.5">Import your Jeff Nippard program PDFs. Each program is followed exactly as written.</p>
+                                    <p className="text-[11px] text-[#8FA2B8] mt-0.5">Import your Jeff Nippard program PDFs or spreadsheets. Each program is followed exactly as written.</p>
                                 </div>
-                                <button onClick={() => pdfInputRef.current && pdfInputRef.current.click()} disabled={importing} className="w-full min-h-[48px] rounded-xl bg-[#1685F8] text-white text-sm font-black disabled:opacity-60">{importing ? 'Reading PDF…' : '＋ Import program PDF(s)'}</button>
-                                <input ref={pdfInputRef} type="file" accept="application/pdf,.pdf" multiple className="hidden" onChange={e => { handlePdfFiles(e.target.files); e.target.value = ''; }} />
+                                <button onClick={() => pdfInputRef.current && pdfInputRef.current.click()} disabled={importing} className="w-full min-h-[48px] rounded-xl bg-[#1685F8] text-white text-sm font-black disabled:opacity-60">{importing ? 'Reading file…' : '＋ Import program file(s) (PDF or Excel)'}</button>
+                                <input ref={pdfInputRef} type="file" accept="application/pdf,.pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple className="hidden" onChange={e => { handlePdfFiles(e.target.files); e.target.value = ''; }} />
                                 {importReport && (
                                     <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-3 space-y-1.5">
                                         {importReport.map((r, i) => <div key={i} className={`text-[11px] leading-snug ${r.ok ? 'text-[#31D583]' : 'text-[#F43F5E]'}`}>{r.ok ? '✓' : '✕'} {r.file}: {r.msg}</div>)}
@@ -1354,7 +1368,7 @@
                                     <input type="search" value={libraryQuery} onChange={e => setLibraryQuery(e.target.value)} placeholder="Search programs" className="w-full min-h-[44px] bg-[#101C2B] border border-[#203147] rounded-xl px-3 text-white" />
                                 )}
                                 {Object.keys(library.programs).length === 0 && !importing && (
-                                    <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-6 text-center text-xs text-[#8FA2B8]">No programs imported yet. Tap “Import program PDF(s)” to add one.</div>
+                                    <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-6 text-center text-xs text-[#8FA2B8]">No programs imported yet. Tap “Import program file(s)” to add one.</div>
                                 )}
                                 {Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase())).map(pr => (
                                     <ProgramCard key={pr.id} program={pr} state={progressOf(pr.id)} isActive={library.activeProgramId === pr.id} onOpen={() => setOpenProgramId(pr.id)} />

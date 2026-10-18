@@ -305,6 +305,110 @@
     }
     const guidanceNames = (allNames, name) => { const k = norm(name); return [...allNames].some(n => n.includes(k) || k.includes(n)); };
 
+
+    // ---- Spreadsheet (.xlsx) programs ----
+    // Input sheets: [{ name, rows: string[][] }] holding each cell's displayed text, so number formats such as "m-d"
+    // used to show rep ranges ("6-8") are read exactly as the author sees them.
+    function parseSpreadsheetProgram(sheets, meta) {
+        const programs = [];
+        for (const sheet of sheets) {
+            const rows = sheet.rows.map(r => r.map(c => (c == null ? '' : String(c)).trim()));
+            const cell = (r, c) => (rows[r] && rows[r][c]) || '';
+            const flags = [];
+            let hdr = rows.findIndex(r => r.some(c => /^Exercise$/i.test(c)) && r.some(c => /^Working Sets$/i.test(c)) && r.some(c => /^Rep Range$/i.test(c)));
+            if (hdr < 0) continue;
+            const title = rows.slice(0, hdr).map(r => r.find(Boolean)).find(Boolean) || sheet.name;
+            const notesBlocks = [];
+            rows.slice(0, hdr).forEach((r, i) => r.forEach(c => { if (c.length > 40) notesBlocks.push({ ref: `row ${i + 1}`, text: c }); }));
+            const weeks = new Map();
+            const labelCol = rows[hdr].findIndex(c => /^Week\s+\d+$/i.test(c));
+            if (labelCol < 0) continue;
+            let block = null, blockNote = null, curWeek = null, curDay = null, cols = null, trackingCells = 0, order = 0;
+            const mapCols = (r) => {
+                const find = (re) => rows[r].findIndex(c => re.test(c));
+                const c = { label: labelCol, exercise: find(/^Exercise$/i), technique: find(/Intensity Technique/i), warm: find(/^Warm-up Sets$/i), sets: find(/^Working Sets$/i), reps: find(/^Rep Range$/i),
+                    rest: find(/^Rest$/i), sub1: find(/^Substitution Option 1$/i), sub2: find(/^Substitution Option 2$/i), notes: find(/^Notes$/i), track: find(/^Tracking/i) };
+                const rir = [];
+                for (let k = r + 1; k <= r + 3; k++) (rows[k] || []).forEach((t, i) => { if (/^RIR/i.test(t)) rir.push(i); });
+                c.rir = rir; c.trackTo = rir.length ? Math.min(...rir) - 1 : c.track + 4;
+                return c;
+            };
+            for (let r = 0; r < rows.length; r++) {
+                const label = cell(r, labelCol);
+                if (/^Block\s+\d+/i.test(label)) { block = label; blockNote = null; continue; }
+                if (/^(Intro|Deload)\b.*Week$/i.test(label) || /^(Intro|Deload) Week$/i.test(label)) { blockNote = label; continue; }
+                if (/^Week\s+\d+$/i.test(label) && /^Exercise$/i.test(cell(r, labelCol + 1))) {
+                    curWeek = parseInt(label.replace(/\D/g, ''), 10); curDay = null; cols = mapCols(r);
+                    weeks.set(curWeek, { week: curWeek, phase: [block, blockNote].filter(Boolean).join(' · ') || null, deload: /deload/i.test(blockNote || ''), pattern: [], days: [], row: r + 1 });
+                    blockNote = null; // intro/deload labels apply to the single week that follows them
+                    continue;
+                }
+                if (curWeek === null || !cols) continue;
+                const wk = weeks.get(curWeek);
+                if (/^Rest Day$/i.test(label)) { wk.pattern.push('Rest'); curDay = null; continue; }
+                const ex = cell(r, cols.exercise);
+                if (!ex || /^Exercise$/i.test(ex)) continue;
+                if (label) { curDay = { day: wk.days.length + 1, label, page: null, ref: `${sheet.name}, row ${r + 1}`, exercises: [] }; wk.days.push(curDay); wk.pattern.push(label); }
+                if (!curDay) { flags.push({ severity: 'high', msg: `Row ${r + 1} ("${ex}") is not under a training day label and was skipped` }); continue; }
+                for (let c = cols.track; c <= cols.trackTo; c++) if (cell(r, c)) trackingCells++;
+                const na = (v) => (/^N\/A$/i.test(v) || v === '' ? null : v);
+                const rowFlags = [];
+                const warmRaw = cell(r, cols.warm), setsRaw = cell(r, cols.sets), repsRaw = cell(r, cols.reps);
+                const sets = /^\d+$/.test(setsRaw) ? parseInt(setsRaw, 10) : null;
+                if (sets === null) rowFlags.push(`Working sets unreadable ("${setsRaw}")`);
+                if (!repsRaw || /^N\/A$/i.test(repsRaw)) rowFlags.push('Rep range given as N/A or blank in the sheet');
+                else if (!/^\d+(-\d+)?$/.test(repsRaw)) rowFlags.push(`Rep range not a number or range; kept as written ("${repsRaw}")`);
+                const rirs = cols.rir.map(i => cell(r, i)).map(v => (/^\d+$/.test(v) ? parseInt(v, 10) : null));
+                const rirText = cols.rir.map(i => cell(r, i)).filter(v => v && !/^N\/A$/i.test(v)).join(' / ');
+                const intensity = rirText ? { type: 'RIR', raw: rirText, perSet: rirs } : null;
+                if (!intensity) rowFlags.push('RIR target missing');
+                let rest = null;
+                const restRaw = cell(r, cols.rest);
+                if (restRaw) {
+                    const m = restRaw.match(/^(\d+(?:\.\d+)?)(?:\s*-\s*(\d+(?:\.\d+)?))?\s*min/i);
+                    rest = m ? { raw: restRaw, minSeconds: Math.round(parseFloat(m[1]) * 60), maxSeconds: Math.round(parseFloat(m[2] || m[1]) * 60) } : { raw: restRaw, minSeconds: null, maxSeconds: null };
+                    if (!m) rowFlags.push(`Rest not recognized ("${restRaw}"); shown as written`);
+                }
+                const subs = [na(cell(r, cols.sub1)), na(cell(r, cols.sub2))].filter(x => x && !/^See Notes$/i.test(x));
+                curDay.exercises.push({
+                    order: ++order && curDay.exercises.length + 1, name: ex, warmupSets: /^\d+$/.test(warmRaw) ? parseInt(warmRaw, 10) : null, warmupText: na(warmRaw),
+                    workingSets: sets, reps: repsRaw || null, intensity, technique: na(cell(r, cols.technique)), rest, restSeconds: null,
+                    notes: cell(r, cols.notes), page: null, ref: `${sheet.name}, row ${r + 1}`, flags: rowFlags, sourceSubstitutions: subs
+                });
+            }
+            const weekList = [...weeks.values()].sort((a, b) => a.week - b.week).map(w => ({ week: w.week, phase: w.phase, deload: w.deload, days: w.days, pattern: w.pattern }));
+            if (!weekList.length) continue;
+            const dayCounts = weekList.map(w => w.days.length);
+            if (new Set(dayCounts).size > 1) flags.push({ severity: 'medium', msg: `Weeks do not all have the same number of training days (${dayCounts.join(', ')})` });
+            if (weekList[weekList.length - 1].week !== weekList.length) flags.push({ severity: 'medium', msg: 'Week numbers are not consecutive; some weeks may be missing from the import' });
+            const grouped = new Map();
+            weekList.forEach(w => w.days.forEach(d => d.exercises.forEach(e => e.flags.forEach(m => {
+                const k = `${d.label}|${e.name}|${m}`;
+                if (!grouped.has(k)) grouped.set(k, { label: d.label, name: e.name, m, weeks: [], ref: e.ref });
+                grouped.get(k).weeks.push(w.week);
+            }))));
+            grouped.forEach(g => flags.push({ severity: /^Rep range given as N\/A/.test(g.m) ? 'low' : 'medium', msg: `${g.label}, ${g.name}: ${g.m} (week${g.weeks.length > 1 ? 's' : ''} ${g.weeks.join(', ')})`, ref: g.ref }));
+            if (trackingCells) flags.push({ severity: 'low', msg: `The sheet contains ${trackingCells} pre-filled "Tracking Load and Reps" cells. They were not imported as prescriptions or as workout history.` });
+            const pattern = weekList[0].pattern;
+            const suggestedWeekdays = pattern.map((p, i) => (p === 'Rest' ? null : (i + 1) % 7)).filter(x => x !== null);
+            const variant = sheet.name && !/^sheet\d*$/i.test(sheet.name) ? sheet.name : null;
+            const name = variant ? `${title} — ${variant}` : title;
+            const deloadWeeks = weekList.filter(w => w.deload).map(w => w.week);
+            programs.push({
+                schemaVersion: SCHEMA_VERSION, parserVersion: PARSER_VERSION, id: `prog-${slug(name)}`, name,
+                source: { fileName: meta.fileName || null, sha256: meta.sha256 || null, sheet: sheet.name, pages: [], importedAt: new Date().toISOString(), pageCount: null, kind: 'spreadsheet' },
+                metadata: { split: null, totalWeeks: weekList.length, daysPerWeek: weekList[0].days.length,
+                    suggestedWeekdays: suggestedWeekdays.length === weekList[0].days.length ? suggestedWeekdays : null,
+                    suggestedSchedule: `The sheet's weekly order is: ${pattern.join(', ')}. Weekdays pre-selected assume the week starts on Monday; change them freely.`,
+                    deloadWeeks, restNote: null, level: null, focus: null, equipment: null },
+                instructions: notesBlocks.map((b, i) => ({ page: null, title: /^IMPORTANT/i.test(b.text) ? 'Important program notes' : `Sheet note (${b.ref})`, lines: b.text.split(/\n+/).map(l => l.trim()).filter(Boolean) })),
+                weeks: weekList, substitutionsFromSource: [], status: 'not_started', flags,
+                importStatus: flags.some(f => f.severity === 'high') ? 'needs_review' : (flags.length ? 'imported_with_notes' : 'imported')
+            });
+        }
+        return { programs, flags: programs.length ? [] : [{ severity: 'high', msg: 'No workout table (Exercise / Working Sets / Rep Range) was recognized in this spreadsheet; nothing was imported' }] };
+    }
+
     // ---- Browser glue ----
     const PDFJS_BASE = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
     let pdfjsReady = null;
@@ -348,6 +452,28 @@
         return parseProgramPdf(pages, { fileName: file.name, sha256 });
     }
 
-    const api = { parseProgramPdf, importPdfFile, SCHEMA_VERSION, PARSER_VERSION };
+    const SHEETJS = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+    let sheetjsReady = null;
+    function loadSheetJs() {
+        if (root.XLSX) return Promise.resolve(root.XLSX);
+        if (!sheetjsReady) sheetjsReady = new Promise((res, rej) => {
+            const sc = document.createElement('script');
+            sc.src = SHEETJS; sc.onload = () => res(root.XLSX);
+            sc.onerror = () => rej(new Error('Could not load the spreadsheet reader library (needs an internet connection).'));
+            document.head.appendChild(sc);
+        });
+        return sheetjsReady;
+    }
+    async function importXlsxFile(file) {
+        const X = await loadSheetJs();
+        const buf = await file.arrayBuffer();
+        const sha256 = await sha256Hex(buf);
+        const wb = X.read(new Uint8Array(buf), { type: 'array' });
+        const sheets = wb.SheetNames.map(name => ({ name, rows: X.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: false, defval: '' }) }));
+        return parseSpreadsheetProgram(sheets, { fileName: file.name, sha256 });
+    }
+    const importFile = (file) => (/\.xlsx?$/i.test(file.name) ? importXlsxFile(file) : importPdfFile(file));
+
+    const api = { parseProgramPdf, parseSpreadsheetProgram, importPdfFile, importXlsxFile, importFile, SCHEMA_VERSION, PARSER_VERSION };
     if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.StrongerImport = api;
 })(typeof window !== 'undefined' ? window : globalThis);
