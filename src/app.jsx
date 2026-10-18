@@ -22,12 +22,22 @@
 
         const EXERCISE_LIBRARY = []; // no built-in exercises; substitutions come from the program source or your own entries
 
+        // Every colour in the UI comes from these tokens (CSS variables), so a theme changes the whole app.
         const THEMES = {
-            blue: { name: 'Athletic Blue', bgPrimary: '#080E16', bgSecondary: '#0D1622', bgCard: '#101C2B', bgElevated: '#142235', border: '#203147', accent: '#1685F8', accentHover: '#2992FF', textPrimary: '#F3F6FA', textSecondary: '#A4B3C5', success: '#31D583' },
-            emerald: { name: 'Volt Emerald', bgPrimary: '#090E14', bgSecondary: '#0F1722', bgCard: '#12202E', bgElevated: '#182A3D', border: '#22384D', accent: '#10B981', accentHover: '#059669', textPrimary: '#F0FDF4', textSecondary: '#94A3B8', success: '#34D399' },
-            crimson: { name: 'Crimson Force', bgPrimary: '#0B0A0C', bgSecondary: '#141217', bgCard: '#1E1B22', bgElevated: '#28242E', border: '#3B3542', accent: '#F43F5E', accentHover: '#E11D48', textPrimary: '#FFF1F2', textSecondary: '#A1A1AA', success: '#31D583' },
-            gold: { name: 'Titan Gold', bgPrimary: '#0D0C0A', bgSecondary: '#161410', bgCard: '#211E18', bgElevated: '#2C2821', border: '#3F3930', accent: '#F59E0B', accentHover: '#D97706', textPrimary: '#FFFBEB', textSecondary: '#A8A29E', success: '#31D583' },
-            violet: { name: 'Cyber Violet', bgPrimary: '#0A0812', bgSecondary: '#120F1D', bgCard: '#1A162B', bgElevated: '#241F3B', border: '#362F54', accent: '#8B5CF6', accentHover: '#7C3AED', textPrimary: '#F5F3FF', textSecondary: '#A78BFA', success: '#31D583' }
+            blue:    { name: 'Athletic Blue',  bg: '#080E16', bg2: '#0D1622', card: '#101C2B', elevated: '#142235', line: '#203147', accent: '#1685F8', accentHover: '#2992FF', ink: '#F3F6FA', muted: '#8FA2B8', onAccent: '#FFFFFF' },
+            emerald: { name: 'Volt Emerald',   bg: '#07100E', bg2: '#0C1916', card: '#10231F', elevated: '#16302A', line: '#1F403A', accent: '#10B981', accentHover: '#34D399', ink: '#F0FDF9', muted: '#86ADA3', onAccent: '#04130E' },
+            crimson: { name: 'Crimson Force',  bg: '#0B0A0C', bg2: '#141217', card: '#1E1B22', elevated: '#28242E', line: '#3B3542', accent: '#F43F5E', accentHover: '#FB7185', ink: '#FFF1F2', muted: '#A59BA8', onAccent: '#FFFFFF' },
+            gold:    { name: 'Titan Gold',     bg: '#0D0C0A', bg2: '#161410', card: '#211E18', elevated: '#2C2821', line: '#3F3930', accent: '#F59E0B', accentHover: '#FBBF24', ink: '#FFFBEB', muted: '#A8A29E', onAccent: '#1A1203' },
+            violet:  { name: 'Cyber Violet',   bg: '#0A0812', bg2: '#120F1D', card: '#1A162B', elevated: '#241F3B', line: '#362F54', accent: '#8B5CF6', accentHover: '#A78BFA', ink: '#F5F3FF', muted: '#A39BC4', onAccent: '#FFFFFF' }
+        };
+        const hexToRgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(' ');
+        const applyTheme = (key) => {
+            const t = THEMES[key] || THEMES.blue;
+            const dark = '#' + [1, 3, 5].map(i => Math.round(parseInt(t.accent.slice(i, i + 2), 16) * 0.55).toString(16).padStart(2, '0')).join('');
+            const vars = { bg: t.bg, bg2: t.bg2, card: t.card, elevated: t.elevated, line: t.line, accent: t.accent, 'accent-hover': t.accentHover, 'accent-dark': dark, ink: t.ink, muted: t.muted, 'on-accent': t.onAccent };
+            Object.entries(vars).forEach(([k, v]) => document.documentElement.style.setProperty(`--c-${k}`, hexToRgb(v)));
+            const meta = document.querySelector('meta[name="theme-color"]');
+            if (meta) meta.setAttribute('content', t.bg);
         };
 
         const INITIAL_WORKOUT_LOGS = []; // history starts empty; nothing is pre-filled
@@ -36,8 +46,8 @@
         const restLabel = (r) => r ? r.raw.replace(/MIN$/i, ' min').toLowerCase().replace(/\s+/g, ' ') : 'unspecified';
         const intensityLabel = (i) => i ? (i.type === 'RPE' ? `RPE ${i.raw}` : i.type === 'RIR' ? `RIR ${i.raw}` : i.type === '%1RM' ? `${i.raw} 1RM` : i.raw) : 'unspecified';
         const STATUS_META = {
-            not_started: { label: 'Not Started', cls: 'bg-[#142235] text-[#8FA2B8]' },
-            in_progress: { label: 'In Progress', cls: 'bg-[#1685F8]/20 text-[#1685F8]' },
+            not_started: { label: 'Not Started', cls: 'bg-th-elevated text-th-muted' },
+            in_progress: { label: 'In Progress', cls: 'bg-th-accent/20 text-th-accent' },
             paused: { label: 'Paused', cls: 'bg-[#F59E0B]/20 text-[#F59E0B]' },
             completed: { label: 'Completed', cls: 'bg-[#31D583]/20 text-[#31D583]' }
         };
@@ -50,19 +60,19 @@
             const m = program.metadata;
             const flagged = program.flags.length;
             return (
-                <button onClick={onOpen} className="w-full text-left bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2.5 active:bg-[#142235]">
+                <button onClick={onOpen} className="w-full text-left bg-th-card border border-th-line rounded-2xl p-4 space-y-2.5 active:bg-th-elevated">
                     <div className="flex items-start justify-between gap-2">
                         <h3 className="text-sm font-black text-white leading-snug">{program.name}</h3>
                         <StatusBadge status={state.status} />
                     </div>
-                    <div className="flex flex-wrap gap-1.5 text-[11px] text-[#8FA2B8]">
-                        {m.totalWeeks && <span className="px-2 py-0.5 rounded-md bg-[#080E16] border border-[#203147]">{m.totalWeeks} weeks</span>}
-                        {m.daysPerWeek && <span className="px-2 py-0.5 rounded-md bg-[#080E16] border border-[#203147]">{m.daysPerWeek} days/week</span>}
-                        {m.split && <span className="px-2 py-0.5 rounded-md bg-[#080E16] border border-[#203147]">{m.split}</span>}
-                        {m.level && <span className="px-2 py-0.5 rounded-md bg-[#080E16] border border-[#203147]">{m.level}</span>}
+                    <div className="flex flex-wrap gap-1.5 text-[11px] text-th-muted">
+                        {m.totalWeeks && <span className="px-2 py-0.5 rounded-md bg-th-bg border border-th-line">{m.totalWeeks} weeks</span>}
+                        {m.daysPerWeek && <span className="px-2 py-0.5 rounded-md bg-th-bg border border-th-line">{m.daysPerWeek} days/week</span>}
+                        {m.split && <span className="px-2 py-0.5 rounded-md bg-th-bg border border-th-line">{m.split}</span>}
+                        {m.level && <span className="px-2 py-0.5 rounded-md bg-th-bg border border-th-line">{m.level}</span>}
                     </div>
                     <div className="flex items-center justify-between text-[11px]">
-                        {isActive ? <span className="font-bold text-[#31D583]">● Active program</span> : <span className="text-[#8FA2B8]">Level, focus &amp; equipment: unspecified in source</span>}
+                        {isActive ? <span className="font-bold text-[#31D583]">● Active program</span> : <span className="text-th-muted">Level, focus &amp; equipment: unspecified in source</span>}
                         {flagged > 0 && <span className="text-[#F59E0B] font-semibold">⚠ {flagged} to review</span>}
                     </div>
                 </button>
@@ -78,17 +88,17 @@
             const m = program.metadata;
             return (
                 <div className="space-y-4">
-                    <button onClick={onBack} className="min-h-[44px] text-xs font-bold text-[#1685F8]">‹ Program Library</button>
+                    <button onClick={onBack} className="min-h-[44px] text-xs font-bold text-th-accent">‹ Program Library</button>
                     <div className="space-y-1.5">
                         <div className="flex items-start justify-between gap-2">
                             <h2 className="text-lg font-black text-white leading-snug">{program.name}</h2>
                             <StatusBadge status={state.status} />
                         </div>
-                        <p className="text-[11px] text-[#8FA2B8]">{[m.totalWeeks && `${m.totalWeeks} weeks`, m.daysPerWeek && `${m.daysPerWeek} training days/week`, m.split].filter(Boolean).join(' · ')}</p>
-                        <p className="text-[10px] text-[#8FA2B8]">Source: {program.source.fileName} · imported {program.source.importedAt.split('T')[0]} · level, focus &amp; equipment are not stated in a structured form in the PDF</p>
+                        <p className="text-[11px] text-th-muted">{[m.totalWeeks && `${m.totalWeeks} weeks`, m.daysPerWeek && `${m.daysPerWeek} training days/week`, m.split].filter(Boolean).join(' · ')}</p>
+                        <p className="text-[10px] text-th-muted">Source: {program.source.fileName} · imported {program.source.importedAt.split('T')[0]} · level, focus &amp; equipment are not stated in a structured form in the PDF</p>
                     </div>
-                    {m.suggestedSchedule && <div className="text-[11px] text-[#C7D3E0] bg-[#101C2B] border border-[#203147] rounded-xl p-3"><span className="font-bold text-white">Weekly layout in the PDF:</span> {m.suggestedSchedule}</div>}
-                    {m.restNote && <div className="text-[10px] text-[#8FA2B8]">{m.restNote}</div>}
+                    {m.suggestedSchedule && <div className="text-[11px] text-[#C7D3E0] bg-th-card border border-th-line rounded-xl p-3"><span className="font-bold text-white">Weekly layout in the PDF:</span> {m.suggestedSchedule}</div>}
+                    {m.restNote && <div className="text-[10px] text-th-muted">{m.restNote}</div>}
                     {children}
                     {program.flags.length > 0 && (
                         <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-3 space-y-2">
@@ -96,54 +106,54 @@
                                 <span>⚠ {program.flags.length} item(s) flagged for review</span><span>{showFlags ? '▲' : '▼'}</span>
                             </button>
                             {showFlags && program.flags.map((f, i) => (
-                                <div key={i} className="text-[11px] text-[#F3F6FA] leading-snug">{f.page ? <span className="text-[#8FA2B8]">p.{f.page} · </span> : f.ref ? <span className="text-[#8FA2B8]">{f.ref} · </span> : null}{f.msg}</div>
+                                <div key={i} className="text-[11px] text-th-ink leading-snug">{f.page ? <span className="text-th-muted">p.{f.page} · </span> : f.ref ? <span className="text-th-muted">{f.ref} · </span> : null}{f.msg}</div>
                             ))}
                         </div>
                     )}
                     <div className="flex gap-2 overflow-x-auto pb-1">
                         {program.weeks.map(w => (
-                            <button key={w.week} onClick={() => setWeek(w.week)} className={`min-h-[40px] px-4 rounded-xl text-xs font-bold shrink-0 border ${w.week === week ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#101C2B] border-[#203147] text-[#8FA2B8]'}`}>Week {w.week}{w.deload ? ' ↓' : ''}</button>
+                            <button key={w.week} onClick={() => setWeek(w.week)} className={`min-h-[40px] px-4 rounded-xl text-xs font-bold shrink-0 border ${w.week === week ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`}>Week {w.week}{w.deload ? ' ↓' : ''}</button>
                         ))}
                     </div>
-                    {wk && (wk.phase || wk.deload) && <div className="text-[11px] text-[#8FA2B8]">{wk.phase}{wk.deload ? ' · deload week (from the source)' : ''}</div>}
-                    {wk && wk.note && <div className="text-[11px] text-[#C7D3E0] bg-[#101C2B] border border-[#203147] rounded-xl p-3">{wk.note}</div>}
+                    {wk && (wk.phase || wk.deload) && <div className="text-[11px] text-th-muted">{wk.phase}{wk.deload ? ' · deload week (from the source)' : ''}</div>}
+                    {wk && wk.note && <div className="text-[11px] text-[#C7D3E0] bg-th-card border border-th-line rounded-xl p-3">{wk.note}</div>}
                     {wk && wk.days.map(d => (
-                        <div key={d.day} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
+                        <div key={d.day} className="bg-th-card border border-th-line rounded-2xl p-4 space-y-3">
                             <div className="flex items-center justify-between">
-                                <div><div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Day {d.day}</div><h3 className="text-sm font-black text-white">{d.label}</h3></div>
-                                <span className="text-[10px] text-[#8FA2B8]">{d.page ? `PDF p.${d.page}` : d.ref}</span>
+                                <div><div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Day {d.day}</div><h3 className="text-sm font-black text-white">{d.label}</h3></div>
+                                <span className="text-[10px] text-th-muted">{d.page ? `PDF p.${d.page}` : d.ref}</span>
                             </div>
                             {d.exercises.map(e => (
-                                <div key={e.order} className="border-t border-[#203147] pt-2.5 space-y-1">
+                                <div key={e.order} className="border-t border-th-line pt-2.5 space-y-1">
                                     <div className="flex items-start justify-between gap-2">
-                                        <div className="text-[13px] font-bold text-white"><span className="text-[#8FA2B8] mr-1.5">{e.order}.</span>{e.name}{e.flags.length > 0 && <span className="ml-1.5 text-[#F59E0B]">⚠</span>}</div>
+                                        <div className="text-[13px] font-bold text-white"><span className="text-th-muted mr-1.5">{e.order}.</span>{e.name}{e.flags.length > 0 && <span className="ml-1.5 text-[#F59E0B]">⚠</span>}</div>
                                         <div className="text-[12px] font-bold text-white tabular-nums shrink-0">{e.workingSets ?? '?'} × {e.reps ?? '?'}</div>
                                     </div>
-                                    <div className="text-[11px] text-[#8FA2B8]">
+                                    <div className="text-[11px] text-th-muted">
                                         {e.warmupText ? `${e.warmupText} warm-up set(s) · ` : e.warmupSets != null ? `${e.warmupSets} warm-up set(s) · ` : ''}Intensity {intensityLabel(e.intensity)} · Rest: {restLabel(e.rest)}
                                     </div>
                                     {e.technique && <div className="text-[11px] font-semibold text-[#F59E0B]">Last-set technique: {e.technique}</div>}
                                     {e.notes && <div className="text-[11px] text-[#C7D3E0] leading-snug">{e.notes}</div>}
-                                    {e.sourceSubstitutions && e.sourceSubstitutions.length > 0 && !e.sourceGuidance && <div className="text-[10px] text-[#8FA2B8]">Substitutes in source: {e.sourceSubstitutions.join(' · ')}</div>}
-                                    {e.videoUrl && <a href={e.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-[11px] font-semibold text-[#1685F8]">▶ Technique video (from the source)</a>}
+                                    {e.sourceSubstitutions && e.sourceSubstitutions.length > 0 && !e.sourceGuidance && <div className="text-[10px] text-th-muted">Substitutes in source: {e.sourceSubstitutions.join(' · ')}</div>}
+                                    {e.videoUrl && <a href={e.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-[11px] font-semibold text-th-accent">▶ Technique video (from the source)</a>}
                                 </div>
                             ))}
                         </div>
                     ))}
                     {program.instructions.length > 0 && (
                         <div className="space-y-2">
-                            <button onClick={() => setShowInstr(!showInstr)} className="w-full min-h-[44px] flex items-center justify-between text-xs font-bold text-white"><span>Instructions from the source ({program.instructions.length} {program.source.kind === 'spreadsheet' ? 'notes' : 'pages'})</span><span className="text-[#8FA2B8]">{showInstr ? '▲' : '▼'}</span></button>
+                            <button onClick={() => setShowInstr(!showInstr)} className="w-full min-h-[44px] flex items-center justify-between text-xs font-bold text-white"><span>Instructions from the source ({program.instructions.length} {program.source.kind === 'spreadsheet' ? 'notes' : 'pages'})</span><span className="text-th-muted">{showInstr ? '▲' : '▼'}</span></button>
                             {showInstr && program.instructions.map((sec, si) => (
-                                <div key={si} className="bg-[#101C2B] border border-[#203147] rounded-xl">
+                                <div key={si} className="bg-th-card border border-th-line rounded-xl">
                                     <button onClick={() => setOpenSection(openSection === si ? null : si)} className="w-full min-h-[44px] px-3 flex items-center justify-between text-left text-xs font-semibold text-white">
-                                        <span className="truncate">{sec.title || sec.lines[0]}</span><span className="text-[#8FA2B8] ml-2 shrink-0">{sec.page ? `p.${sec.page} ` : ''}{openSection === si ? '▲' : '▼'}</span>
+                                        <span className="truncate">{sec.title || sec.lines[0]}</span><span className="text-th-muted ml-2 shrink-0">{sec.page ? `p.${sec.page} ` : ''}{openSection === si ? '▲' : '▼'}</span>
                                     </button>
                                     {openSection === si && <div className="px-3 pb-3 text-[11px] text-[#C7D3E0] leading-relaxed whitespace-pre-line">{sec.lines.join('\n')}</div>}
                                 </div>
                             ))}
                         </div>
                     )}
-                    <button onClick={onRemove} className="w-full min-h-[44px] rounded-xl bg-[#142235] border border-[#203147] text-[#F43F5E] text-xs font-bold">Archive program (workout history is kept)</button>
+                    <button onClick={onRemove} className="w-full min-h-[44px] rounded-xl bg-th-elevated border border-th-line text-[#F43F5E] text-xs font-bold">Archive program (workout history is kept)</button>
                 </div>
             );
         };
@@ -195,20 +205,20 @@
             const lastDate = preview.length ? preview[preview.length - 1].plannedDate : null;
             return (
                 <div className="fixed inset-0 z-[60] bg-black/80 flex items-end justify-center">
-                    <div className="bg-[#101C2B] border-t border-[#203147] rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
+                    <div className="bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Start: {program.name}</h3>
-                            <button onClick={onCancel} aria-label="Close" className="min-w-[44px] min-h-[44px] text-[#8FA2B8]">✕</button>
+                            <button onClick={onCancel} aria-label="Close" className="min-w-[44px] min-h-[44px] text-th-muted">✕</button>
                         </div>
                         <div>
-                            <label className="text-[11px] text-[#8FA2B8] block mb-1">Start date</label>
-                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white" />
+                            <label className="text-[11px] text-th-muted block mb-1">Start date</label>
+                            <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="w-full min-h-[44px] bg-th-bg border border-th-line rounded-xl px-3 text-white" />
                         </div>
                         <div>
-                            <label className="text-[11px] text-[#8FA2B8] block mb-1">Training weekdays — choose {need}{fromPdf ? ` (pre-selected from the PDF's example week: ${program.metadata.suggestedSchedule})` : ' (the PDF does not say which days)'}</label>
+                            <label className="text-[11px] text-th-muted block mb-1">Training weekdays — choose {need}{fromPdf ? ` (pre-selected from the PDF's example week: ${program.metadata.suggestedSchedule})` : ' (the PDF does not say which days)'}</label>
                             <div className="grid grid-cols-7 gap-1.5">
                                 {WEEKDAYS.map((n, d) => (
-                                    <button key={d} onClick={() => toggle(d)} className={`min-h-[44px] rounded-lg text-[11px] font-bold border ${weekdays.includes(d) ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]'}`}>{n}</button>
+                                    <button key={d} onClick={() => toggle(d)} className={`min-h-[44px] rounded-lg text-[11px] font-bold border ${weekdays.includes(d) ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-bg border-th-line text-th-muted'}`}>{n}</button>
                                 ))}
                             </div>
                             {!valid && <div className="text-[11px] text-[#F59E0B] mt-1.5">Select exactly {need} days ({weekdays.length} selected).</div>}
@@ -217,19 +227,19 @@
                             <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-xl p-3 space-y-1">
                                 <div className="text-[11px] font-bold text-[#F59E0B]">Equipment you haven't marked as available (estimated from exercise names)</div>
                                 {missing.map(m => <div key={m.equipment} className="text-[11px] text-white"><span className="font-bold">{m.equipment}:</span> {m.exercises.join(', ')}</div>)}
-                                <div className="text-[10px] text-[#8FA2B8]">You can substitute individual exercises during the workout. Update “My equipment” in Settings if this is wrong.</div>
+                                <div className="text-[10px] text-th-muted">You can substitute individual exercises during the workout. Update “My equipment” in Settings if this is wrong.</div>
                             </div>
                         )}
                         {valid && (
                             <div className="space-y-1.5">
                                 <div className="text-xs font-bold text-white">Calendar preview · ends {fmtShort(lastDate)}</div>
-                                <div className="bg-[#080E16] border border-[#203147] rounded-xl p-3 max-h-48 overflow-y-auto space-y-1">
-                                    {preview.map(s => <div key={s.key} className="flex justify-between text-[11px]"><span className="text-[#8FA2B8]">{fmtShort(s.plannedDate)}</span><span className="text-white">W{s.week} D{s.day} · {s.label}</span></div>)}
+                                <div className="bg-th-bg border border-th-line rounded-xl p-3 max-h-48 overflow-y-auto space-y-1">
+                                    {preview.map(s => <div key={s.key} className="flex justify-between text-[11px]"><span className="text-th-muted">{fmtShort(s.plannedDate)}</span><span className="text-white">W{s.week} D{s.day} · {s.label}</span></div>)}
                                 </div>
-                                <p className="text-[10px] text-[#8FA2B8]">Other days are rest days. Workouts never advance or complete just because a date passes.</p>
+                                <p className="text-[10px] text-th-muted">Other days are rest days. Workouts never advance or complete just because a date passes.</p>
                             </div>
                         )}
-                        <button disabled={!valid} onClick={() => onConfirm({ startDate, weekdays: weekdays.slice().sort((a, b) => a - b) })} className="w-full min-h-[48px] rounded-xl bg-[#1685F8] text-white text-sm font-black disabled:opacity-40">Start Program</button>
+                        <button disabled={!valid} onClick={() => onConfirm({ startDate, weekdays: weekdays.slice().sort((a, b) => a - b) })} className="w-full min-h-[48px] rounded-xl bg-th-accent text-th-on-accent text-sm font-black disabled:opacity-40">Start Program</button>
                     </div>
                 </div>
             );
@@ -251,7 +261,7 @@
             sessions.forEach(s => { const k = s.status === 'completed' && s.completedDate ? s.completedDate : s.plannedDate; if (k) (byDate[k] = byDate[k] || []).push(s); });
             const logDates = new Set(logs.map(l => l.date));
             const nextKey = (sessions.find(s => s.status === 'planned') || {}).key;
-            const dotCls = (s) => s.status === 'completed' ? 'bg-[#31D583]' : s.status === 'skipped' ? 'bg-[#8FA2B8]' : s.missed ? 'bg-[#F43F5E]' : 'bg-[#1685F8]';
+            const dotCls = (s) => s.status === 'completed' ? 'bg-[#31D583]' : s.status === 'skipped' ? 'bg-th-muted' : s.missed ? 'bg-[#F43F5E]' : 'bg-th-accent';
             const daySessions = byDate[selected] || [];
             const doneCount = sessions.filter(s => s.status === 'completed').length;
             const nextSession = sessions.find(s => s.status === 'planned');
@@ -260,27 +270,27 @@
                 <div className="space-y-4">
                     <h2 className="text-lg font-black text-white">Calendar</h2>
                     {!program ? (
-                        <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-5 text-center space-y-3">
-                            <p className="text-xs text-[#8FA2B8]">No program is active. Start one from the Program Library to see its schedule here.</p>
-                            <button onClick={onOpenProgram} className="min-h-[44px] px-5 rounded-xl bg-[#1685F8] text-white text-xs font-bold">Open Program Library</button>
+                        <div className="bg-th-card border border-dashed border-th-line rounded-2xl p-5 text-center space-y-3">
+                            <p className="text-xs text-th-muted">No program is active. Start one from the Program Library to see its schedule here.</p>
+                            <button onClick={onOpenProgram} className="min-h-[44px] px-5 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">Open Program Library</button>
                         </div>
                     ) : (
-                        <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-1">
-                            <div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Active program</div>
+                        <div className="bg-th-card border border-th-line rounded-2xl p-4 space-y-1">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Active program</div>
                             <div className="text-sm font-black text-white">{program.name}</div>
-                            <div className="text-[11px] text-[#8FA2B8]">Week {wkNow} of {program.weeks.length} · {doneCount}/{sessions.length} workouts completed</div>
+                            <div className="text-[11px] text-th-muted">Week {wkNow} of {program.weeks.length} · {doneCount}/{sessions.length} workouts completed</div>
                         </div>
                     )}
-                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-3">
+                    <div className="bg-th-card border border-th-line rounded-2xl p-3">
                         <div className="flex items-center justify-between mb-2">
                             <button aria-label="Previous month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))} className="min-w-[44px] min-h-[44px] text-white text-lg">‹</button>
                             <div className="text-sm font-bold text-white">{month.toLocaleString(undefined, { month: 'long', year: 'numeric' })}</div>
                             <button aria-label="Next month" onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))} className="min-w-[44px] min-h-[44px] text-white text-lg">›</button>
                         </div>
-                        <div className="grid grid-cols-7 text-center text-[10px] text-[#8FA2B8] mb-1">{WEEKDAYS.map(w => <div key={w}>{w}</div>)}</div>
+                        <div className="grid grid-cols-7 text-center text-[10px] text-th-muted mb-1">{WEEKDAYS.map(w => <div key={w}>{w}</div>)}</div>
                         <div className="grid grid-cols-7 gap-1">
                             {cells.map((ds, i) => ds ? (
-                                <button key={ds} onClick={() => setSelected(ds)} className={`min-h-[46px] rounded-lg flex flex-col items-center justify-center gap-1 text-xs font-semibold border ${selected === ds ? 'border-[#1685F8] bg-[#1685F8]/10' : 'border-transparent'} ${ds === today ? 'text-[#1685F8]' : 'text-white'}`}>
+                                <button key={ds} onClick={() => setSelected(ds)} className={`min-h-[46px] rounded-lg flex flex-col items-center justify-center gap-1 text-xs font-semibold border ${selected === ds ? 'border-th-accent bg-th-accent/10' : 'border-transparent'} ${ds === today ? 'text-th-accent' : 'text-white'}`}>
                                     <span>{parseInt(ds.slice(8), 10)}</span>
                                     <span className="flex gap-0.5 h-1.5">
                                         {(byDate[ds] || []).slice(0, 3).map(s => <span key={s.key} className={`w-1.5 h-1.5 rounded-full ${dotCls(s)}`}></span>)}
@@ -289,43 +299,43 @@
                                 </button>
                             ) : <div key={`e${i}`}></div>)}
                         </div>
-                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-[#8FA2B8]">
-                            <span><span className="inline-block w-2 h-2 rounded-full bg-[#1685F8] mr-1"></span>Scheduled</span>
+                        <div className="flex flex-wrap gap-x-3 gap-y-1 mt-2 text-[10px] text-th-muted">
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-th-accent mr-1"></span>Scheduled</span>
                             <span><span className="inline-block w-2 h-2 rounded-full bg-[#31D583] mr-1"></span>Completed</span>
                             <span><span className="inline-block w-2 h-2 rounded-full bg-[#F43F5E] mr-1"></span>Missed</span>
-                            <span><span className="inline-block w-2 h-2 rounded-full bg-[#8FA2B8] mr-1"></span>Skipped</span>
+                            <span><span className="inline-block w-2 h-2 rounded-full bg-th-muted mr-1"></span>Skipped</span>
                         </div>
                     </div>
                     <div className="space-y-2">
                         <div className="text-xs font-bold text-white">{fmtShort(selected)}{selected === today ? ' · Today' : ''}</div>
-                        {daySessions.length === 0 && <div className="text-[11px] text-[#8FA2B8]">{program ? 'Rest day — no program workout scheduled.' : 'Nothing scheduled.'}</div>}
+                        {daySessions.length === 0 && <div className="text-[11px] text-th-muted">{program ? 'Rest day — no program workout scheduled.' : 'Nothing scheduled.'}</div>}
                         {daySessions.map(s => (
-                            <div key={s.key} className="bg-[#101C2B] border border-[#203147] rounded-xl p-3 space-y-2">
+                            <div key={s.key} className="bg-th-card border border-th-line rounded-xl p-3 space-y-2">
                                 <div className="flex items-start justify-between gap-2">
                                     <div>
                                         <div className="text-sm font-bold text-white">{s.label}</div>
-                                        <div className="text-[11px] text-[#8FA2B8]">Week {s.week}{s.deload ? ' (deload)' : ''} · Day {s.day} · {s.exercises.length} exercises</div>
+                                        <div className="text-[11px] text-th-muted">Week {s.week}{s.deload ? ' (deload)' : ''} · Day {s.day} · {s.exercises.length} exercises</div>
                                         {s.rescheduled && <div className="text-[10px] text-[#F59E0B]">Rescheduled</div>}
                                         {s.status === 'completed' && <div className="text-[10px] text-[#31D583]">Completed {s.completedDate}{s.completedDate !== s.plannedDate ? ` (planned ${s.plannedDate})` : ''}</div>}
                                         {s.missed && <div className="text-[10px] text-[#F43F5E]">Missed — still pending; nothing was skipped automatically</div>}
-                                        {s.status === 'skipped' && <div className="text-[10px] text-[#8FA2B8]">Skipped by you</div>}
+                                        {s.status === 'skipped' && <div className="text-[10px] text-th-muted">Skipped by you</div>}
                                     </div>
-                                    {s.key === nextKey && <span className="text-[10px] font-bold text-[#1685F8] uppercase">Up next</span>}
+                                    {s.key === nextKey && <span className="text-[10px] font-bold text-th-accent uppercase">Up next</span>}
                                 </div>
                                 {s.status === 'planned' && (
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <button onClick={() => onStart(s)} className="min-h-[44px] px-4 rounded-xl bg-[#1685F8] text-white text-xs font-bold">{hasActiveWorkout ? 'Return to workout' : 'Start workout'}</button>
-                                        <label className="min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold flex items-center gap-2">Move to
+                                        <button onClick={() => onStart(s)} className="min-h-[44px] px-4 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">{hasActiveWorkout ? 'Return to workout' : 'Start workout'}</button>
+                                        <label className="min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold flex items-center gap-2">Move to
                                             <input type="date" value={s.plannedDate || ''} onChange={e => e.target.value && onReschedule(s, e.target.value)} className="bg-transparent text-white w-[130px]" />
                                         </label>
-                                        <button onClick={() => onSkip(s)} className="min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-[#8FA2B8] text-xs font-bold">Skip</button>
+                                        <button onClick={() => onSkip(s)} className="min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-th-muted text-xs font-bold">Skip</button>
                                     </div>
                                 )}
-                                {s.status === 'skipped' && <button onClick={() => onUnskip(s)} className="min-h-[44px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Undo skip</button>}
+                                {s.status === 'skipped' && <button onClick={() => onUnskip(s)} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">Undo skip</button>}
                             </div>
                         ))}
                         {logs.filter(l => l.date === selected).map(l => (
-                            <div key={l.id} className="bg-[#101C2B] border border-[#203147] rounded-xl p-3 text-[11px] text-[#8FA2B8]"><span className="text-white font-bold">{l.workoutName}</span> · logged · {l.durationMin} min{l.programName ? ` · ${l.programName}` : ''}</div>
+                            <div key={l.id} className="bg-th-card border border-th-line rounded-xl p-3 text-[11px] text-th-muted"><span className="text-white font-bold">{l.workoutName}</span> · logged · {l.durationMin} min{l.programName ? ` · ${l.programName}` : ''}</div>
                         ))}
                     </div>
                 </div>
@@ -340,18 +350,18 @@
             const matches = library.filter(x => (x.name + ' ' + x.equipment + ' ' + x.primaryMuscle).toLowerCase().includes(q.toLowerCase()));
             return (
                 <div className="fixed inset-0 z-[60] bg-black/80 flex items-end justify-center">
-                    <div className="bg-[#101C2B] border-t border-[#203147] rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
+                    <div className="bg-th-card border-t border-th-line rounded-t-3xl max-w-lg w-full p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-bottom">
                         <div className="flex items-center justify-between">
                             <h3 className="text-sm font-bold text-white">Substitute exercise</h3>
-                            <button onClick={onClose} aria-label="Close" className="min-w-[44px] min-h-[44px] text-[#8FA2B8]">✕</button>
+                            <button onClick={onClose} aria-label="Close" className="min-w-[44px] min-h-[44px] text-th-muted">✕</button>
                         </div>
-                        <div className="bg-[#080E16] border border-[#203147] rounded-xl p-3 text-[11px] space-y-0.5">
-                            <div className="text-[#8FA2B8]">Prescribed (stays on record)</div>
+                        <div className="bg-th-bg border border-th-line rounded-xl p-3 text-[11px] space-y-0.5">
+                            <div className="text-th-muted">Prescribed (stays on record)</div>
                             <div className="text-white font-bold">{item.name} · {item.prescribed.workingSets ?? '?'} × {item.prescribed.reps ?? '?'}</div>
                         </div>
-                        {item.substitution && <button onClick={onRestore} className="w-full min-h-[44px] rounded-xl bg-[#142235] border border-[#31D583]/40 text-[#31D583] text-xs font-bold">Restore original: {item.name}</button>}
+                        {item.substitution && <button onClick={onRestore} className="w-full min-h-[44px] rounded-xl bg-th-elevated border border-[#31D583]/40 text-[#31D583] text-xs font-bold">Restore original: {item.name}</button>}
                         {(item.prescribed.sourceGuidance || []).length > 0 && (
-                            <div className="bg-[#080E16] border border-[#203147] rounded-xl p-3 space-y-1.5">
+                            <div className="bg-th-bg border border-th-line rounded-xl p-3 space-y-1.5">
                                 <div className="text-[11px] font-bold text-white">What the program PDF says</div>
                                 {item.prescribed.sourceGuidance.map((g, i) => <div key={i} className="text-[11px] text-[#C7D3E0] leading-snug"><span className="font-bold">{g.name}:</span> {g.text}</div>)}
                                 {item.prescribed.sourceGuidance.some(g => normName(g.name) !== normName(item.name)) && <div className="text-[10px] text-[#F59E0B]">Linked by partial name match — check the wording applies to this exercise.</div>}
@@ -360,22 +370,22 @@
                         {suggestions.length > 0 && (
                             <div className="space-y-1.5">
                                 <div className="text-[11px] font-bold text-white">Alternatives listed in the program PDF</div>
-                                {suggestions.map(n => <button key={n} onClick={() => onPick({ name: n, exerciseId: (library.find(x => normName(x.name) === normName(n)) || {}).id || null, origin: 'program-pdf' })} className="w-full text-left min-h-[44px] px-3 rounded-xl bg-[#080E16] border border-[#203147] text-xs text-white">{n}</button>)}
+                                {suggestions.map(n => <button key={n} onClick={() => onPick({ name: n, exerciseId: (library.find(x => normName(x.name) === normName(n)) || {}).id || null, origin: 'program-pdf' })} className="w-full text-left min-h-[44px] px-3 rounded-xl bg-th-bg border border-th-line text-xs text-white">{n}</button>)}
                             </div>
                         )}
                         {library.length > 0 && (
                         <div className="space-y-1.5">
-                            <div className="text-[11px] font-bold text-white">Your exercise library <span className="text-[#8FA2B8] font-normal">(not verified as equivalent — your choice)</span></div>
-                            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by name, equipment, muscle" className="w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white" />
+                            <div className="text-[11px] font-bold text-white">Your exercise library <span className="text-th-muted font-normal">(not verified as equivalent — your choice)</span></div>
+                            <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by name, equipment, muscle" className="w-full min-h-[44px] bg-th-bg border border-th-line rounded-xl px-3 text-white" />
                             <div className="max-h-44 overflow-y-auto space-y-1.5">
-                                {matches.map(x => <button key={x.id} onClick={() => onPick({ name: x.name, exerciseId: x.id, origin: 'library' })} className="w-full text-left min-h-[44px] px-3 rounded-xl bg-[#080E16] border border-[#203147] text-xs text-white flex justify-between gap-2"><span>{x.name}</span><span className="text-[#8FA2B8]">{x.equipment}</span></button>)}
-                                {matches.length === 0 && <div className="text-[11px] text-[#8FA2B8]">No match. Type a custom exercise below.</div>}
+                                {matches.map(x => <button key={x.id} onClick={() => onPick({ name: x.name, exerciseId: x.id, origin: 'library' })} className="w-full text-left min-h-[44px] px-3 rounded-xl bg-th-bg border border-th-line text-xs text-white flex justify-between gap-2"><span>{x.name}</span><span className="text-th-muted">{x.equipment}</span></button>)}
+                                {matches.length === 0 && <div className="text-[11px] text-th-muted">No match. Type a custom exercise below.</div>}
                             </div>
                         </div>
                         )}
                         <div className="flex gap-2">
-                            <input value={custom} onChange={e => setCustom(e.target.value)} placeholder="Custom exercise name" className="flex-1 min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white" />
-                            <button disabled={!custom.trim()} onClick={() => onPick({ name: custom.trim(), exerciseId: null, origin: 'custom' })} className="min-h-[44px] px-4 rounded-xl bg-[#1685F8] text-white text-xs font-bold disabled:opacity-40">Use</button>
+                            <input value={custom} onChange={e => setCustom(e.target.value)} placeholder="Custom exercise name" className="flex-1 min-h-[44px] bg-th-bg border border-th-line rounded-xl px-3 text-white" />
+                            <button disabled={!custom.trim()} onClick={() => onPick({ name: custom.trim(), exerciseId: null, origin: 'custom' })} className="min-h-[44px] px-4 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold disabled:opacity-40">Use</button>
                         </div>
                     </div>
                 </div>
@@ -411,23 +421,23 @@
             const toUnit = (lb) => Math.round(unit === 'kg' ? lb / 2.20462 : lb).toLocaleString();
             return (
                 <div className="space-y-4">
-                    <div><h2 className="text-lg font-black text-white">History</h2><p className="text-[11px] text-[#8FA2B8]">Every workout you finished, with the sets you actually logged.</p></div>
-                    {logs.length === 0 && <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-6 text-center text-xs text-[#8FA2B8]">No workouts logged yet. Finish a workout and it will appear here.</div>}
+                    <div><h2 className="text-lg font-black text-white">History</h2><p className="text-[11px] text-th-muted">Every workout you finished, with the sets you actually logged.</p></div>
+                    {logs.length === 0 && <div className="bg-th-card border border-dashed border-th-line rounded-2xl p-6 text-center text-xs text-th-muted">No workouts logged yet. Finish a workout and it will appear here.</div>}
                     {logs.map(l => (
-                        <div key={l.id} className="bg-[#101C2B] border border-[#203147] rounded-xl">
+                        <div key={l.id} className="bg-th-card border border-th-line rounded-xl">
                             <button onClick={() => setOpen(open === l.id ? null : l.id)} className="w-full min-h-[56px] p-3 flex items-start justify-between gap-2 text-left">
                                 <div className="min-w-0">
                                     <div className="text-sm font-bold text-white">{l.workoutName}</div>
-                                    <div className="text-[10px] text-[#8FA2B8]">{l.date}{l.week ? ` · Week ${l.week} Day ${l.day}` : ''}{l.programName ? ` · ${l.programName}` : ''}</div>
+                                    <div className="text-[10px] text-th-muted">{l.date}{l.week ? ` · Week ${l.week} Day ${l.day}` : ''}{l.programName ? ` · ${l.programName}` : ''}</div>
                                 </div>
-                                <div className="text-[11px] text-[#8FA2B8] text-right tabular-nums shrink-0">{l.durationMin} min<br />{toUnit(l.totalVolumeLb || 0)} {unit}</div>
+                                <div className="text-[11px] text-th-muted text-right tabular-nums shrink-0">{l.durationMin} min<br />{toUnit(l.totalVolumeLb || 0)} {unit}</div>
                             </button>
                             {open === l.id && (
-                                <div className="px-3 pb-3 space-y-2 border-t border-[#203147] pt-2">
+                                <div className="px-3 pb-3 space-y-2 border-t border-th-line pt-2">
                                     {l.exercises.map((e, i) => (
                                         <div key={i} className="text-[11px]">
                                             <div className="font-semibold text-white">{e.name}{e.substituted ? <span className="text-[#F59E0B]"> (substitute for {e.prescribedName})</span> : null}</div>
-                                            <div className="text-[#8FA2B8] tabular-nums">{e.sets.map(x => `${x.type === 'warmup' ? 'W ' : x.type === 'drop' ? 'D ' : x.type === 'myo' ? 'M ' : ''}${x.weight || 0}×${x.reps}`).join(' · ')}</div>
+                                            <div className="text-th-muted tabular-nums">{e.sets.map(x => `${x.type === 'warmup' ? 'W ' : x.type === 'drop' ? 'D ' : x.type === 'myo' ? 'M ' : ''}${x.weight || 0}×${x.reps}`).join(' · ')}</div>
                                         </div>
                                     ))}
                                 </div>
@@ -469,45 +479,45 @@
             return (
                 <div className="space-y-4">
                     <h2 className="text-lg font-black text-white">Progress</h2>
-                    <select value={sel} onChange={e => setSel(e.target.value)} className="w-full min-h-[44px] bg-[#101C2B] border border-[#203147] rounded-xl px-3 text-white">
+                    <select value={sel} onChange={e => setSel(e.target.value)} className="w-full min-h-[44px] bg-th-card border border-th-line rounded-xl px-3 text-white">
                         <option value="all">All workouts (overall history)</option>
                         {ids.map(id => <option key={id} value={id}>{library.programs[id] ? library.programs[id].name : id}</option>)}
                     </select>
                     {program && (
-                        <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2">
+                        <div className="bg-th-card border border-th-line rounded-2xl p-4 space-y-2">
                             <div className="flex items-center justify-between"><div className="text-sm font-black text-white">{program.name}</div><StatusBadge status={prog.status} /></div>
-                            <div className="text-[11px] text-[#8FA2B8]">Week {(sessions.find(x => x.status === 'planned') || { week: program.weeks.length }).week} of {program.weeks.length} · {done} of {sessions.length} workouts completed{skipped ? ` · ${skipped} skipped` : ''}</div>
-                            <div className="w-full bg-[#080E16] h-2 rounded-full overflow-hidden"><div className="bg-[#31D583] h-full" style={{ width: `${sessions.length ? (done / sessions.length) * 100 : 0}%` }}></div></div>
-                            <div className="text-[11px] text-[#8FA2B8]">{sessions.length ? Math.round((done / sessions.length) * 100) : 0}% complete</div>
-                            <div className="text-[11px] text-[#8FA2B8]">Deload / progression: {deloadLines.length ? deloadLines.join(' · ') : 'no deload instructions found in the imported text; weekly changes follow the prescriptions in the program detail.'}</div>
+                            <div className="text-[11px] text-th-muted">Week {(sessions.find(x => x.status === 'planned') || { week: program.weeks.length }).week} of {program.weeks.length} · {done} of {sessions.length} workouts completed{skipped ? ` · ${skipped} skipped` : ''}</div>
+                            <div className="w-full bg-th-bg h-2 rounded-full overflow-hidden"><div className="bg-[#31D583] h-full" style={{ width: `${sessions.length ? (done / sessions.length) * 100 : 0}%` }}></div></div>
+                            <div className="text-[11px] text-th-muted">{sessions.length ? Math.round((done / sessions.length) * 100) : 0}% complete</div>
+                            <div className="text-[11px] text-th-muted">Deload / progression: {deloadLines.length ? deloadLines.join(' · ') : 'no deload instructions found in the imported text; weekly changes follow the prescriptions in the program detail.'}</div>
                         </div>
                     )}
-                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2">
+                    <div className="bg-th-card border border-th-line rounded-2xl p-4 space-y-2">
                         <div className="text-xs font-bold text-white">Training volume (working sets you logged)</div>
-                        {weekKeys.length === 0 ? <div className="text-[11px] text-[#8FA2B8]">No logged workouts yet.</div> : (
+                        {weekKeys.length === 0 ? <div className="text-[11px] text-th-muted">No logged workouts yet.</div> : (
                             <div className="h-32 flex items-end gap-2">
                                 {weekKeys.map(k => <div key={k} className="flex-1 flex flex-col items-center justify-end h-full gap-1">
-                                    <div className="w-full bg-[#1685F8] rounded-t-sm" style={{ height: `${Math.max(4, (byWeek[k] / maxVol) * 80)}%` }}></div>
-                                    <div className="text-[9px] text-[#8FA2B8]">{k}</div></div>)}
+                                    <div className="w-full bg-th-accent rounded-t-sm" style={{ height: `${Math.max(4, (byWeek[k] / maxVol) * 80)}%` }}></div>
+                                    <div className="text-[9px] text-th-muted">{k}</div></div>)}
                             </div>
                         )}
-                        {weekKeys.length > 0 && <div className="text-[10px] text-[#8FA2B8]">Total {Math.round(toUnit(Object.values(byWeek).reduce((a, b) => a + b, 0))).toLocaleString()} {unit}</div>}
+                        {weekKeys.length > 0 && <div className="text-[10px] text-th-muted">Total {Math.round(toUnit(Object.values(byWeek).reduce((a, b) => a + b, 0))).toLocaleString()} {unit}</div>}
                     </div>
-                    <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-2">
+                    <div className="bg-th-card border border-th-line rounded-2xl p-4 space-y-2">
                         <div className="text-xs font-bold text-white">Exercise performance</div>
-                        {exNames.length === 0 ? <div className="text-[11px] text-[#8FA2B8]">Log a workout to see exercise trends.</div> : (<>
-                            <select value={chosen} onChange={e => setExName(e.target.value)} className="w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white">{exNames.map(n => <option key={n} value={n}>{n}</option>)}</select>
-                            {series.map((x, i) => <div key={i} className="flex justify-between text-[11px]"><span className="text-[#8FA2B8]">{x.date}</span><span className="text-white tabular-nums">{x.weight} {x.unit} × {x.reps}{x.weight === prWeight && prWeight > 0 && series.length > 1 ? ' · best logged' : ''}</span></div>)}
-                            <div className="text-[10px] text-[#8FA2B8]">Best set per session, from your logged working sets only.</div>
+                        {exNames.length === 0 ? <div className="text-[11px] text-th-muted">Log a workout to see exercise trends.</div> : (<>
+                            <select value={chosen} onChange={e => setExName(e.target.value)} className="w-full min-h-[44px] bg-th-bg border border-th-line rounded-xl px-3 text-white">{exNames.map(n => <option key={n} value={n}>{n}</option>)}</select>
+                            {series.map((x, i) => <div key={i} className="flex justify-between text-[11px]"><span className="text-th-muted">{x.date}</span><span className="text-white tabular-nums">{x.weight} {x.unit} × {x.reps}{x.weight === prWeight && prWeight > 0 && series.length > 1 ? ' · best logged' : ''}</span></div>)}
+                            <div className="text-[10px] text-th-muted">Best set per session, from your logged working sets only.</div>
                         </>)}
                     </div>
                     <div className="space-y-2">
                         <div className="text-xs font-bold text-white">Recent workouts</div>
-                        {logs.length === 0 && <div className="text-[11px] text-[#8FA2B8]">Nothing logged yet.</div>}
+                        {logs.length === 0 && <div className="text-[11px] text-th-muted">Nothing logged yet.</div>}
                         {logs.slice(0, 10).map(l => (
-                            <div key={l.id} className="bg-[#101C2B] border border-[#203147] rounded-xl p-3 flex justify-between gap-2">
-                                <div><div className="text-xs font-bold text-white">{l.workoutName}</div><div className="text-[10px] text-[#8FA2B8]">{l.date}{l.week ? ` · Week ${l.week} Day ${l.day}` : ''}{l.programName && sel === 'all' ? ` · ${l.programName}` : ''}</div></div>
-                                <div className="text-[11px] text-[#8FA2B8] text-right tabular-nums">{l.durationMin} min<br />{Math.round(toUnit(l.totalVolumeLb || 0)).toLocaleString()} {unit}</div>
+                            <div key={l.id} className="bg-th-card border border-th-line rounded-xl p-3 flex justify-between gap-2">
+                                <div><div className="text-xs font-bold text-white">{l.workoutName}</div><div className="text-[10px] text-th-muted">{l.date}{l.week ? ` · Week ${l.week} Day ${l.day}` : ''}{l.programName && sel === 'all' ? ` · ${l.programName}` : ''}</div></div>
+                                <div className="text-[11px] text-th-muted text-right tabular-nums">{l.durationMin} min<br />{Math.round(toUnit(l.totalVolumeLb || 0)).toLocaleString()} {unit}</div>
                             </div>
                         ))}
                     </div>
@@ -548,11 +558,11 @@
         function App() {
             const [activeNav, setActiveNav] = useState('Home');
             const [selectedTheme, setSelectedTheme] = useState(STORED.selectedTheme || 'blue');
-            const theme = THEMES[selectedTheme];
+            useEffect(() => { applyTheme(selectedTheme); }, [selectedTheme]);
 
             const exercises = EXERCISE_LIBRARY;
             const [workoutLogs, setWorkoutLogs] = useState(STORED.workoutLogs || INITIAL_WORKOUT_LOGS);
-            const [userSettings, setUserSettings] = useState(STORED.userSettings || { name: '', unit: 'lb', targetCalories: 2400, targetProtein: 180, equipment: DEFAULT_EQUIPMENT });
+            const [userSettings, setUserSettings] = useState(STORED.userSettings || { name: '', unit: 'lb', equipment: DEFAULT_EQUIPMENT });
 
             const [activeSession, setActiveSession] = useState(STORED.activeSession || null);
             // Workout view is a layer over the app; the session itself lives here regardless of the page shown.
@@ -812,33 +822,33 @@
                 const lastDone = [...item.sets].reverse().find(x => x.completed && x.type !== 'warmup' && x.weight !== '');
                 const dropHint = lastDone && dropPct ? String(Math.round(parseFloat(lastDone.weight) * (1 - parseInt(dropPct, 10) / 100) * 2) / 2) : userSettings.unit;
                 return (
-                    <div key={exIdx} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
+                    <div key={exIdx} className="bg-th-card border border-th-line rounded-2xl p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                                <div className="text-[10px] text-[#8FA2B8]">Exercise {exIdx + 1} of {activeSession.exercises.length}</div>
+                                <div className="text-[10px] text-th-muted">Exercise {exIdx + 1} of {activeSession.exercises.length}</div>
                                 <h3 className="text-sm font-bold text-white">{display}</h3>
                                 {item.substitution && <div className="text-[10px] text-[#F59E0B]">Your substitution · prescribed: {item.name}</div>}
                             </div>
-                            <button onClick={() => setSubModalIdx(exIdx)} aria-label="Substitute exercise" className="min-w-[44px] min-h-[44px] rounded-lg bg-[#142235] text-[#8FA2B8] text-base shrink-0">⇄</button>
+                            <button onClick={() => setSubModalIdx(exIdx)} aria-label="Substitute exercise" className="min-w-[44px] min-h-[44px] rounded-lg bg-th-elevated text-th-muted text-base shrink-0">⇄</button>
                         </div>
-                        <div className="bg-[#080E16] border border-[#203147] rounded-xl p-2.5 text-[11px] space-y-0.5">
-                            <div className="text-[#8FA2B8] uppercase text-[9px] font-bold tracking-wide">Prescribed by program</div>
+                        <div className="bg-th-bg border border-th-line rounded-xl p-2.5 text-[11px] space-y-0.5">
+                            <div className="text-th-muted uppercase text-[9px] font-bold tracking-wide">Prescribed by program</div>
                             <div className="text-white font-bold">{pr.workingSets ?? '?'} × {pr.reps ?? '?'}{pr.warmupText ? ` · ${pr.warmupText} warm-up` : pr.warmupSets ? ` · ${pr.warmupSets} warm-up` : ''} · {intensityLabel(pr.intensity)}{pr.rest ? ` · rest ${restLabel(pr.rest)}` : ''}</div>
                             {pr.technique && <div className="text-[#F59E0B] font-semibold">Last-set technique: {pr.technique}</div>}
                             {pr.notes && <div className="text-[#C7D3E0] leading-snug">{pr.notes}</div>}
-                            {pr.rest && pr.rest.maxSeconds && <button onClick={() => startRest(pr.rest.maxSeconds)} className="min-h-[36px] px-3 rounded-lg bg-[#142235] border border-[#203147] text-[11px] font-semibold text-white">⏱ Start prescribed rest ({restLabel(pr.rest)})</button>}
-                            {pr.videoUrl && <a href={pr.videoUrl} target="_blank" rel="noopener noreferrer" className="block text-[11px] font-semibold text-[#1685F8]">▶ Technique video</a>}
+                            {pr.rest && pr.rest.maxSeconds && <button onClick={() => startRest(pr.rest.maxSeconds)} className="min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[11px] font-semibold text-white">⏱ Start prescribed rest ({restLabel(pr.rest)})</button>}
+                            {pr.videoUrl && <a href={pr.videoUrl} target="_blank" rel="noopener noreferrer" className="block text-[11px] font-semibold text-th-accent">▶ Technique video</a>}
                             {!item.substitution && equipmentFor(item.name) && !ownedEquipment.includes(equipmentFor(item.name)) && <div className="text-[#F59E0B]">⚠ May need {equipmentFor(item.name)} (not in your equipment list) — tap ⇄ to substitute</div>}
                             {pr.flags.length > 0 && <div className="text-[#F59E0B]">⚠ Uncertain extraction — check {pr.page ? `PDF p.${pr.page}` : pr.ref}</div>}
                         </div>
-                        {prev && <div className="flex items-center justify-between gap-2"><div className="text-[11px] text-[#8FA2B8]">Last time · {prev}</div>{lastSets.length > 0 && <button onClick={fillLast} className="min-h-[36px] px-3 rounded-lg bg-[#142235] border border-[#203147] text-[10px] font-bold text-white shrink-0">Use last weights</button>}</div>}
+                        {prev && <div className="flex items-center justify-between gap-2"><div className="text-[11px] text-th-muted">Last time · {prev}</div>{lastSets.length > 0 && <button onClick={fillLast} className="min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[10px] font-bold text-white shrink-0">Use last weights</button>}</div>}
                         <div className="space-y-2">
                             {item.sets.map((st, setIdx) => (
-                                <div key={st.id} className={`grid grid-cols-[34px_1fr_1fr_44px] gap-2 items-center p-2 rounded-xl border ${st.completed ? 'bg-[#31D583]/10 border-[#31D583]/30' : 'bg-[#080E16] border-[#203147]'}`}>
+                                <div key={st.id} className={`grid grid-cols-[34px_1fr_1fr_44px] gap-2 items-center p-2 rounded-xl border ${st.completed ? 'bg-[#31D583]/10 border-[#31D583]/30' : 'bg-th-bg border-th-line'}`}>
                                     <span className="text-[11px] font-bold text-white">{st.type === 'warmup' ? `W${st.setNumber}` : st.type === 'drop' ? `D${st.setNumber}` : st.type === 'myo' ? `M${st.setNumber}` : `#${st.setNumber}`}</span>
-                                    <input type="number" inputMode="decimal" value={st.weight} placeholder={st.type === 'drop' ? dropHint : placeholderWeight(st, setIdx)} aria-label="Weight" onChange={e => updateSet(exIdx, setIdx, { weight: e.target.value })} className="w-full min-w-0 h-11 bg-[#101C2B] border border-[#203147] rounded-lg px-2 text-center text-white tabular-nums font-bold" />
-                                    <input type="number" inputMode="numeric" value={st.reps} placeholder={pr.reps || 'reps'} aria-label="Reps" onChange={e => updateSet(exIdx, setIdx, { reps: e.target.value })} className="w-full min-w-0 h-11 bg-[#101C2B] border border-[#203147] rounded-lg px-2 text-center text-white tabular-nums font-bold" />
-                                    <button onClick={() => toggleProgramSet(exIdx, setIdx)} aria-label="Complete set" className={`h-11 w-11 rounded-lg text-base font-black ${st.completed ? 'bg-[#31D583] text-[#080E16]' : 'bg-[#142235] text-[#8FA2B8]'}`}>✓</button>
+                                    <input type="number" inputMode="decimal" value={st.weight} placeholder={st.type === 'drop' ? dropHint : placeholderWeight(st, setIdx)} aria-label="Weight" onChange={e => updateSet(exIdx, setIdx, { weight: e.target.value })} className="w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold" />
+                                    <input type="number" inputMode="numeric" value={st.reps} placeholder={pr.reps || 'reps'} aria-label="Reps" onChange={e => updateSet(exIdx, setIdx, { reps: e.target.value })} className="w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold" />
+                                    <button onClick={() => toggleProgramSet(exIdx, setIdx)} aria-label="Complete set" className={`h-11 w-11 rounded-lg text-base font-black ${st.completed ? 'bg-[#31D583] text-th-bg' : 'bg-th-elevated text-th-muted'}`}>✓</button>
                                 </div>
                             ))}
                             {(/myo/i.test(tech) || /drop/i.test(tech) || holdSec) && (
@@ -849,8 +859,8 @@
                                 </div>
                             )}
                             <div className="flex gap-2">
-                                {pr.warmupText && !pr.warmupSets && <button onClick={() => addSet(exIdx, 'warmup')} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]">＋ Warm-up set</button>}
-                                <button onClick={() => addSet(exIdx)} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]">＋ Add extra set</button>
+                                {pr.warmupText && !pr.warmupSets && <button onClick={() => addSet(exIdx, 'warmup')} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted">＋ Warm-up set</button>}
+                                <button onClick={() => addSet(exIdx)} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted">＋ Add extra set</button>
                             </div>
                         </div>
                     </div>
@@ -858,66 +868,55 @@
             };
 
             return (
-                <div style={{ backgroundColor: theme.bgPrimary, color: theme.textPrimary }} className="min-h-screen flex flex-col w-full font-sans antialiased pb-24 md:pb-0">
+                <div className="bg-th-bg text-th-ink min-h-screen flex flex-col w-full font-sans antialiased pb-24 md:pb-0">
                     
                     {/* TOP HEADER (Optimized for iPhone notch & touch) */}
-                    <header className="px-4 py-3.5 border-b border-[#203147] bg-[#0D1622]/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3 safe-top">
+                    <header className="px-4 py-3.5 border-b border-th-line bg-th-bg2/90 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between gap-3 safe-top">
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#1685F8] to-[#0A529B] flex items-center justify-center shadow-md shadow-[#1685F8]/25 shrink-0">
+                            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-th-accent to-th-accent-dark flex items-center justify-center shadow-md shadow-th-accent/25 shrink-0">
                                 <Icon name="dumbbell" className="w-4 h-4 text-white" />
                             </div>
                             <div>
                                 <h1 className="text-xs font-black tracking-wider text-white">STRONGER</h1>
-                                <p className="text-[10px] text-[#8FA2B8] truncate">{userSettings.name ? `Hey, ${userSettings.name} 👋` : 'Welcome 👋'}</p>
+                                <p className="text-[10px] text-th-muted truncate">{userSettings.name ? `Hey, ${userSettings.name} 👋` : 'Welcome 👋'}</p>
                             </div>
                         </div>
 
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center gap-1 bg-[#101C2B] border border-[#203147] rounded-lg px-2 py-1 text-[11px]">
-                                <select
-                                    value={selectedTheme}
-                                    onChange={(e) => setSelectedTheme(e.target.value)}
-                                    className="bg-transparent text-white font-semibold outline-none cursor-pointer"
-                                >
-                                    {Object.entries(THEMES).map(([key, t]) => (
-                                        <option key={key} value={key} className="bg-[#101C2B] text-white">{t.name}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div onClick={() => setActiveNav('Settings')} className="w-8 h-8 rounded-xl bg-[#1685F8] text-white font-bold flex items-center justify-center text-xs shadow cursor-pointer">
+                            <button onClick={() => setActiveNav('Settings')} aria-label="Settings" className="w-8 h-8 rounded-xl bg-th-accent text-th-on-accent font-bold flex items-center justify-center text-xs shadow cursor-pointer">
                                 {(userSettings.name || 'S')[0].toUpperCase()}
-                            </div>
+                            </button>
                         </div>
                     </header>
 
                     {/* ACTIVE WORKOUT OVERLAY (Optimized for gym thumb usage) */}
                     {activeSession && workoutOpen && (
-                        <div className="fixed inset-0 z-50 bg-[#080E16]/95 backdrop-blur-xl flex flex-col p-4 overflow-y-auto safe-top safe-bottom">
+                        <div className="fixed inset-0 z-50 bg-th-bg/95 backdrop-blur-xl flex flex-col p-4 overflow-y-auto safe-top safe-bottom">
                             <div className="max-w-xl mx-auto w-full space-y-4">
-                                <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl">
+                                <div className="bg-th-card border border-th-line rounded-2xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl">
                                     <div>
-                                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Active Workout</div>
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Active Workout</div>
                                         <h2 className="text-lg font-black text-white">{activeSession.workoutName}</h2>
-                                        {activeSession.program && <div className="text-[11px] text-[#8FA2B8]">{activeSession.program.programName} · Week {activeSession.program.week} · Day {activeSession.program.day}</div>}
-                                        <div className="text-[11px] text-[#8FA2B8] flex items-center gap-2 mt-0.5">
+                                        {activeSession.program && <div className="text-[11px] text-th-muted">{activeSession.program.programName} · Week {activeSession.program.week} · Day {activeSession.program.day}</div>}
+                                        <div className="text-[11px] text-th-muted flex items-center gap-2 mt-0.5">
                                             <span>Time: <strong className="text-white tabular-nums">{Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s</strong></span>
                                             <span>·</span>
                                             <span>Rest: <strong className="text-[#31D583] tabular-nums">{fmtClock(timerSeconds)}</strong></span>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <button onClick={() => { setWorkoutOpen(false); setActiveNav('Home'); }} aria-label="Back to Home, keep workout running" className="min-h-[44px] px-3 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">⌂ Home</button>
-                                        <button onClick={requestFinish} className="px-3.5 py-2 rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-[#080E16] text-xs font-black shadow cursor-pointer">
+                                        <button onClick={() => { setWorkoutOpen(false); setActiveNav('Home'); }} aria-label="Back to Home, keep workout running" className="min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">⌂ Home</button>
+                                        <button onClick={requestFinish} className="px-3.5 py-2 rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-th-bg text-xs font-black shadow cursor-pointer">
                                             Finish
                                         </button>
-                                        <button onClick={() => setConfirmDiscard(true)} aria-label="Discard workout" className="min-w-[44px] min-h-[44px] rounded-xl bg-[#142235] text-[#F43F5E] text-sm font-black">✕</button>
+                                        <button onClick={() => setConfirmDiscard(true)} aria-label="Discard workout" className="min-w-[44px] min-h-[44px] rounded-xl bg-th-elevated text-[#F43F5E] text-sm font-black">✕</button>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 overflow-x-auto pb-1">
-                                    <span className="text-[11px] text-[#8FA2B8] shrink-0">Rest timer</span>
-                                    {[60, 90, 120, 180].map(sec => <button key={sec} onClick={() => startRest(sec)} className="min-h-[40px] px-3.5 rounded-lg bg-[#142235] border border-[#203147] text-[11px] font-semibold text-white shrink-0">{sec >= 120 ? `${sec / 60} min` : `${sec}s`}</button>)}
-                                    {timerRunning && <button onClick={() => setRestEndsAt(null)} className="min-h-[40px] px-3.5 rounded-lg bg-[#142235] border border-[#F43F5E]/40 text-[11px] font-semibold text-[#F43F5E] shrink-0">Stop {fmtClock(timerSeconds)}</button>}
+                                    <span className="text-[11px] text-th-muted shrink-0">Rest timer</span>
+                                    {[60, 90, 120, 180].map(sec => <button key={sec} onClick={() => startRest(sec)} className="min-h-[40px] px-3.5 rounded-lg bg-th-elevated border border-th-line text-[11px] font-semibold text-white shrink-0">{sec >= 120 ? `${sec / 60} min` : `${sec}s`}</button>)}
+                                    {timerRunning && <button onClick={() => setRestEndsAt(null)} className="min-h-[40px] px-3.5 rounded-lg bg-th-elevated border border-[#F43F5E]/40 text-[11px] font-semibold text-[#F43F5E] shrink-0">Stop {fmtClock(timerSeconds)}</button>}
                                 </div>
 
                                 <div className="space-y-4">
@@ -936,35 +935,35 @@
                                         <div className="text-xs font-bold text-[#F59E0B]">Back up your data</div>
                                         <p className="text-[11px] text-[#C7D3E0]">Your programs and workout history live only in this browser. {userSettings.lastBackupAt ? `Last backup ${daysSince(userSettings.lastBackupAt)} day(s) ago.` : 'You have never exported a backup.'}</p>
                                         <div className="flex gap-2">
-                                            <button onClick={exportBackup} className="flex-1 min-h-[44px] rounded-xl bg-[#F59E0B] text-[#080E16] text-xs font-black">Export backup now</button>
-                                            <button onClick={() => setUserSettings({ ...userSettings, backupSnoozeUntil: Date.now() + 3 * 86400000 })} className="min-h-[44px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Later</button>
+                                            <button onClick={exportBackup} className="flex-1 min-h-[44px] rounded-xl bg-[#F59E0B] text-th-bg text-xs font-black">Export backup now</button>
+                                            <button onClick={() => setUserSettings({ ...userSettings, backupSnoozeUntil: Date.now() + 3 * 86400000 })} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">Later</button>
                                         </div>
                                     </div>
                                 )}
                                 {!activeProgram && (
-                                    <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-5 text-center space-y-3">
-                                        <p className="text-xs text-[#8FA2B8]">{Object.keys(library.programs).length ? 'No program is active. Pick one from your library to put it on the calendar.' : 'Import a program (PDF or Excel) to follow it here, step by step.'}</p>
-                                        <button onClick={() => setActiveNav('Program')} className="min-h-[44px] px-5 rounded-xl bg-[#1685F8] text-white text-xs font-bold">Open Program Library</button>
+                                    <div className="bg-th-card border border-dashed border-th-line rounded-2xl p-5 text-center space-y-3">
+                                        <p className="text-xs text-th-muted">{Object.keys(library.programs).length ? 'No program is active. Pick one from your library to put it on the calendar.' : 'Import a program (PDF or Excel) to follow it here, step by step.'}</p>
+                                        <button onClick={() => setActiveNav('Program')} className="min-h-[44px] px-5 rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">Open Program Library</button>
                                     </div>
                                 )}
                                 {activeProgram && (
-                                    <div className="bg-[#101C2B] border border-[#1685F8]/40 rounded-2xl p-4 space-y-2">
-                                        <div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Active program · {activeProgram.name}</div>
+                                    <div className="bg-th-card border border-th-accent/40 rounded-2xl p-4 space-y-2">
+                                        <div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Active program · {activeProgram.name}</div>
                                         {nextProgramSession ? (<>
                                             <div className="text-sm font-black text-white">Week {nextProgramSession.week} · Day {nextProgramSession.day} · {nextProgramSession.label}</div>
-                                            <div className="text-[11px] text-[#8FA2B8]">{nextProgramSession.plannedDate ? (nextProgramSession.plannedDate === todayStr() ? 'Scheduled today' : nextProgramSession.missed ? `Missed — was planned ${fmtShort(nextProgramSession.plannedDate)} (still pending)` : `Planned ${fmtShort(nextProgramSession.plannedDate)}`) : ''}</div>
+                                            <div className="text-[11px] text-th-muted">{nextProgramSession.plannedDate ? (nextProgramSession.plannedDate === todayStr() ? 'Scheduled today' : nextProgramSession.missed ? `Missed — was planned ${fmtShort(nextProgramSession.plannedDate)} (still pending)` : `Planned ${fmtShort(nextProgramSession.plannedDate)}`) : ''}</div>
                                             <div className="flex gap-2 pt-1">
-                                                <button onClick={() => startProgramWorkout(nextProgramSession)} className="flex-1 min-h-[44px] rounded-xl bg-[#1685F8] text-white text-xs font-bold">{activeSession ? 'Return to workout' : 'Start workout'}</button>
-                                                <button onClick={() => setActiveNav('Calendar')} className="min-h-[44px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Calendar</button>
+                                                <button onClick={() => startProgramWorkout(nextProgramSession)} className="flex-1 min-h-[44px] rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">{activeSession ? 'Return to workout' : 'Start workout'}</button>
+                                                <button onClick={() => setActiveNav('Calendar')} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">Calendar</button>
                                             </div>
-                                        </>) : <div className="text-xs text-[#8FA2B8]">No pending workouts left in this program.</div>}
+                                        </>) : <div className="text-xs text-th-muted">No pending workouts left in this program.</div>}
                                         {weekSessions.length > 0 && (
                                             <div className="pt-1">
-                                                <div className="text-[10px] text-[#8FA2B8] mb-1.5">Week {curWeekNum}{weekSessions[0].deload ? ' (deload)' : ''} · {weekSessions.filter(x => x.status === 'completed').length}/{weekSessions.length} done · {programDone}/{activeSessions.length} overall</div>
+                                                <div className="text-[10px] text-th-muted mb-1.5">Week {curWeekNum}{weekSessions[0].deload ? ' (deload)' : ''} · {weekSessions.filter(x => x.status === 'completed').length}/{weekSessions.length} done · {programDone}/{activeSessions.length} overall</div>
                                                 <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${weekSessions.length}, minmax(0, 1fr))` }}>
                                                     {weekSessions.map(ws => {
                                                         const isToday = ws.plannedDate === todayStr();
-                                                        const cls = ws.status === 'completed' ? 'bg-[#31D583]/20 border-[#31D583]/50 text-[#31D583]' : ws.status === 'skipped' ? 'bg-[#142235] border-[#203147] text-[#8FA2B8]' : ws.missed ? 'bg-[#F43F5E]/15 border-[#F43F5E]/50 text-[#F43F5E]' : isToday ? 'bg-[#1685F8]/20 border-[#1685F8] text-white' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]';
+                                                        const cls = ws.status === 'completed' ? 'bg-[#31D583]/20 border-[#31D583]/50 text-[#31D583]' : ws.status === 'skipped' ? 'bg-th-elevated border-th-line text-th-muted' : ws.missed ? 'bg-[#F43F5E]/15 border-[#F43F5E]/50 text-[#F43F5E]' : isToday ? 'bg-th-accent/20 border-th-accent text-white' : 'bg-th-bg border-th-line text-th-muted';
                                                         return (
                                                             <button key={ws.key} onClick={() => setActiveNav('Calendar')} aria-label={`${ws.label} ${ws.status}`} className={`min-h-[52px] rounded-lg border px-1 py-1 flex flex-col items-center justify-center text-[9px] leading-tight ${cls}`}>
                                                                 <span className="font-black text-[11px]">{ws.status === 'completed' ? '✓' : `D${ws.day}`}</span>
@@ -981,15 +980,15 @@
                                 {/* SUMMARY METRICS (real data) */}
                                 {activeProgram && (
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="p-3.5 rounded-xl bg-[#101C2B] border border-[#203147] space-y-2">
-                                            <div className="flex items-center justify-between text-[11px] text-[#8FA2B8]"><span>Program progress</span><Icon name="layers" className="w-3.5 h-3.5 text-[#1685F8]" /></div>
+                                        <div className="p-3.5 rounded-xl bg-th-card border border-th-line space-y-2">
+                                            <div className="flex items-center justify-between text-[11px] text-th-muted"><span>Program progress</span><Icon name="layers" className="w-3.5 h-3.5 text-th-accent" /></div>
                                             <div className="text-lg font-extrabold text-white tabular-nums">{programDone} / {activeSessions.length}</div>
-                                            <div className="w-full bg-[#080E16] h-1.5 rounded-full overflow-hidden"><div className="bg-[#1685F8] h-full rounded-full" style={{ width: `${activeSessions.length ? (programDone / activeSessions.length) * 100 : 0}%` }}></div></div>
+                                            <div className="w-full bg-th-bg h-1.5 rounded-full overflow-hidden"><div className="bg-th-accent h-full rounded-full" style={{ width: `${activeSessions.length ? (programDone / activeSessions.length) * 100 : 0}%` }}></div></div>
                                         </div>
-                                        <div className="p-3.5 rounded-xl bg-[#101C2B] border border-[#203147] space-y-2">
-                                            <div className="flex items-center justify-between text-[11px] text-[#8FA2B8]"><span>This week</span><Icon name="check-circle-2" className="w-3.5 h-3.5 text-[#31D583]" /></div>
+                                        <div className="p-3.5 rounded-xl bg-th-card border border-th-line space-y-2">
+                                            <div className="flex items-center justify-between text-[11px] text-th-muted"><span>This week</span><Icon name="check-circle-2" className="w-3.5 h-3.5 text-[#31D583]" /></div>
                                             <div className="text-lg font-extrabold text-white tabular-nums">{weekSessions.filter(x => x.status === 'completed').length} / {weekSessions.length}</div>
-                                            <div className="flex items-center gap-1">{weekSessions.map(x => <div key={x.key} className={`h-1.5 flex-1 rounded-full ${x.status === 'completed' ? 'bg-[#31D583]' : 'bg-[#203147]'}`}></div>)}</div>
+                                            <div className="flex items-center gap-1">{weekSessions.map(x => <div key={x.key} className={`h-1.5 flex-1 rounded-full ${x.status === 'completed' ? 'bg-[#31D583]' : 'bg-th-line'}`}></div>)}</div>
                                         </div>
                                     </div>
                                 )}
@@ -1005,12 +1004,12 @@
                                 {(() => {
                                     const st = progressOf(openProgramId).status, id = openProgramId;
                                     const btn = 'w-full min-h-[48px] rounded-xl text-sm font-black ';
-                                    if (st === 'not_started') return <button onClick={() => requestStartProgram(id)} className={btn + 'bg-[#1685F8] text-white'}>Start Program</button>;
+                                    if (st === 'not_started') return <button onClick={() => requestStartProgram(id)} className={btn + 'bg-th-accent text-white'}>Start Program</button>;
                                     if (st === 'completed') return <div className="text-xs font-bold text-[#31D583]">✓ All workouts completed</div>;
                                     return (
                                         <div className="flex gap-2">
-                                            <button onClick={() => resumeProgram(id)} className={btn + 'flex-1 bg-[#1685F8] text-white'}>Resume Program</button>
-                                            {st === 'in_progress' && <button onClick={() => pauseProgram(id)} className="min-h-[48px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Pause</button>}
+                                            <button onClick={() => resumeProgram(id)} className={btn + 'flex-1 bg-th-accent text-white'}>Resume Program</button>
+                                            {st === 'in_progress' && <button onClick={() => pauseProgram(id)} className="min-h-[48px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">Pause</button>}
                                         </div>
                                     );
                                 })()}
@@ -1021,22 +1020,22 @@
                             <div className="space-y-4">
                                 <div>
                                     <h2 className="text-lg font-black text-white">Program Library</h2>
-                                    <p className="text-[11px] text-[#8FA2B8] mt-0.5">Import your Jeff Nippard program PDFs or spreadsheets. Each program is followed exactly as written.</p>
+                                    <p className="text-[11px] text-th-muted mt-0.5">Import your Jeff Nippard program PDFs or spreadsheets. Each program is followed exactly as written.</p>
                                 </div>
-                                <button onClick={() => pdfInputRef.current && pdfInputRef.current.click()} disabled={importing} className="w-full min-h-[48px] rounded-xl bg-[#1685F8] text-white text-sm font-black disabled:opacity-60">{importing ? 'Reading file…' : '＋ Import program file(s) (PDF or Excel)'}</button>
+                                <button onClick={() => pdfInputRef.current && pdfInputRef.current.click()} disabled={importing} className="w-full min-h-[48px] rounded-xl bg-th-accent text-th-on-accent text-sm font-black disabled:opacity-60">{importing ? 'Reading file…' : '＋ Import program file(s) (PDF or Excel)'}</button>
                                 <input ref={pdfInputRef} type="file" accept="application/pdf,.pdf,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" multiple className="hidden" onChange={e => { handlePdfFiles(e.target.files); e.target.value = ''; }} />
                                 {importReport && (
-                                    <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-3 space-y-1.5">
+                                    <div className="bg-th-card border border-th-line rounded-xl p-3 space-y-1.5">
                                         {importReport.map((r, i) => <div key={i} className={`text-[11px] leading-snug ${r.ok ? 'text-[#31D583]' : 'text-[#F43F5E]'}`}>{r.ok ? '✓' : '✕'} {r.file}: {r.msg}</div>)}
-                                        <button onClick={() => setImportReport(null)} className="text-[10px] text-[#8FA2B8] min-h-[32px]">Dismiss</button>
+                                        <button onClick={() => setImportReport(null)} className="text-[10px] text-th-muted min-h-[32px]">Dismiss</button>
                                     </div>
                                 )}
                                 {Object.keys(library.programs).length > 1 && (() => {
                                     const dayOpts = [...new Set(Object.values(library.programs).map(pr => pr.metadata.daysPerWeek).filter(Boolean))].sort((a, b) => a - b);
-                                    const chip = (on) => `min-h-[40px] px-3.5 rounded-full border text-[11px] font-bold shrink-0 ${on ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#101C2B] border-[#203147] text-[#8FA2B8]'}`;
+                                    const chip = (on) => `min-h-[40px] px-3.5 rounded-full border text-[11px] font-bold shrink-0 ${on ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-card border-th-line text-th-muted'}`;
                                     return (
                                         <div className="space-y-2">
-                                            <input type="search" value={libraryQuery} onChange={e => setLibraryQuery(e.target.value)} placeholder="Search programs" className="w-full min-h-[44px] bg-[#101C2B] border border-[#203147] rounded-xl px-3 text-white" />
+                                            <input type="search" value={libraryQuery} onChange={e => setLibraryQuery(e.target.value)} placeholder="Search programs" className="w-full min-h-[44px] bg-th-card border border-th-line rounded-xl px-3 text-white" />
                                             <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter by training days per week">
                                                 <button onClick={() => setLibDays('all')} className={chip(libDays === 'all')}>Any days</button>
                                                 {dayOpts.map(n => <button key={n} onClick={() => setLibDays(n)} className={chip(libDays === n)}>{n} days/week</button>)}
@@ -1048,7 +1047,7 @@
                                     );
                                 })()}
                                 {Object.keys(library.programs).length === 0 && !importing && (
-                                    <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-6 text-center text-xs text-[#8FA2B8]">No programs imported yet. Tap “Import program file(s)” to add one.</div>
+                                    <div className="bg-th-card border border-dashed border-th-line rounded-2xl p-6 text-center text-xs text-th-muted">No programs imported yet. Tap “Import program file(s)” to add one.</div>
                                 )}
                                 {Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase()) && (libDays === 'all' || pr.metadata.daysPerWeek === libDays) && (libStatus === 'all' || progressOf(pr.id).status === libStatus)).map(pr => (
                                     <ProgramCard key={pr.id} program={pr} state={progressOf(pr.id)} isActive={library.activeProgramId === pr.id} onOpen={() => setOpenProgramId(pr.id)} />
@@ -1057,26 +1056,6 @@
                         )}
 
                         {activeNav === 'Progress' && <ProgramProgress key={library.activeProgramId || 'none'} library={library} workoutLogs={workoutLogs} unit={userSettings.unit} />}
-
-                        {activeNav === 'Nutrition' && (
-                            <div className="space-y-4">
-                                <h2 className="text-base font-black text-white">Nutrition</h2>
-                                <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3">
-                                    <div className="text-xs font-bold text-white">Your daily targets</div>
-                                    <div className="grid grid-cols-2 gap-3">
-                                        <label className="bg-[#080E16] p-3 rounded-lg border border-[#203147] text-center block">
-                                            <input type="number" inputMode="numeric" value={userSettings.targetCalories} onChange={e => setUserSettings({ ...userSettings, targetCalories: Number(e.target.value) })} className="w-full bg-transparent text-center text-lg font-black text-white" />
-                                            <div className="text-[10px] text-[#8FA2B8]">kcal per day</div>
-                                        </label>
-                                        <label className="bg-[#080E16] p-3 rounded-lg border border-[#203147] text-center block">
-                                            <input type="number" inputMode="numeric" value={userSettings.targetProtein} onChange={e => setUserSettings({ ...userSettings, targetProtein: Number(e.target.value) })} className="w-full bg-transparent text-center text-lg font-black text-white" />
-                                            <div className="text-[10px] text-[#8FA2B8]">g protein per day</div>
-                                        </label>
-                                    </div>
-                                    <p className="text-[11px] text-[#8FA2B8]">Food logging isn't part of this app yet, so no intake is shown. These are just your saved targets.</p>
-                                </div>
-                            </div>
-                        )}
 
                         {activeNav === 'Calendar' && (
                             <CalendarView program={activeProgram} prog={activeProg} sessions={activeSessions} logs={workoutLogs} hasActiveWorkout={!!activeSession}
@@ -1088,33 +1067,43 @@
                         {activeNav === 'Settings' && (
                             <div className="space-y-4">
                                 <h2 className="text-base font-black text-white">Settings</h2>
-                                <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3">
+                                <div className="bg-th-card border border-th-line rounded-xl p-4 space-y-3">
                                     <div>
-                                        <label className="text-[11px] text-[#8FA2B8] block mb-1">Athlete Name</label>
-                                        <input type="text" value={userSettings.name} placeholder="Your name (optional)" onChange={e => setUserSettings({ ...userSettings, name: e.target.value })} className="w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs" />
+                                        <label className="text-[11px] text-th-muted block mb-1">Your name</label>
+                                        <input type="text" value={userSettings.name} placeholder="Your name (optional)" onChange={e => setUserSettings({ ...userSettings, name: e.target.value })} className="w-full bg-th-bg border border-th-line rounded-lg px-3 py-2 text-white text-xs" />
                                     </div>
                                     <div>
-                                        <label className="text-[11px] text-[#8FA2B8] block mb-1">Weight Unit</label>
-                                        <select value={userSettings.unit} onChange={e => setUserSettings({ ...userSettings, unit: e.target.value })} className="w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs">
+                                        <label className="text-[11px] text-th-muted block mb-1">Weight Unit</label>
+                                        <select value={userSettings.unit} onChange={e => setUserSettings({ ...userSettings, unit: e.target.value })} className="w-full bg-th-bg border border-th-line rounded-lg px-3 py-2 text-white text-xs">
                                             <option value="lb">Pounds (lb)</option>
                                             <option value="kg">Kilograms (kg)</option>
                                         </select>
                                     </div>
-                                    <div className="pt-3 border-t border-[#203147] space-y-2">
+                                    <div className="pt-3 border-t border-th-line space-y-2">
+                                        <div className="text-xs font-bold text-white">Appearance</div>
+                                        <div className="flex items-center gap-3" role="radiogroup" aria-label="Colour theme">
+                                            {Object.entries(THEMES).map(([key, t]) => (
+                                                <button key={key} role="radio" aria-checked={selectedTheme === key} aria-label={t.name} title={t.name} onClick={() => setSelectedTheme(key)}
+                                                    className={`w-11 h-11 rounded-full border-2 flex items-center justify-center ${selectedTheme === key ? 'border-white' : 'border-th-line'}`} style={{ background: `linear-gradient(135deg, ${t.card} 50%, ${t.accent} 50%)` }}></button>
+                                            ))}
+                                        </div>
+                                        <p className="text-[11px] text-th-muted">{THEMES[selectedTheme].name}</p>
+                                    </div>
+                                    <div className="pt-3 border-t border-th-line space-y-2">
                                         <div className="text-xs font-bold text-white">My equipment</div>
-                                        <p className="text-[11px] text-[#8FA2B8]">Used to flag program exercises you may not be able to do. You choose any substitutions; nothing is changed automatically.</p>
+                                        <p className="text-[11px] text-th-muted">Used to flag program exercises you may not be able to do. You choose any substitutions; nothing is changed automatically.</p>
                                         <div className="grid grid-cols-2 gap-2">
                                             {EQUIPMENT_OPTIONS.map(eq => { const on = ownedEquipment.includes(eq); return (
-                                                <button key={eq} onClick={() => setUserSettings({ ...userSettings, equipment: on ? ownedEquipment.filter(x => x !== eq) : [...ownedEquipment, eq] })} className={`min-h-[44px] rounded-xl border text-xs font-bold ${on ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]'}`}>{on ? '✓ ' : ''}{eq}</button>); })}
+                                                <button key={eq} onClick={() => setUserSettings({ ...userSettings, equipment: on ? ownedEquipment.filter(x => x !== eq) : [...ownedEquipment, eq] })} className={`min-h-[44px] rounded-xl border text-xs font-bold ${on ? 'bg-th-accent border-th-accent text-th-on-accent' : 'bg-th-bg border-th-line text-th-muted'}`}>{on ? '✓ ' : ''}{eq}</button>); })}
                                         </div>
                                     </div>
-                                    <div className="pt-3 border-t border-[#203147] space-y-2">
+                                    <div className="pt-3 border-t border-th-line space-y-2">
                                         <div className="text-xs font-bold text-white">Backup</div>
-                                        <p className="text-[11px] text-[#8FA2B8]">Data is stored only in this browser on this device (no cloud sync). Export a backup to keep it safe.{userSettings.lastBackupAt ? ` Last backup: ${userSettings.lastBackupAt.split('T')[0]}.` : ' You have not exported a backup yet.'}</p>
-                                        <p className="text-[11px] text-[#8FA2B8]">Browser storage protection: {storagePersisted === true ? 'granted — the browser will not clear this data automatically.' : 'not guaranteed. On iPhone, add the app to your Home Screen (Share → Add to Home Screen) for the best protection, and keep backups.'}</p>
+                                        <p className="text-[11px] text-th-muted">Data is stored only in this browser on this device (no cloud sync). Export a backup to keep it safe.{userSettings.lastBackupAt ? ` Last backup: ${userSettings.lastBackupAt.split('T')[0]}.` : ' You have not exported a backup yet.'}</p>
+                                        <p className="text-[11px] text-th-muted">Browser storage protection: {storagePersisted === true ? 'granted — the browser will not clear this data automatically.' : 'not guaranteed. On iPhone, add the app to your Home Screen (Share → Add to Home Screen) for the best protection, and keep backups.'}</p>
                                         <div className="flex gap-2">
-                                            <button onClick={exportBackup} className="flex-1 min-h-[44px] rounded-xl bg-[#1685F8] text-white text-xs font-bold">Export backup</button>
-                                            <button onClick={() => importInputRef.current && importInputRef.current.click()} className="flex-1 min-h-[44px] rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Restore backup</button>
+                                            <button onClick={exportBackup} className="flex-1 min-h-[44px] rounded-xl bg-th-accent text-th-on-accent text-xs font-bold">Export backup</button>
+                                            <button onClick={() => importInputRef.current && importInputRef.current.click()} className="flex-1 min-h-[44px] rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">Restore backup</button>
                                             <input ref={importInputRef} type="file" accept="application/json,.json" className="hidden" onChange={e => { importBackup(e.target.files[0]); e.target.value = ''; }} />
                                         </div>
                                     </div>
@@ -1126,7 +1115,7 @@
                     {/* IPHONE BOTTOM TAB BAR (Thumb friendly navigation) */}
                     <div className="fixed bottom-0 left-0 right-0 z-40">
                     {activeSession && !workoutOpen && (
-                        <button onClick={() => setWorkoutOpen(true)} aria-label="Return to active workout" className="w-full flex items-center justify-between gap-3 px-4 min-h-[48px] bg-[#1685F8] text-white text-left">
+                        <button onClick={() => setWorkoutOpen(true)} aria-label="Return to active workout" className="w-full flex items-center justify-between gap-3 px-4 min-h-[48px] bg-th-accent text-th-on-accent text-left">
                             <span className="flex items-center gap-2 min-w-0">
                                 <span className="w-2 h-2 rounded-full bg-white animate-pulse shrink-0"></span>
                                 <span className="text-xs font-black truncate">{activeSession.workoutName}</span>
@@ -1138,14 +1127,13 @@
                             </span>
                         </button>
                     )}
-                    <nav aria-label="Bottom Navigation" className="bg-[#0D1622]/95 backdrop-blur-xl border-t border-[#203147] px-2 py-1.5 flex items-center justify-around safe-bottom">
+                    <nav aria-label="Bottom Navigation" className="bg-th-bg2/95 backdrop-blur-xl border-t border-th-line px-2 py-1.5 flex items-center justify-around safe-bottom">
                         {[
                             { id: 'Home', label: 'Home', icon: 'home' },
                             { id: 'History', label: 'History', icon: 'history' },
                             { id: 'Program', label: 'Program', icon: 'layers' },
                             { id: 'Calendar', label: 'Calendar', icon: 'calendar' },
-                            { id: 'Progress', label: 'Progress', icon: 'bar-chart-3' },
-                            { id: 'Nutrition', label: 'Nutrition', icon: 'utensils' }
+                            { id: 'Progress', label: 'Progress', icon: 'bar-chart-3' }
                         ].map(item => {
                             const isActive = activeNav === item.id;
                             return (
@@ -1153,7 +1141,7 @@
                                     key={item.id}
                                     onClick={() => setActiveNav(item.id)}
                                     className={`flex flex-col items-center justify-center py-1 px-3 rounded-xl transition-all cursor-pointer ${
-                                        isActive ? 'text-[#1685F8]' : 'text-[#8FA2B8] hover:text-white'
+                                        isActive ? 'text-th-accent' : 'text-th-muted hover:text-white'
                                     }`}
                                 >
                                     <Icon name={item.icon} className="w-5 h-5" />
@@ -1166,11 +1154,11 @@
 
                     {confirmDiscard && (
                         <div className="fixed inset-0 z-[60] bg-black/80 flex items-center justify-center p-4">
-                            <div className="bg-[#101C2B] border border-[#203147] rounded-2xl max-w-sm w-full p-5 space-y-4">
+                            <div className="bg-th-card border border-th-line rounded-2xl max-w-sm w-full p-5 space-y-4">
                                 <h3 className="text-sm font-bold text-white">Discard this workout?</h3>
-                                <p className="text-xs text-[#8FA2B8]">All sets logged in this session will be lost. Nothing will be saved to your history.</p>
+                                <p className="text-xs text-th-muted">All sets logged in this session will be lost. Nothing will be saved to your history.</p>
                                 <div className="flex gap-2">
-                                    <button onClick={() => setConfirmDiscard(false)} className="flex-1 min-h-[44px] rounded-xl bg-[#142235] text-white text-xs font-bold">Keep Workout</button>
+                                    <button onClick={() => setConfirmDiscard(false)} className="flex-1 min-h-[44px] rounded-xl bg-th-elevated text-white text-xs font-bold">Keep Workout</button>
                                     <button onClick={() => { setActiveSession(null); setWorkoutOpen(false); setRestEndsAt(null); setConfirmDiscard(false); }} className="flex-1 min-h-[44px] rounded-xl bg-[#F43F5E] text-white text-xs font-black">Discard</button>
                                 </div>
                             </div>
@@ -1184,12 +1172,12 @@
                     )}
                     {confirmDialog && (
                         <div className="fixed inset-0 z-[70] bg-black/80 flex items-center justify-center p-4">
-                            <div className="bg-[#101C2B] border border-[#203147] rounded-2xl max-w-sm w-full p-5 space-y-4">
+                            <div className="bg-th-card border border-th-line rounded-2xl max-w-sm w-full p-5 space-y-4">
                                 <h3 className="text-sm font-bold text-white">{confirmDialog.title}</h3>
-                                <p className="text-xs text-[#8FA2B8]">{confirmDialog.body}</p>
+                                <p className="text-xs text-th-muted">{confirmDialog.body}</p>
                                 <div className="flex gap-2">
-                                    <button onClick={() => setConfirmDialog(null)} className="flex-1 min-h-[44px] rounded-xl bg-[#142235] text-white text-xs font-bold">Cancel</button>
-                                    <button onClick={() => { const fn = confirmDialog.onConfirm; setConfirmDialog(null); fn(); }} className={`flex-1 min-h-[44px] rounded-xl text-white text-xs font-black ${confirmDialog.danger ? 'bg-[#F43F5E]' : 'bg-[#1685F8]'}`}>{confirmDialog.confirmLabel}</button>
+                                    <button onClick={() => setConfirmDialog(null)} className="flex-1 min-h-[44px] rounded-xl bg-th-elevated text-white text-xs font-bold">Cancel</button>
+                                    <button onClick={() => { const fn = confirmDialog.onConfirm; setConfirmDialog(null); fn(); }} className={`flex-1 min-h-[44px] rounded-xl text-th-on-accent text-xs font-black ${confirmDialog.danger ? 'bg-[#F43F5E]' : 'bg-th-accent'}`}>{confirmDialog.confirmLabel}</button>
                                 </div>
                             </div>
                         </div>
@@ -1197,11 +1185,11 @@
 
                     {/* MODALS */}
                     {toast && (
-                        <div className="fixed bottom-20 left-4 right-4 z-50 bg-[#101C2B] border border-[#1685F8] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
-                            <div className="w-2 h-2 rounded-full bg-[#1685F8] animate-ping"></div>
+                        <div className="fixed bottom-20 left-4 right-4 z-50 bg-th-card border border-th-accent text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
+                            <div className="w-2 h-2 rounded-full bg-th-accent animate-ping"></div>
                             <div>
                                 <div className="text-xs font-bold">{toast.title}</div>
-                                <div className="text-[10px] text-[#8FA2B8]">{toast.message}</div>
+                                <div className="text-[10px] text-th-muted">{toast.message}</div>
                             </div>
                         </div>
                     )}
@@ -1209,5 +1197,6 @@
             );
         }
 
+        applyTheme(STORED.selectedTheme || 'blue'); // before first render, so there is no colour flash
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     

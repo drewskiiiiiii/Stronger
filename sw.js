@@ -1,6 +1,6 @@
 /* STRONGER service worker: caches the app shell so it opens offline.
  * Same-origin files use stale-while-revalidate (updates arrive on the next open); other requests (fonts, images) are cached as they load. */
-const CACHE = 'stronger-10086527c7';
+const CACHE = 'stronger-958138a3a4';
 const SHELL = ['./', 'index.html', 'app.js', 'styles.css', 'pdf-import.js', 'manifest.webmanifest', 'icons/icon-180.png', 'icons/icon-192.png', 'icons/icon-512.png',
     'vendor/react.production.min.js', 'vendor/react-dom.production.min.js', 'vendor/pdf.min.js', 'vendor/pdf.worker.min.js', 'vendor/xlsx.full.min.js'];
 

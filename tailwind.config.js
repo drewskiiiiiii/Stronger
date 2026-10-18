@@ -1,5 +1,5 @@
 module.exports = {
     content: ['./index.html', './src/**/*.jsx', './pdf-import.js'],
-    theme: { extend: { fontFamily: { sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'] } } },
+    theme: { extend: { colors: { th: Object.fromEntries(['bg', 'bg2', 'card', 'elevated', 'line', 'accent', 'accent-hover', 'accent-dark', 'ink', 'muted', 'on-accent'].map(k => [k, `rgb(var(--c-${k}) / <alpha-value>)`])) }, fontFamily: { sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'] } } },
     plugins: []
 };

@@ -4,6 +4,10 @@
 
 /* App base styles (previously inline in index.html) */
 @layer base {
+        :root { /* default (Athletic Blue); the app overwrites these when a theme is applied */
+            --c-bg: 8 14 22; --c-bg2: 13 22 34; --c-card: 16 28 43; --c-elevated: 20 34 53; --c-line: 32 49 71;
+            --c-accent: 22 133 248; --c-accent-hover: 41 146 255; --c-accent-dark: 12 73 137; --c-ink: 243 246 250; --c-muted: 143 162 184; --c-on-accent: 255 255 255;
+        }
         body { 
             font-family: 'Inter', sans-serif; 
             -webkit-tap-highlight-color: transparent;

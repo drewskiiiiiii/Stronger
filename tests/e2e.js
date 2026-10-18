@@ -23,7 +23,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     ok('no sample name, exercises or plan anywhere', !/John|Barbell Bench Press|Sample|Upper Body Strength|Strength Builder/.test(body));
     await tab('History'); ok('History starts empty', await p.getByText('No workouts logged yet').isVisible());
     await tab('Home');
-    await tab('Nutrition'); ok('nutrition shows no fake intake', !(await p.locator('main').innerText()).includes('1,850'));
+    ok('no Nutrition tool in navigation', (await p.locator('nav').getByText('Nutrition').count()) === 0 && (await p.locator('nav button').count()) === 5);
 
     // --- import two programs, filters, duplicates ---
     await tab('Program');
@@ -112,6 +112,18 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     await p.getByRole('button', { name: /Upper/ }).first().click();
     ok('History expands to the logged sets', await p.getByText('100×8').first().isVisible());
 
+    // --- themes: discreet selector in Settings, whole-app colours, persisted ---
+    ok('no theme dropdown in the header', (await p.locator('header select').count()) === 0);
+    await p.getByLabel('Settings').click();
+    const accentBefore = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim());
+    await p.getByRole('radio', { name: 'Titan Gold' }).click();
+    const accentAfter = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim());
+    ok('choosing a theme changes the accent colour variable', accentBefore === '22 133 248' && accentAfter === '245 158 11');
+    ok('themed elements really use it', await p.evaluate(() => { const el = document.querySelector('.bg-th-accent'); return !el || getComputedStyle(el).backgroundColor === 'rgb(245, 158, 11)'; }));
+    await p.reload({ waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1200);
+    ok('theme persists after reload', await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim()) === '245 158 11');
+    await p.getByLabel('Settings').click(); await p.getByRole('radio', { name: 'Athletic Blue' }).click();
+
     // --- progress + layout ---
     await tab('Progress');
     ok('progress shows program completion', await p.getByText(/1 of 6 workouts completed/).isVisible());
@@ -147,7 +159,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     await op.reload({ waitUntil: 'domcontentloaded' }); await op.waitForTimeout(500);
     await o.ctx.setOffline(true);
     await op.reload({ waitUntil: 'domcontentloaded' }); await op.waitForTimeout(1500);
-    ok('app opens offline', (await op.locator('nav button').count()) === 6);
+    ok('app opens offline', (await op.locator('nav button').count()) === 5);
     await o.browser.close(); srv2.close();
 
     console.log(`\ne2e: ${passed} passed, ${failed} failed`);
