@@ -52,8 +52,16 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
 
     // --- workout: persistence across navigation and reload ---
     await p.getByRole('button', { name: 'Start workout' }).first().click(); await p.waitForTimeout(400);
+    // range-only warm-ups (e.g. "1-2"): the warm-up section and its add button sit ABOVE the working sets
+    const addY = (await p.getByRole('button', { name: '＋ Add warm-up set' }).first().boundingBox()).y;
+    const workY = (await p.getByLabel(/Working set 1 weight/).first().boundingBox()).y;
+    ok('Add warm-up button is listed above the first working set', addY < workY);
+    await p.getByRole('button', { name: '＋ Add warm-up set' }).first().click();
+    const warmY = (await p.getByLabel(/Warm-up set 1 weight/).first().boundingBox()).y;
+    const workY2 = (await p.getByLabel(/Working set 1 weight/).first().boundingBox()).y;
+    ok('an added warm-up row appears above the working sets', warmY < workY2);
     ok('integer warm-up count creates labelled Warm-up rows', await p.getByText('Warm-up sets', { exact: true }).first().isVisible() && await p.getByLabel(/Warm-up set 2 weight/).first().isVisible());
-    await p.getByLabel('Reps').nth(0).fill('8'); await p.getByLabel('Weight').nth(0).fill('100'); await p.getByLabel('Complete set').nth(0).click();
+    await p.getByLabel(/Working set 1 reps/).first().fill('8'); await p.getByLabel(/Working set 1 weight/).first().fill('100'); await p.getByLabel(/Complete set \(Working 1\)/).first().click();
     await p.getByRole('button', { name: /Home/ }).first().click();
     ok('banner visible on Home', await p.getByLabel('Return to active workout').isVisible());
     ok('Home shows this week plan', await p.getByRole('button', { name: /Upper in_progress|Upper planned/ }).count() >= 0 && await p.getByText(/Week 1 · 0\/3 done/).isVisible());

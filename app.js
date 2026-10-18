@@ -1557,6 +1557,11 @@ function App() {
         weight: String(lastSets[Math.min(workIdx(i), lastSets.length - 1)].weight || '')
       });
     });
+    const canAddWarm = !!pr.warmupText && !pr.warmupSets;
+    const addWarmBtn = React.createElement("button", {
+      onClick: () => addSet(exIdx, 'warmup'),
+      className: "w-full min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted"
+    }, "\uFF0B Add warm-up set");
     const tech = pr.technique || '';
     const holdSec = (tech.match(/static hold[^0-9]*(\d+)\s*sec/i) || [])[1];
     const dropPct = (tech.match(/(\d+)\s*%/) || [])[1];
@@ -1610,7 +1615,13 @@ function App() {
       className: "min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[10px] font-bold text-white shrink-0"
     }, "Use last weights")), React.createElement("div", {
       className: "space-y-2"
-    }, item.sets.map((st, setIdx) => {
+    }, canAddWarm && !item.sets.some(x => x.type === 'warmup') && React.createElement(React.Fragment, null, React.createElement("div", {
+      className: "flex items-center gap-2 pt-1"
+    }, React.createElement("span", {
+      className: "px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-th-elevated text-th-muted"
+    }, "Warm-up sets"), React.createElement("span", {
+      className: "text-[10px] text-th-muted"
+    }, pr.warmupText, " per the program \xB7 not counted in volume")), addWarmBtn), item.sets.map((st, setIdx) => {
       const catOf = x => x.type === 'warmup' ? 'warmup' : x.type === 'drop' || x.type === 'myo' ? 'technique' : 'working';
       const cat = catOf(st),
         isWarm = cat === 'warmup',
@@ -1660,7 +1671,7 @@ function App() {
         onClick: () => toggleProgramSet(exIdx, setIdx),
         "aria-label": `Complete set (${word} ${st.setNumber})`,
         className: `h-11 w-11 rounded-lg text-base font-black ${st.completed ? doneCls : 'bg-th-elevated text-th-muted'}`
-      }, "\u2713")));
+      }, "\u2713")), isWarm && canAddWarm && (!item.sets[setIdx + 1] || item.sets[setIdx + 1].type !== 'warmup') && addWarmBtn);
     }), (/myo/i.test(tech) || /drop/i.test(tech) || holdSec) && React.createElement("div", {
       className: "flex gap-2 flex-wrap"
     }, /myo/i.test(tech) && React.createElement("button", {
@@ -1674,10 +1685,7 @@ function App() {
       className: "flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]"
     }, "\u23F1 Start ", holdSec, "s hold timer")), React.createElement("div", {
       className: "flex gap-2"
-    }, pr.warmupText && !pr.warmupSets && React.createElement("button", {
-      onClick: () => addSet(exIdx, 'warmup'),
-      className: "flex-1 min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted"
-    }, "\uFF0B Warm-up set"), React.createElement("button", {
+    }, React.createElement("button", {
       onClick: () => addSet(exIdx),
       className: "flex-1 min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted"
     }, "\uFF0B Add extra set"))));

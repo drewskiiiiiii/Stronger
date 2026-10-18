@@ -842,6 +842,8 @@
                 const workIdx = (setIdx) => item.sets.slice(0, setIdx).filter(x => x.type === 'working').length;
                 const placeholderWeight = (st, setIdx) => (st.type === 'working' && lastSets.length ? String(lastSets[Math.min(workIdx(setIdx), lastSets.length - 1)].weight || userSettings.unit) : userSettings.unit);
                 const fillLast = () => item.sets.forEach((st, i) => { if (st.type === 'working' && st.weight === '' && lastSets.length) updateSet(exIdx, i, { weight: String(lastSets[Math.min(workIdx(i), lastSets.length - 1)].weight || '') }); });
+                const canAddWarm = !!pr.warmupText && !pr.warmupSets; // warm-ups given as a range: you decide how many
+                const addWarmBtn = <button onClick={() => addSet(exIdx, 'warmup')} className="w-full min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted">＋ Add warm-up set</button>;
                 const tech = pr.technique || '';
                 const holdSec = (tech.match(/static hold[^0-9]*(\d+)\s*sec/i) || [])[1];
                 const dropPct = (tech.match(/(\d+)\s*%/) || [])[1];
@@ -869,6 +871,15 @@
                         </div>
                         {prev && <div className="flex items-center justify-between gap-2"><div className="text-[11px] text-th-muted">Last time · {prev}</div>{lastSets.length > 0 && <button onClick={fillLast} className="min-h-[36px] px-3 rounded-lg bg-th-elevated border border-th-line text-[10px] font-bold text-white shrink-0">Use last weights</button>}</div>}
                         <div className="space-y-2">
+                            {canAddWarm && !item.sets.some(x => x.type === 'warmup') && (
+                                <>
+                                    <div className="flex items-center gap-2 pt-1">
+                                        <span className="px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-th-elevated text-th-muted">Warm-up sets</span>
+                                        <span className="text-[10px] text-th-muted">{pr.warmupText} per the program · not counted in volume</span>
+                                    </div>
+                                    {addWarmBtn}
+                                </>
+                            )}
                             {item.sets.map((st, setIdx) => {
                                 const catOf = (x) => (x.type === 'warmup' ? 'warmup' : (x.type === 'drop' || x.type === 'myo') ? 'technique' : 'working');
                                 const cat = catOf(st), isWarm = cat === 'warmup', isTech = cat === 'technique';
@@ -893,6 +904,7 @@
                                             <input type="number" inputMode="numeric" value={st.reps} placeholder={isWarm ? 'reps' : (pr.reps || 'reps')} aria-label={`${word} set ${st.setNumber} reps`} onChange={e => updateSet(exIdx, setIdx, { reps: e.target.value })} className="w-full min-w-0 h-11 bg-th-card border border-th-line rounded-lg px-2 text-center text-white tabular-nums font-bold" />
                                             <button onClick={() => toggleProgramSet(exIdx, setIdx)} aria-label={`Complete set (${word} ${st.setNumber})`} className={`h-11 w-11 rounded-lg text-base font-black ${st.completed ? doneCls : 'bg-th-elevated text-th-muted'}`}>✓</button>
                                         </div>
+                                        {isWarm && canAddWarm && (!item.sets[setIdx + 1] || item.sets[setIdx + 1].type !== 'warmup') && addWarmBtn}
                                     </React.Fragment>
                                 );
                             })}
@@ -904,7 +916,6 @@
                                 </div>
                             )}
                             <div className="flex gap-2">
-                                {pr.warmupText && !pr.warmupSets && <button onClick={() => addSet(exIdx, 'warmup')} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted">＋ Warm-up set</button>}
                                 <button onClick={() => addSet(exIdx)} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-th-line text-[11px] font-semibold text-th-muted">＋ Add extra set</button>
                             </div>
                         </div>
