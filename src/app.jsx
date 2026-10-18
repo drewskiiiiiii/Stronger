@@ -59,10 +59,10 @@
         };
 
         const INITIAL_PROGRAM = {
-            name: '12 Week Strength Builder',
+            name: 'Sample Strength Plan (built-in)',
             totalWeeks: 12,
-            currentWeek: 4,
-            phase: 'Phase 2 · Intensification',
+            currentWeek: 1,
+            phase: 'Built-in sample',
             days: [
                 { id: 'day-1', name: 'Upper Body Strength', emphasis: 'Push · Pull · Core', durationMin: 60, location: 'Gym', exercises: [
                     { exerciseId: 'ex-bench', sets: 4, reps: 5, targetWeightLb: 225, restSeconds: 180, completed: false },
@@ -84,11 +84,7 @@
             ]
         };
 
-        const INITIAL_WORKOUT_LOGS = [
-            { id: 'log-1', date: '2026-09-20', workoutName: 'Upper Body Strength', durationMin: 58, totalVolumeLb: 18450, exercises: [
-                { exerciseId: 'ex-bench', name: 'Barbell Bench Press', sets: [{ setNumber: 1, weight: 225, reps: 5, rpe: 8 }, { setNumber: 2, weight: 225, reps: 5, rpe: 8.5 }, { setNumber: 3, weight: 225, reps: 5, rpe: 9 }, { setNumber: 4, weight: 225, reps: 5, rpe: 9.5 }] }
-            ]}
-        ];
+        const INITIAL_WORKOUT_LOGS = []; // history starts empty; nothing is pre-filled
 
         // ---- Program library components ----
         const restLabel = (r) => r ? r.raw.replace(/MIN$/i, ' min').toLowerCase().replace(/\s+/g, ' ') : 'unspecified';
@@ -540,9 +536,15 @@
 
         // ---- Local persistence (browser localStorage only; no cloud sync) ----
         const STORE_KEY = 'stronger.state';
-        const SCHEMA_VERSION = 1;
+        const SCHEMA_VERSION = 2;
         const migrate = (data) => {
-            // Future schema upgrades go here, keyed on data.schemaVersion.
+            // Schema upgrades are keyed on data.schemaVersion.
+            if (!data.schemaVersion || data.schemaVersion < 2) {
+                // v2 removed the demo data that shipped with the first version of the app.
+                if (Array.isArray(data.workoutLogs)) data.workoutLogs = data.workoutLogs.filter(l => !(l.id === 'log-1' && l.workoutName === 'Upper Body Strength' && l.date === '2026-09-20'));
+                if (data.program && data.program.name === '12 Week Strength Builder' && data.program.phase === 'Phase 2 · Intensification') data.program = undefined;
+                data.schemaVersion = 2;
+            }
             return data;
         };
         const loadStore = () => {
@@ -571,7 +573,7 @@
             const todaysWorkout = program.days.find(d => d.id === selectedDayId) || program.days[0];
 
             const [workoutLogs, setWorkoutLogs] = useState(STORED.workoutLogs || INITIAL_WORKOUT_LOGS);
-            const [userSettings, setUserSettings] = useState(STORED.userSettings || { name: 'John', unit: 'lb', targetCalories: 2400, targetProtein: 180, equipment: DEFAULT_EQUIPMENT });
+            const [userSettings, setUserSettings] = useState(STORED.userSettings || { name: 'Athlete', unit: 'lb', targetCalories: 2400, targetProtein: 180, equipment: DEFAULT_EQUIPMENT });
 
             const [activeSession, setActiveSession] = useState(STORED.activeSession || null);
             // Workout view is a layer over the app; the session itself lives here regardless of the page shown.
@@ -589,6 +591,8 @@
             const [library, setLibrary] = useState(STORED.library || { programs: {}, progress: {}, activeProgramId: null });
             const [openProgramId, setOpenProgramId] = useState(null);
             const [libraryQuery, setLibraryQuery] = useState('');
+            const [libDays, setLibDays] = useState('all');
+            const [libStatus, setLibStatus] = useState('all');
             const [importing, setImporting] = useState(false);
             const [importReport, setImportReport] = useState(null);
             const pdfInputRef = useRef(null);
@@ -602,6 +606,12 @@
             const activeProg = activeProgram ? progressOf(library.activeProgramId) : null;
             const activeSessions = useMemo(() => activeProgram && activeProg ? buildSessions(activeProgram, activeProg) : [], [activeProgram, activeProg]);
             const nextProgramSession = activeSessions.find(x => x.status === 'planned') || null;
+            const curWeekNum = nextProgramSession ? nextProgramSession.week : (activeSessions.length ? activeSessions[activeSessions.length - 1].week : null);
+            const weekSessions = activeSessions.filter(x => x.week === curWeekNum);
+            const programDone = activeSessions.filter(x => x.status === 'completed').length;
+            const daysSince = (iso) => Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+            const hasData = Object.keys(library.programs).length > 0 || workoutLogs.length > 0;
+            const showBackupReminder = hasData && !(userSettings.backupSnoozeUntil && userSettings.backupSnoozeUntil > Date.now()) && (!userSettings.lastBackupAt || daysSince(userSettings.lastBackupAt) >= 7);
 
             const patchProgress = (id, fn) => setLibrary(prev => ({ ...prev, progress: { ...prev.progress, [id]: fn(prev.progress[id] || { status: 'not_started' }) } }));
             const askOpenWorkout = () => setConfirmDialog({ title: 'A workout is already in progress', body: 'Return to it (or discard it from inside the workout screen) before starting another.', confirmLabel: 'Return to workout', onConfirm: () => setWorkoutOpen(true) });
@@ -643,6 +653,14 @@
                 }
                 return null;
             };
+            const lastSetsFor = (name) => {
+                const n = normName(name);
+                for (const log of workoutLogs) {
+                    const ex = log.exercises.find(e => normName(e.name) === n && e.sets.some(x => x.reps));
+                    if (ex) return ex.sets.filter(x => x.type !== 'warmup' && x.reps);
+                }
+                return [];
+            };
             const startProgramWorkout = (sess) => {
                 if (activeSession) return askOpenWorkout();
                 const prog = library.programs[library.activeProgramId];
@@ -673,6 +691,7 @@
                     const w = e.sets.filter(x => x.type === 'warmup');
                     return { ...e, sets: [...w, { ...blank, id: `${e.key}-wu-${Date.now()}`, setNumber: w.length + 1, type: 'warmup' }, ...e.sets.filter(x => x.type !== 'warmup')] };
                 }
+                if (type === 'drop' || type === 'myo') return { ...e, sets: [...e.sets, { ...blank, id: `${e.key}-${type}-${Date.now()}`, setNumber: e.sets.filter(x => x.type === type).length + 1, type, extra: true }] };
                 return { ...e, sets: [...e.sets, { ...blank, id: `${e.key}-extra-${Date.now()}`, setNumber: e.sets.filter(x => x.type === 'working').length + 1, type: 'working', extra: true }] };
             }) }));
             const setSubstitution = (exIdx, sub) => { setActiveSession(prev => ({ ...prev, exercises: prev.exercises.map((e, i) => i !== exIdx ? e : { ...e, substitution: sub }) })); setSubModalIdx(null); };
@@ -895,12 +914,22 @@
                 } catch (e) { /* storage full or unavailable */ }
             }, [selectedTheme, program, selectedDayId, workoutLogs, userSettings, exercises, activeSession, restEndsAt, library]);
 
+            useEffect(() => { // iOS: scroll a focused field into view once the keyboard is up
+                const onFocus = (e) => { const t = e.target; if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) setTimeout(() => t.scrollIntoView({ block: 'center', behavior: 'smooth' }), 350); };
+                document.addEventListener('focusin', onFocus);
+                return () => document.removeEventListener('focusin', onFocus);
+            }, []);
+            const [storagePersisted, setStoragePersisted] = useState(null);
+            useEffect(() => { // ask the browser not to evict our data (Safari grants this mainly to home-screen apps)
+                if (navigator.storage && navigator.storage.persist) navigator.storage.persist().then(setStoragePersisted).catch(() => {});
+            }, []);
             const exportBackup = () => {
                 const data = { app: 'STRONGER', exportedAt: new Date().toISOString(), ...loadStore() };
                 const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
                 const a = document.createElement('a');
                 a.href = url; a.download = `stronger-backup-${new Date().toISOString().split('T')[0]}.json`;
                 a.click(); URL.revokeObjectURL(url);
+                setUserSettings(prev => ({ ...prev, lastBackupAt: new Date().toISOString(), backupSnoozeUntil: null }));
             };
             const importBackup = (file) => {
                 if (!file) return;
@@ -949,7 +978,7 @@
                 const exLogs = sess.exercises.map(e => {
                     const done = e.sets.filter(x => x.completed);
                     doneSets += done.length;
-                    done.forEach(x => { if (x.type === 'working') vol += (parseFloat(x.weight) || 0) * (parseInt(x.reps, 10) || 0) * toLb; });
+                    done.forEach(x => { if (x.type !== 'warmup') vol += (parseFloat(x.weight) || 0) * (parseInt(x.reps, 10) || 0) * toLb; });
                     return { exerciseId: e.substitution ? e.substitution.exerciseId : e.exerciseId, name: e.substitution ? e.substitution.name : e.name,
                         prescribedName: e.name, substituted: !!e.substitution, substitutionOrigin: e.substitution ? e.substitution.origin : null, prescribed: e.prescribed,
                         sets: done.map(x => ({ setNumber: x.setNumber, type: x.type, weight: parseFloat(x.weight) || 0, unit, reps: parseInt(x.reps, 10) || 0, rpe: x.rpe === '' ? null : parseFloat(x.rpe) })) };
@@ -982,6 +1011,15 @@
                 const pr = item.prescribed;
                 const display = item.substitution ? item.substitution.name : item.name;
                 const prev = lastPerformance(display);
+                const lastSets = lastSetsFor(display);
+                const workIdx = (setIdx) => item.sets.slice(0, setIdx).filter(x => x.type === 'working').length;
+                const placeholderWeight = (st, setIdx) => (st.type === 'working' && lastSets.length ? String(lastSets[Math.min(workIdx(setIdx), lastSets.length - 1)].weight || userSettings.unit) : userSettings.unit);
+                const fillLast = () => item.sets.forEach((st, i) => { if (st.type === 'working' && st.weight === '' && lastSets.length) updateSet(exIdx, i, { weight: String(lastSets[Math.min(workIdx(i), lastSets.length - 1)].weight || '') }); });
+                const tech = pr.technique || '';
+                const holdSec = (tech.match(/static hold[^0-9]*(\d+)\s*sec/i) || [])[1];
+                const dropPct = (tech.match(/(\d+)\s*%/) || [])[1];
+                const lastDone = [...item.sets].reverse().find(x => x.completed && x.type !== 'warmup' && x.weight !== '');
+                const dropHint = lastDone && dropPct ? String(Math.round(parseFloat(lastDone.weight) * (1 - parseInt(dropPct, 10) / 100) * 2) / 2) : userSettings.unit;
                 return (
                     <div key={exIdx} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
@@ -1002,16 +1040,23 @@
                             {!item.substitution && equipmentFor(item.name) && !ownedEquipment.includes(equipmentFor(item.name)) && <div className="text-[#F59E0B]">⚠ May need {equipmentFor(item.name)} (not in your equipment list) — tap ⇄ to substitute</div>}
                             {pr.flags.length > 0 && <div className="text-[#F59E0B]">⚠ Uncertain extraction — check {pr.page ? `PDF p.${pr.page}` : pr.ref}</div>}
                         </div>
-                        {prev && <div className="text-[11px] text-[#8FA2B8]">Last time · {prev}</div>}
+                        {prev && <div className="flex items-center justify-between gap-2"><div className="text-[11px] text-[#8FA2B8]">Last time · {prev}</div>{lastSets.length > 0 && <button onClick={fillLast} className="min-h-[36px] px-3 rounded-lg bg-[#142235] border border-[#203147] text-[10px] font-bold text-white shrink-0">Use last weights</button>}</div>}
                         <div className="space-y-2">
                             {item.sets.map((st, setIdx) => (
                                 <div key={st.id} className={`grid grid-cols-[34px_1fr_1fr_44px] gap-2 items-center p-2 rounded-xl border ${st.completed ? 'bg-[#31D583]/10 border-[#31D583]/30' : 'bg-[#080E16] border-[#203147]'}`}>
-                                    <span className="text-[11px] font-bold text-white">{st.type === 'warmup' ? `W${st.setNumber}` : `#${st.setNumber}`}</span>
-                                    <input type="number" inputMode="decimal" value={st.weight} placeholder={userSettings.unit} aria-label="Weight" onChange={e => updateSet(exIdx, setIdx, { weight: e.target.value })} className="w-full min-w-0 h-11 bg-[#101C2B] border border-[#203147] rounded-lg px-2 text-center text-white tabular-nums font-bold" />
+                                    <span className="text-[11px] font-bold text-white">{st.type === 'warmup' ? `W${st.setNumber}` : st.type === 'drop' ? `D${st.setNumber}` : st.type === 'myo' ? `M${st.setNumber}` : `#${st.setNumber}`}</span>
+                                    <input type="number" inputMode="decimal" value={st.weight} placeholder={st.type === 'drop' ? dropHint : placeholderWeight(st, setIdx)} aria-label="Weight" onChange={e => updateSet(exIdx, setIdx, { weight: e.target.value })} className="w-full min-w-0 h-11 bg-[#101C2B] border border-[#203147] rounded-lg px-2 text-center text-white tabular-nums font-bold" />
                                     <input type="number" inputMode="numeric" value={st.reps} placeholder={pr.reps || 'reps'} aria-label="Reps" onChange={e => updateSet(exIdx, setIdx, { reps: e.target.value })} className="w-full min-w-0 h-11 bg-[#101C2B] border border-[#203147] rounded-lg px-2 text-center text-white tabular-nums font-bold" />
                                     <button onClick={() => toggleProgramSet(exIdx, setIdx)} aria-label="Complete set" className={`h-11 w-11 rounded-lg text-base font-black ${st.completed ? 'bg-[#31D583] text-[#080E16]' : 'bg-[#142235] text-[#8FA2B8]'}`}>✓</button>
                                 </div>
                             ))}
+                            {(/myo/i.test(tech) || /drop/i.test(tech) || holdSec) && (
+                                <div className="flex gap-2 flex-wrap">
+                                    {/myo/i.test(tech) && <button onClick={() => addSet(exIdx, 'myo')} className="flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]">＋ Myo-rep set</button>}
+                                    {/drop/i.test(tech) && <button onClick={() => addSet(exIdx, 'drop')} className="flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]">＋ Drop set{dropPct ? ` (−${dropPct}%)` : ''}</button>}
+                                    {holdSec && <button onClick={() => startRest(parseInt(holdSec, 10))} className="flex-1 min-h-[40px] rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/40 text-[11px] font-bold text-[#F59E0B]">⏱ Start {holdSec}s hold timer</button>}
+                                </div>
+                            )}
                             <div className="flex gap-2">
                                 {pr.warmupText && !pr.warmupSets && <button onClick={() => addSet(exIdx, 'warmup')} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]">＋ Warm-up set</button>}
                                 <button onClick={() => addSet(exIdx)} className="flex-1 min-h-[40px] rounded-xl border border-dashed border-[#203147] text-[11px] font-semibold text-[#8FA2B8]">＋ Add extra set</button>
@@ -1159,6 +1204,22 @@
                     <main className={`flex-1 flex flex-col p-4 max-w-xl mx-auto w-full space-y-6 ${activeSession ? 'pb-16' : ''}`}>
                         {activeNav === 'Home' && (
                             <div className="space-y-5">
+                                {showBackupReminder && (
+                                    <div className="bg-[#F59E0B]/10 border border-[#F59E0B]/30 rounded-2xl p-4 space-y-2">
+                                        <div className="text-xs font-bold text-[#F59E0B]">Back up your data</div>
+                                        <p className="text-[11px] text-[#C7D3E0]">Your programs and workout history live only in this browser. {userSettings.lastBackupAt ? `Last backup ${daysSince(userSettings.lastBackupAt)} day(s) ago.` : 'You have never exported a backup.'}</p>
+                                        <div className="flex gap-2">
+                                            <button onClick={exportBackup} className="flex-1 min-h-[44px] rounded-xl bg-[#F59E0B] text-[#080E16] text-xs font-black">Export backup now</button>
+                                            <button onClick={() => setUserSettings({ ...userSettings, backupSnoozeUntil: Date.now() + 3 * 86400000 })} className="min-h-[44px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Later</button>
+                                        </div>
+                                    </div>
+                                )}
+                                {!activeProgram && (
+                                    <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-5 text-center space-y-3">
+                                        <p className="text-xs text-[#8FA2B8]">{Object.keys(library.programs).length ? 'No program is active. Pick one from your library to put it on the calendar.' : 'Import a program (PDF or Excel) to follow it here, step by step.'}</p>
+                                        <button onClick={() => setActiveNav('Program')} className="min-h-[44px] px-5 rounded-xl bg-[#1685F8] text-white text-xs font-bold">Open Program Library</button>
+                                    </div>
+                                )}
                                 {activeProgram && (
                                     <div className="bg-[#101C2B] border border-[#1685F8]/40 rounded-2xl p-4 space-y-2">
                                         <div className="text-[10px] font-bold uppercase tracking-wider text-[#1685F8]">Active program · {activeProgram.name}</div>
@@ -1170,10 +1231,28 @@
                                                 <button onClick={() => setActiveNav('Calendar')} className="min-h-[44px] px-4 rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Calendar</button>
                                             </div>
                                         </>) : <div className="text-xs text-[#8FA2B8]">No pending workouts left in this program.</div>}
+                                        {weekSessions.length > 0 && (
+                                            <div className="pt-1">
+                                                <div className="text-[10px] text-[#8FA2B8] mb-1.5">Week {curWeekNum}{weekSessions[0].deload ? ' (deload)' : ''} · {weekSessions.filter(x => x.status === 'completed').length}/{weekSessions.length} done · {programDone}/{activeSessions.length} overall</div>
+                                                <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${weekSessions.length}, minmax(0, 1fr))` }}>
+                                                    {weekSessions.map(ws => {
+                                                        const isToday = ws.plannedDate === todayStr();
+                                                        const cls = ws.status === 'completed' ? 'bg-[#31D583]/20 border-[#31D583]/50 text-[#31D583]' : ws.status === 'skipped' ? 'bg-[#142235] border-[#203147] text-[#8FA2B8]' : ws.missed ? 'bg-[#F43F5E]/15 border-[#F43F5E]/50 text-[#F43F5E]' : isToday ? 'bg-[#1685F8]/20 border-[#1685F8] text-white' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]';
+                                                        return (
+                                                            <button key={ws.key} onClick={() => setActiveNav('Calendar')} aria-label={`${ws.label} ${ws.status}`} className={`min-h-[52px] rounded-lg border px-1 py-1 flex flex-col items-center justify-center text-[9px] leading-tight ${cls}`}>
+                                                                <span className="font-black text-[11px]">{ws.status === 'completed' ? '✓' : `D${ws.day}`}</span>
+                                                                <span className="truncate w-full text-center">{ws.plannedDate ? fmtShort(ws.plannedDate).split(' ')[0] : ''}</span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 
-                                {/* HERO WORKOUT CARD */}
+                                {!activeProgram && (<>
+                                {/* HERO WORKOUT CARD (built-in sample) */}
                                 <div className="relative rounded-2xl overflow-hidden border border-[#203147] bg-[#101C2B] shadow-xl">
                                     <div className="absolute inset-0 z-0">
                                         <img src={IMAGES.heroDeadlift} alt="Hero athlete" className="w-full h-full object-cover opacity-35" />
@@ -1181,7 +1260,7 @@
                                     </div>
                                     <div className="relative z-10 p-5 space-y-4">
                                         <div className="flex items-center justify-between">
-                                            <span className="px-2.5 py-0.5 rounded-full bg-[#1685F8]/20 text-[#1685F8] border border-[#1685F8]/30 text-[10px] font-extrabold uppercase tracking-widest">Today's Workout</span>
+                                            <span className="px-2.5 py-0.5 rounded-full bg-[#1685F8]/20 text-[#1685F8] border border-[#1685F8]/30 text-[10px] font-extrabold uppercase tracking-widest">Sample workout</span>
                                             <span className="text-[11px] text-[#8FA2B8] font-medium">{todaysWorkout.durationMin} min</span>
                                         </div>
                                         <div>
@@ -1199,40 +1278,30 @@
                                     </div>
                                 </div>
 
-                                {/* 2x2 SUMMARY METRICS */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    <div className="p-3.5 rounded-xl bg-[#101C2B] border border-[#203147] space-y-2">
-                                        <div className="flex items-center justify-between text-[11px] text-[#8FA2B8]">
-                                            <span>Current Program</span><Icon name="layers" className="w-3.5 h-3.5 text-[#1685F8]" />
+                                </>)}
+                                {/* SUMMARY METRICS (real data) */}
+                                {activeProgram && (
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="p-3.5 rounded-xl bg-[#101C2B] border border-[#203147] space-y-2">
+                                            <div className="flex items-center justify-between text-[11px] text-[#8FA2B8]"><span>Program progress</span><Icon name="layers" className="w-3.5 h-3.5 text-[#1685F8]" /></div>
+                                            <div className="text-lg font-extrabold text-white tabular-nums">{programDone} / {activeSessions.length}</div>
+                                            <div className="w-full bg-[#080E16] h-1.5 rounded-full overflow-hidden"><div className="bg-[#1685F8] h-full rounded-full" style={{ width: `${activeSessions.length ? (programDone / activeSessions.length) * 100 : 0}%` }}></div></div>
                                         </div>
-                                        <div className="text-xs font-bold text-white truncate">{program.name}</div>
-                                        <div className="w-full bg-[#080E16] h-1.5 rounded-full overflow-hidden">
-                                            <div className="bg-[#1685F8] h-full rounded-full" style={{ width: `${(program.currentWeek / program.totalWeeks) * 100}%` }}></div>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-3.5 rounded-xl bg-[#101C2B] border border-[#203147] space-y-2">
-                                        <div className="flex items-center justify-between text-[11px] text-[#8FA2B8]">
-                                            <span>Weekly Training</span><Icon name="check-circle-2" className="w-3.5 h-3.5 text-[#31D583]" />
-                                        </div>
-                                        <div className="flex items-baseline gap-1.5">
-                                            <span className="text-lg font-extrabold text-white">4 / 5</span>
-                                            <span className="text-[10px] text-[#8FA2B8]">Sessions</span>
-                                        </div>
-                                        <div className="flex items-center gap-1">
-                                            {[true, true, true, true, false].map((done, i) => (
-                                                <div key={i} className={`h-1.5 flex-1 rounded-full ${done ? 'bg-[#31D583]' : 'bg-[#203147]'}`}></div>
-                                            ))}
+                                        <div className="p-3.5 rounded-xl bg-[#101C2B] border border-[#203147] space-y-2">
+                                            <div className="flex items-center justify-between text-[11px] text-[#8FA2B8]"><span>This week</span><Icon name="check-circle-2" className="w-3.5 h-3.5 text-[#31D583]" /></div>
+                                            <div className="text-lg font-extrabold text-white tabular-nums">{weekSessions.filter(x => x.status === 'completed').length} / {weekSessions.length}</div>
+                                            <div className="flex items-center gap-1">{weekSessions.map(x => <div key={x.key} className={`h-1.5 flex-1 rounded-full ${x.status === 'completed' ? 'bg-[#31D583]' : 'bg-[#203147]'}`}></div>)}</div>
                                         </div>
                                     </div>
-                                </div>
+                                )}
 
+                                {!activeProgram && (<>
                                 {/* EXERCISE STACK */}
                                 <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-2">
                                             <Icon name="dumbbell" className="w-4 h-4 text-[#1685F8]" />
-                                            <h3 className="text-xs font-bold text-white uppercase tracking-wider">Today's Exercises</h3>
+                                            <h3 className="text-xs font-bold text-white uppercase tracking-wider">Sample exercises</h3>
                                         </div>
                                         <button onClick={() => setShowPlanGeneratorModal(true)} className="text-[11px] font-semibold text-[#1685F8] flex items-center gap-1">
                                             <Icon name="sparkles" className="w-3 h-3" /><span>New Plan</span>
@@ -1264,13 +1333,14 @@
                                         })}
                                     </div>
                                 </div>
+                                </>)}
                             </div>
                         )}
 
                         {activeNav === 'Workouts' && (
                             <div className="space-y-4">
                                 <div className="flex items-center justify-between">
-                                    <h2 className="text-base font-black text-white">Workouts</h2>
+                                    <div><h2 className="text-base font-black text-white">Quick workouts</h2><p className="text-[11px] text-[#8FA2B8]">Built-in sample sessions. Your imported programs live in Program.</p></div>
                                     <button onClick={() => setShowPlanGeneratorModal(true)} className="px-3 py-1.5 rounded-lg bg-[#1685F8] text-white text-xs font-bold">Generate Plan</button>
                                 </div>
                                 <div className="space-y-3">
@@ -1330,16 +1400,29 @@
                                         <button onClick={() => setImportReport(null)} className="text-[10px] text-[#8FA2B8] min-h-[32px]">Dismiss</button>
                                     </div>
                                 )}
-                                {Object.keys(library.programs).length > 1 && (
-                                    <input type="search" value={libraryQuery} onChange={e => setLibraryQuery(e.target.value)} placeholder="Search programs" className="w-full min-h-[44px] bg-[#101C2B] border border-[#203147] rounded-xl px-3 text-white" />
-                                )}
+                                {Object.keys(library.programs).length > 1 && (() => {
+                                    const dayOpts = [...new Set(Object.values(library.programs).map(pr => pr.metadata.daysPerWeek).filter(Boolean))].sort((a, b) => a - b);
+                                    const chip = (on) => `min-h-[40px] px-3.5 rounded-full border text-[11px] font-bold shrink-0 ${on ? 'bg-[#1685F8] border-[#1685F8] text-white' : 'bg-[#101C2B] border-[#203147] text-[#8FA2B8]'}`;
+                                    return (
+                                        <div className="space-y-2">
+                                            <input type="search" value={libraryQuery} onChange={e => setLibraryQuery(e.target.value)} placeholder="Search programs" className="w-full min-h-[44px] bg-[#101C2B] border border-[#203147] rounded-xl px-3 text-white" />
+                                            <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter by training days per week">
+                                                <button onClick={() => setLibDays('all')} className={chip(libDays === 'all')}>Any days</button>
+                                                {dayOpts.map(n => <button key={n} onClick={() => setLibDays(n)} className={chip(libDays === n)}>{n} days/week</button>)}
+                                            </div>
+                                            <div className="flex gap-2 overflow-x-auto pb-1" aria-label="Filter by status">
+                                                {[['all', 'All'], ['not_started', 'Not started'], ['in_progress', 'In progress'], ['paused', 'Paused'], ['completed', 'Completed']].map(([k, l]) => <button key={k} onClick={() => setLibStatus(k)} className={chip(libStatus === k)}>{l}</button>)}
+                                            </div>
+                                        </div>
+                                    );
+                                })()}
                                 {Object.keys(library.programs).length === 0 && !importing && (
                                     <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-6 text-center text-xs text-[#8FA2B8]">No programs imported yet. Tap “Import program file(s)” to add one.</div>
                                 )}
-                                {Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase())).map(pr => (
+                                {Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase()) && (libDays === 'all' || pr.metadata.daysPerWeek === libDays) && (libStatus === 'all' || progressOf(pr.id).status === libStatus)).map(pr => (
                                     <ProgramCard key={pr.id} program={pr} state={progressOf(pr.id)} isActive={library.activeProgramId === pr.id} onOpen={() => setOpenProgramId(pr.id)} />
                                 ))}
-                                <h2 className="text-base font-black text-white pt-2">Built-in plan: {program.name}</h2>
+                                <h2 className="text-base font-black text-white pt-2">{program.name}</h2>
                                 <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3">
                                     <div className="text-xs font-bold text-white">Periodized Weeks</div>
                                     <div className="grid grid-cols-4 gap-2">
@@ -1364,36 +1447,18 @@
                             <div className="space-y-4">
                                 <h2 className="text-base font-black text-white">Nutrition</h2>
                                 <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3">
-                                    <div className="text-xs font-bold text-white">Macros Today</div>
+                                    <div className="text-xs font-bold text-white">Your daily targets</div>
                                     <div className="grid grid-cols-2 gap-3">
-                                        <div className="bg-[#080E16] p-3 rounded-lg border border-[#203147] text-center">
-                                            <div className="text-lg font-black text-white">1,850</div>
-                                            <div className="text-[10px] text-[#8FA2B8]">of 2,400 kcal</div>
-                                        </div>
-                                        <div className="bg-[#080E16] p-3 rounded-lg border border-[#203147] text-center">
-                                            <div className="text-lg font-black text-white">145g</div>
-                                            <div className="text-[10px] text-[#8FA2B8]">Protein (Goal 180g)</div>
-                                        </div>
+                                        <label className="bg-[#080E16] p-3 rounded-lg border border-[#203147] text-center block">
+                                            <input type="number" inputMode="numeric" value={userSettings.targetCalories} onChange={e => setUserSettings({ ...userSettings, targetCalories: Number(e.target.value) })} className="w-full bg-transparent text-center text-lg font-black text-white" />
+                                            <div className="text-[10px] text-[#8FA2B8]">kcal per day</div>
+                                        </label>
+                                        <label className="bg-[#080E16] p-3 rounded-lg border border-[#203147] text-center block">
+                                            <input type="number" inputMode="numeric" value={userSettings.targetProtein} onChange={e => setUserSettings({ ...userSettings, targetProtein: Number(e.target.value) })} className="w-full bg-transparent text-center text-lg font-black text-white" />
+                                            <div className="text-[10px] text-[#8FA2B8]">g protein per day</div>
+                                        </label>
                                     </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {activeNav === 'Recovery' && (
-                            <div className="space-y-4">
-                                <h2 className="text-base font-black text-white">Recovery</h2>
-                                <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3">
-                                    <div className="text-xs font-bold text-white">Sleep Biometrics</div>
-                                    <div className="bg-[#080E16] p-3 rounded-lg border border-[#203147] flex items-center justify-between">
-                                        <div>
-                                            <div className="text-xs text-[#8FA2B8]">Duration</div>
-                                            <div className="text-sm font-bold text-white">7h 28m</div>
-                                        </div>
-                                        <div>
-                                            <div className="text-xs text-[#8FA2B8]">Score</div>
-                                            <div className="text-sm font-bold text-[#31D583]">82 / 100</div>
-                                        </div>
-                                    </div>
+                                    <p className="text-[11px] text-[#8FA2B8]">Food logging isn't part of this app yet, so no intake is shown. These are just your saved targets.</p>
                                 </div>
                             </div>
                         )}
@@ -1430,7 +1495,8 @@
                                     </div>
                                     <div className="pt-3 border-t border-[#203147] space-y-2">
                                         <div className="text-xs font-bold text-white">Backup</div>
-                                        <p className="text-[11px] text-[#8FA2B8]">Data is stored only in this browser on this device (no cloud sync). Export a backup to keep it safe.</p>
+                                        <p className="text-[11px] text-[#8FA2B8]">Data is stored only in this browser on this device (no cloud sync). Export a backup to keep it safe.{userSettings.lastBackupAt ? ` Last backup: ${userSettings.lastBackupAt.split('T')[0]}.` : ' You have not exported a backup yet.'}</p>
+                                        <p className="text-[11px] text-[#8FA2B8]">Browser storage protection: {storagePersisted === true ? 'granted — the browser will not clear this data automatically.' : 'not guaranteed. On iPhone, add the app to your Home Screen (Share → Add to Home Screen) for the best protection, and keep backups.'}</p>
                                         <div className="flex gap-2">
                                             <button onClick={exportBackup} className="flex-1 min-h-[44px] rounded-xl bg-[#1685F8] text-white text-xs font-bold">Export backup</button>
                                             <button onClick={() => importInputRef.current && importInputRef.current.click()} className="flex-1 min-h-[44px] rounded-xl bg-[#142235] border border-[#203147] text-white text-xs font-bold">Restore backup</button>

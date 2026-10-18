@@ -9,7 +9,7 @@
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
         }
-        html, body { overflow-x: hidden; max-width: 100%; }
+        html, body { overflow-x: hidden; max-width: 100%; -webkit-text-size-adjust: 100%; touch-action: manipulation; overscroll-behavior-y: none; }
         .min-h-screen { min-height: 100vh; min-height: 100dvh; }
         input[type=date] { color-scheme: dark; }
         input, select, textarea { font-size: 16px; } /* prevents iOS Safari zoom-on-focus */
