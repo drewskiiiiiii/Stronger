@@ -199,6 +199,7 @@
                         ))}
                     </div>
                     {wk && (wk.phase || wk.deload) && <div className="text-[11px] text-[#8FA2B8]">{wk.phase}{wk.deload ? ' · deload week (from the source)' : ''}</div>}
+                    {wk && wk.note && <div className="text-[11px] text-[#C7D3E0] bg-[#101C2B] border border-[#203147] rounded-xl p-3">{wk.note}</div>}
                     {wk && wk.days.map(d => (
                         <div key={d.day} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
                             <div className="flex items-center justify-between">
@@ -217,7 +218,7 @@
                                     {e.technique && <div className="text-[11px] font-semibold text-[#F59E0B]">Last-set technique: {e.technique}</div>}
                                     {e.notes && <div className="text-[11px] text-[#C7D3E0] leading-snug">{e.notes}</div>}
                                     {e.sourceSubstitutions && e.sourceSubstitutions.length > 0 && !e.sourceGuidance && <div className="text-[10px] text-[#8FA2B8]">Substitutes in source: {e.sourceSubstitutions.join(' · ')}</div>}
-                                    {e.videoUrl && <a href={e.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-[11px] font-semibold text-[#1685F8]">▶ Technique video (from PDF)</a>}
+                                    {e.videoUrl && <a href={e.videoUrl} target="_blank" rel="noopener noreferrer" className="inline-block text-[11px] font-semibold text-[#1685F8]">▶ Technique video (from the source)</a>}
                                 </div>
                             ))}
                         </div>
