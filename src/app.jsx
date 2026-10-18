@@ -1,6 +1,7 @@
         const { useState, useEffect, useRef, useMemo } = React;
         // ---- Inline icons (lucide, ISC license) so nothing loads from a CDN ----
         const ICONS = {
+            'history': '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" /> <path d="M3 3v5h5" /> <path d="M12 7v5l4 2" />',
             'bar-chart-3': '<line x1="12" x2="12" y1="20" y2="10" /> <line x1="18" x2="18" y1="20" y2="4" /> <line x1="6" x2="6" y1="20" y2="16" />',
             'calendar': '<path d="M8 2v4" /> <path d="M16 2v4" /> <rect width="18" height="18" x="3" y="4" rx="2" /> <path d="M3 10h18" />',
             'check': '<path d="M20 6 9 17l-5-5" />',
@@ -19,36 +20,7 @@
 
 
 
-        const IMAGES = {
-            benchPress: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=300&q=80',
-            pullUps: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?auto=format&fit=crop&w=300&q=80',
-            overheadPress: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=300&q=80',
-            barbellRow: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=300&q=80',
-            heroDeadlift: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
-            squat: 'https://images.unsplash.com/photo-1574680096145-d05b474e2155?auto=format&fit=crop&w=300&q=80',
-            inclineDumbbell: 'https://images.unsplash.com/photo-1534367507873-d2d7e24c797f?auto=format&fit=crop&w=300&q=80',
-            romanianDeadlift: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?auto=format&fit=crop&w=300&q=80',
-            legRaises: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=300&q=80'
-        };
-
-        const INITIAL_EXERCISES = [
-            { id: 'ex-bench', name: 'Barbell Bench Press', shortName: 'Bench Press', primaryMuscle: 'Chest', equipment: 'Barbell', pattern: 'Horizontal Push', thumbnail: IMAGES.benchPress },
-            { id: 'ex-pullup', name: 'Weighted Pull-Ups', shortName: 'Pull-Up', primaryMuscle: 'Back', equipment: 'Pull-Up Bar', pattern: 'Vertical Pull', thumbnail: IMAGES.pullUps },
-            { id: 'ex-db-ohp', name: 'DB Overhead Press', shortName: 'DB OHP', primaryMuscle: 'Shoulders', equipment: 'Dumbbells', pattern: 'Vertical Push', thumbnail: IMAGES.overheadPress },
-            { id: 'ex-row', name: 'Barbell Row', shortName: 'Barbell Row', primaryMuscle: 'Back', equipment: 'Barbell', pattern: 'Horizontal Pull', thumbnail: IMAGES.barbellRow },
-            { id: 'ex-leg-raise', name: 'Hanging Leg Raises', shortName: 'Leg Raises', primaryMuscle: 'Core', equipment: 'Pull-Up Bar', pattern: 'Core Flexion', thumbnail: IMAGES.legRaises },
-            { id: 'ex-deadlift', name: 'Deadlift', shortName: 'Deadlift', primaryMuscle: 'Posterior Chain', equipment: 'Barbell', pattern: 'Hip Hinge', thumbnail: IMAGES.heroDeadlift },
-            { id: 'ex-ohp', name: 'Overhead Press', shortName: 'OHP', primaryMuscle: 'Shoulders', equipment: 'Barbell', pattern: 'Vertical Push', thumbnail: IMAGES.overheadPress },
-            { id: 'ex-squat', name: 'Barbell Back Squat', shortName: 'Squat', primaryMuscle: 'Quadriceps', equipment: 'Barbell', pattern: 'Squat', thumbnail: IMAGES.squat },
-            { id: 'ex-incline-db', name: 'Incline Dumbbell Press', shortName: 'Incline DB Press', primaryMuscle: 'Chest', equipment: 'Dumbbells', pattern: 'Horizontal Push', thumbnail: IMAGES.inclineDumbbell },
-            { id: 'ex-rdl', name: 'Romanian Deadlift', shortName: 'RDL', primaryMuscle: 'Hamstrings', equipment: 'Barbell', pattern: 'Hip Hinge', thumbnail: IMAGES.romanianDeadlift },
-            { id: 'ex-db-row', name: 'Single-Arm DB Row', shortName: 'DB Row', primaryMuscle: 'Back', equipment: 'Dumbbells', pattern: 'Horizontal Pull', thumbnail: IMAGES.barbellRow },
-            { id: 'ex-goblet-squat', name: 'Goblet Squat', shortName: 'Goblet Squat', primaryMuscle: 'Quadriceps', equipment: 'Dumbbells', pattern: 'Squat', thumbnail: IMAGES.squat },
-            { id: 'ex-db-rdl', name: 'Dumbbell RDL', shortName: 'DB RDL', primaryMuscle: 'Hamstrings', equipment: 'Dumbbells', pattern: 'Hip Hinge', thumbnail: IMAGES.romanianDeadlift },
-            { id: 'ex-pushup', name: 'Deficit Tempo Push-Ups', shortName: 'Push-Up', primaryMuscle: 'Chest', equipment: 'Bodyweight', pattern: 'Horizontal Push', thumbnail: IMAGES.benchPress },
-            { id: 'ex-split-squat', name: 'Bulgarian Split Squat', shortName: 'Split Squat', primaryMuscle: 'Quadriceps', equipment: 'Dumbbells', pattern: 'Squat', thumbnail: IMAGES.squat },
-            { id: 'ex-plank-reach', name: 'Hollow Body Hold', shortName: 'Core Hold', primaryMuscle: 'Core', equipment: 'Bodyweight', pattern: 'Core Flexion', thumbnail: IMAGES.legRaises }
-        ];
+        const EXERCISE_LIBRARY = []; // no built-in exercises; substitutions come from the program source or your own entries
 
         const THEMES = {
             blue: { name: 'Athletic Blue', bgPrimary: '#080E16', bgSecondary: '#0D1622', bgCard: '#101C2B', bgElevated: '#142235', border: '#203147', accent: '#1685F8', accentHover: '#2992FF', textPrimary: '#F3F6FA', textSecondary: '#A4B3C5', success: '#31D583' },
@@ -56,32 +28,6 @@
             crimson: { name: 'Crimson Force', bgPrimary: '#0B0A0C', bgSecondary: '#141217', bgCard: '#1E1B22', bgElevated: '#28242E', border: '#3B3542', accent: '#F43F5E', accentHover: '#E11D48', textPrimary: '#FFF1F2', textSecondary: '#A1A1AA', success: '#31D583' },
             gold: { name: 'Titan Gold', bgPrimary: '#0D0C0A', bgSecondary: '#161410', bgCard: '#211E18', bgElevated: '#2C2821', border: '#3F3930', accent: '#F59E0B', accentHover: '#D97706', textPrimary: '#FFFBEB', textSecondary: '#A8A29E', success: '#31D583' },
             violet: { name: 'Cyber Violet', bgPrimary: '#0A0812', bgSecondary: '#120F1D', bgCard: '#1A162B', bgElevated: '#241F3B', border: '#362F54', accent: '#8B5CF6', accentHover: '#7C3AED', textPrimary: '#F5F3FF', textSecondary: '#A78BFA', success: '#31D583' }
-        };
-
-        const INITIAL_PROGRAM = {
-            name: 'Sample Strength Plan (built-in)',
-            totalWeeks: 12,
-            currentWeek: 1,
-            phase: 'Built-in sample',
-            days: [
-                { id: 'day-1', name: 'Upper Body Strength', emphasis: 'Push · Pull · Core', durationMin: 60, location: 'Gym', exercises: [
-                    { exerciseId: 'ex-bench', sets: 4, reps: 5, targetWeightLb: 225, restSeconds: 180, completed: false },
-                    { exerciseId: 'ex-pullup', sets: 4, reps: 6, targetWeightLb: 10, restSeconds: 120, completed: false, isWeightedAddition: true },
-                    { exerciseId: 'ex-db-ohp', sets: 3, reps: 8, targetWeightLb: 65, restSeconds: 90, completed: false },
-                    { exerciseId: 'ex-row', sets: 3, reps: 8, targetWeightLb: 185, restSeconds: 90, completed: false },
-                    { exerciseId: 'ex-leg-raise', sets: 3, reps: 12, targetWeightLb: 0, restSeconds: 60, completed: false }
-                ]},
-                { id: 'day-2', name: 'Lower Body Power', emphasis: 'Squat · Hinge · Posterior', durationMin: 65, location: 'Gym', exercises: [
-                    { exerciseId: 'ex-squat', sets: 4, reps: 5, targetWeightLb: 315, restSeconds: 180, completed: false },
-                    { exerciseId: 'ex-rdl', sets: 3, reps: 8, targetWeightLb: 245, restSeconds: 120, completed: false },
-                    { exerciseId: 'ex-db-row', sets: 3, reps: 10, targetWeightLb: 80, restSeconds: 90, completed: false }
-                ]},
-                { id: 'day-3', name: 'Hypertrophy & Accessories', emphasis: 'Shoulders · Arms · Back', durationMin: 55, location: 'Gym', exercises: [
-                    { exerciseId: 'ex-ohp', sets: 4, reps: 6, targetWeightLb: 145, restSeconds: 120, completed: false },
-                    { exerciseId: 'ex-incline-db', sets: 3, reps: 10, targetWeightLb: 75, restSeconds: 90, completed: false },
-                    { exerciseId: 'ex-pullup', sets: 3, reps: 8, targetWeightLb: 0, restSeconds: 90, completed: false }
-                ]}
-            ]
         };
 
         const INITIAL_WORKOUT_LOGS = []; // history starts empty; nothing is pre-filled
@@ -417,6 +363,7 @@
                                 {suggestions.map(n => <button key={n} onClick={() => onPick({ name: n, exerciseId: (library.find(x => normName(x.name) === normName(n)) || {}).id || null, origin: 'program-pdf' })} className="w-full text-left min-h-[44px] px-3 rounded-xl bg-[#080E16] border border-[#203147] text-xs text-white">{n}</button>)}
                             </div>
                         )}
+                        {library.length > 0 && (
                         <div className="space-y-1.5">
                             <div className="text-[11px] font-bold text-white">Your exercise library <span className="text-[#8FA2B8] font-normal">(not verified as equivalent — your choice)</span></div>
                             <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search by name, equipment, muscle" className="w-full min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white" />
@@ -425,6 +372,7 @@
                                 {matches.length === 0 && <div className="text-[11px] text-[#8FA2B8]">No match. Type a custom exercise below.</div>}
                             </div>
                         </div>
+                        )}
                         <div className="flex gap-2">
                             <input value={custom} onChange={e => setCustom(e.target.value)} placeholder="Custom exercise name" className="flex-1 min-h-[44px] bg-[#080E16] border border-[#203147] rounded-xl px-3 text-white" />
                             <button disabled={!custom.trim()} onClick={() => onPick({ name: custom.trim(), exerciseId: null, origin: 'custom' })} className="min-h-[44px] px-4 rounded-xl bg-[#1685F8] text-white text-xs font-bold disabled:opacity-40">Use</button>
@@ -455,6 +403,39 @@
                 if (eq && !owned.includes(eq)) (found[eq] = found[eq] || new Set()).add(e.name);
             })));
             return Object.entries(found).map(([eq, set]) => ({ equipment: eq, exercises: [...set] }));
+        };
+
+        // ---- Workout history (real logs only) ----
+        const HistoryView = ({ logs, unit }) => {
+            const [open, setOpen] = useState(null);
+            const toUnit = (lb) => Math.round(unit === 'kg' ? lb / 2.20462 : lb).toLocaleString();
+            return (
+                <div className="space-y-4">
+                    <div><h2 className="text-lg font-black text-white">History</h2><p className="text-[11px] text-[#8FA2B8]">Every workout you finished, with the sets you actually logged.</p></div>
+                    {logs.length === 0 && <div className="bg-[#101C2B] border border-dashed border-[#203147] rounded-2xl p-6 text-center text-xs text-[#8FA2B8]">No workouts logged yet. Finish a workout and it will appear here.</div>}
+                    {logs.map(l => (
+                        <div key={l.id} className="bg-[#101C2B] border border-[#203147] rounded-xl">
+                            <button onClick={() => setOpen(open === l.id ? null : l.id)} className="w-full min-h-[56px] p-3 flex items-start justify-between gap-2 text-left">
+                                <div className="min-w-0">
+                                    <div className="text-sm font-bold text-white">{l.workoutName}</div>
+                                    <div className="text-[10px] text-[#8FA2B8]">{l.date}{l.week ? ` · Week ${l.week} Day ${l.day}` : ''}{l.programName ? ` · ${l.programName}` : ''}</div>
+                                </div>
+                                <div className="text-[11px] text-[#8FA2B8] text-right tabular-nums shrink-0">{l.durationMin} min<br />{toUnit(l.totalVolumeLb || 0)} {unit}</div>
+                            </button>
+                            {open === l.id && (
+                                <div className="px-3 pb-3 space-y-2 border-t border-[#203147] pt-2">
+                                    {l.exercises.map((e, i) => (
+                                        <div key={i} className="text-[11px]">
+                                            <div className="font-semibold text-white">{e.name}{e.substituted ? <span className="text-[#F59E0B]"> (substitute for {e.prescribedName})</span> : null}</div>
+                                            <div className="text-[#8FA2B8] tabular-nums">{e.sets.map(x => `${x.type === 'warmup' ? 'W ' : x.type === 'drop' ? 'D ' : x.type === 'myo' ? 'M ' : ''}${x.weight || 0}×${x.reps}`).join(' · ')}</div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            );
         };
 
         // ---- Program progress ----
@@ -536,7 +517,7 @@
 
         // ---- Local persistence (browser localStorage only; no cloud sync) ----
         const STORE_KEY = 'stronger.state';
-        const SCHEMA_VERSION = 2;
+        const SCHEMA_VERSION = 3;
         const migrate = (data) => {
             // Schema upgrades are keyed on data.schemaVersion.
             if (!data.schemaVersion || data.schemaVersion < 2) {
@@ -544,6 +525,14 @@
                 if (Array.isArray(data.workoutLogs)) data.workoutLogs = data.workoutLogs.filter(l => !(l.id === 'log-1' && l.workoutName === 'Upper Body Strength' && l.date === '2026-09-20'));
                 if (data.program && data.program.name === '12 Week Strength Builder' && data.program.phase === 'Phase 2 · Intensification') data.program = undefined;
                 data.schemaVersion = 2;
+            }
+            if (data.schemaVersion < 3) {
+                // v3 removed all built-in sample content (sample exercises, sample plan, placeholder name).
+                delete data.program; delete data.selectedDayId; delete data.exercises;
+                if (Array.isArray(data.workoutLogs)) data.workoutLogs = data.workoutLogs.filter(l => !(l.id === 'log-1' && l.workoutName === 'Upper Body Strength' && l.date === '2026-09-20'));
+                if (data.userSettings && (data.userSettings.name === 'John' || data.userSettings.name === 'Athlete')) data.userSettings.name = '';
+                if (data.activeSession && !data.activeSession.program) { data.activeSession = null; data.restEndsAt = null; } // a sample workout in progress
+                data.schemaVersion = 3;
             }
             return data;
         };
@@ -561,19 +550,9 @@
             const [selectedTheme, setSelectedTheme] = useState(STORED.selectedTheme || 'blue');
             const theme = THEMES[selectedTheme];
 
-            const [exercises, setExercises] = useState(STORED.exercises || INITIAL_EXERCISES);
-            const exerciseMap = useMemo(() => {
-                const map = {};
-                exercises.forEach(ex => { map[ex.id] = ex; });
-                return map;
-            }, [exercises]);
-
-            const [program, setProgram] = useState(STORED.program || INITIAL_PROGRAM);
-            const [selectedDayId, setSelectedDayId] = useState(STORED.selectedDayId || INITIAL_PROGRAM.days[0].id);
-            const todaysWorkout = program.days.find(d => d.id === selectedDayId) || program.days[0];
-
+            const exercises = EXERCISE_LIBRARY;
             const [workoutLogs, setWorkoutLogs] = useState(STORED.workoutLogs || INITIAL_WORKOUT_LOGS);
-            const [userSettings, setUserSettings] = useState(STORED.userSettings || { name: 'Athlete', unit: 'lb', targetCalories: 2400, targetProtein: 180, equipment: DEFAULT_EQUIPMENT });
+            const [userSettings, setUserSettings] = useState(STORED.userSettings || { name: '', unit: 'lb', targetCalories: 2400, targetProtein: 180, equipment: DEFAULT_EQUIPMENT });
 
             const [activeSession, setActiveSession] = useState(STORED.activeSession || null);
             // Workout view is a layer over the app; the session itself lives here regardless of the page shown.
@@ -728,172 +707,10 @@
                 setOpenProgramId(null);
             };
 
-            const [swapModalConfig, setSwapModalConfig] = useState(null);
-            const [showPlanGeneratorModal, setShowPlanGeneratorModal] = useState(false);
-            const [planGenConfig, setPlanGenConfig] = useState({ weeks: 12, daysPerWeek: 4, goal: 'Powerbuilding', equipment: 'Barbell & Rack' });
-
             const [toast, setToast] = useState(null);
             const triggerToast = (title, message) => {
                 setToast({ title, message });
                 setTimeout(() => setToast(null), 3500);
-            };
-
-            const formatWeight = (lb, unit, isWeightedAddition = false) => {
-                if (lb === 0) return 'Bodyweight';
-                if (isWeightedAddition) {
-                    if (unit === 'kg') return `+${Math.round(lb * 0.453592 * 2)/2} kg`;
-                    return `+${lb} lb`;
-                }
-                if (unit === 'kg') return `${Math.round(lb * 0.453592)} kg`;
-                return `${lb} lb`;
-            };
-
-            const getSimilarAlternatives = (sourceExerciseId, equipCategory = 'All') => {
-                const source = exerciseMap[sourceExerciseId];
-                if (!source) return exercises;
-                return exercises.filter(ex => ex.id !== sourceExerciseId).map(ex => {
-                    const samePattern = ex.pattern === source.pattern;
-                    const sameMuscle = ex.primaryMuscle.toLowerCase().includes(source.primaryMuscle.toLowerCase().split(' ')[0]);
-                    let matchScore = (samePattern ? 40 : 0) + (sameMuscle ? 30 : 0);
-                    return { ...ex, matchScore };
-                }).filter(ex => {
-                    if (equipCategory === 'All') return true;
-                    if (equipCategory === 'Dumbbells') return ex.equipment.toLowerCase().includes('dumbbell') || ex.equipment.toLowerCase().includes('bodyweight');
-                    if (equipCategory === 'Barbell') return ex.equipment.toLowerCase().includes('barbell') || ex.equipment.toLowerCase().includes('pull-up');
-                    if (equipCategory === 'Bodyweight') return ex.equipment.toLowerCase().includes('bodyweight') || ex.equipment.toLowerCase().includes('pull-up');
-                    return true;
-                }).sort((a,b) => b.matchScore - a.matchScore);
-            };
-
-            const convertTargetWeightForSwap = (oldWeightLb, oldEx, newEx) => {
-                if (!newEx) return oldWeightLb;
-                if (newEx.equipment.toLowerCase().includes('bodyweight') && !newEx.equipment.toLowerCase().includes('dumbbell')) return 0;
-                const oldIsBarbell = oldEx?.equipment?.toLowerCase().includes('barbell');
-                const newIsDumbbell = newEx?.equipment?.toLowerCase().includes('dumbbell');
-                if (oldIsBarbell && newIsDumbbell && oldWeightLb > 0) return Math.max(20, Math.round((oldWeightLb * 0.36) / 5) * 5);
-                return oldWeightLb > 0 ? oldWeightLb : 65;
-            };
-
-            const handleReplaceSingleExercise = (newExerciseId) => {
-                if (!swapModalConfig) return;
-                const { dayId, exerciseId, activeExIdx } = swapModalConfig;
-                const oldEx = exerciseMap[exerciseId];
-                const newEx = exerciseMap[newExerciseId];
-                if (!newEx) return;
-
-                if (dayId && exerciseId) {
-                    setProgram(prev => ({
-                        ...prev,
-                        days: prev.days.map(d => {
-                            if (d.id !== dayId) return d;
-                            return {
-                                ...d,
-                                exercises: d.exercises.map(item => {
-                                    if (item.exerciseId !== exerciseId) return item;
-                                    const adjustedWeight = convertTargetWeightForSwap(item.targetWeightLb, oldEx, newEx);
-                                    return { ...item, exerciseId: newExerciseId, targetWeightLb: adjustedWeight, isWeightedAddition: newEx.id === 'ex-pullup' };
-                                })
-                            };
-                        })
-                    }));
-                }
-
-                if (activeSession && typeof activeExIdx === 'number') {
-                    setActiveSession(prev => {
-                        if (!prev) return prev;
-                        const updated = prev.exercises.map((item, idx) => {
-                            if (idx !== activeExIdx) return item;
-                            const baseSet = item.sets[0];
-                            const adjustedWeight = convertTargetWeightForSwap(baseSet?.prescribedWeightLb || 135, oldEx, newEx);
-                            return {
-                                ...item,
-                                exerciseId: newExerciseId,
-                                isWeightedAddition: newEx.id === 'ex-pullup',
-                                sets: item.sets.map(s => ({ ...s, prescribedWeightLb: adjustedWeight, actualWeightLb: adjustedWeight }))
-                            };
-                        });
-                        return { ...prev, exercises: updated };
-                    });
-                }
-
-                setSwapModalConfig(null);
-                triggerToast(`Swapped to ${newEx.name}`, `Matched pattern and scaled target load.`);
-            };
-
-            const handleAdaptEntireWorkoutByEquipment = (targetDayId, equipmentProfileKey) => {
-                const profileMap = {
-                    dumbbells_only: { label: 'Dumbbells & Bench Only', location: 'Home / Hotel DBs', replacements: { 'ex-bench': 'ex-incline-db', 'ex-pullup': 'ex-db-row', 'ex-ohp': 'ex-db-ohp', 'ex-row': 'ex-db-row', 'ex-deadlift': 'ex-db-rdl', 'ex-squat': 'ex-goblet-squat', 'ex-rdl': 'ex-db-rdl', 'ex-leg-raise': 'ex-plank-reach' } },
-                    bodyweight_minimal: { label: 'Bodyweight & Pull-Up Bar', location: 'Calisthenics / Travel', replacements: { 'ex-bench': 'ex-pushup', 'ex-incline-db': 'ex-pushup', 'ex-db-ohp': 'ex-pushup', 'ex-ohp': 'ex-pushup', 'ex-row': 'ex-pullup', 'ex-db-row': 'ex-pullup', 'ex-deadlift': 'ex-split-squat', 'ex-squat': 'ex-split-squat', 'ex-rdl': 'ex-split-squat', 'ex-leg-raise': 'ex-plank-reach' } },
-                    barbell_rack: { label: 'Barbell & Power Rack', location: 'Barbell Garage Gym', replacements: { 'ex-incline-db': 'ex-bench', 'ex-pushup': 'ex-bench', 'ex-db-ohp': 'ex-ohp', 'ex-db-row': 'ex-row', 'ex-goblet-squat': 'ex-squat', 'ex-db-rdl': 'ex-rdl', 'ex-plank-reach': 'ex-leg-raise' } }
-                };
-
-                const chosenProfile = profileMap[equipmentProfileKey];
-                if (!chosenProfile) return;
-
-                setProgram(prev => ({
-                    ...prev,
-                    days: prev.days.map(d => {
-                        if (d.id !== targetDayId) return d;
-                        const adaptedExercises = d.exercises.map(item => {
-                            const oldEx = exerciseMap[item.exerciseId];
-                            const mappedId = chosenProfile.replacements[item.exerciseId] || item.exerciseId;
-                            const newEx = exerciseMap[mappedId] || oldEx;
-                            const newWeight = convertTargetWeightForSwap(item.targetWeightLb, oldEx, newEx);
-                            return { ...item, exerciseId: mappedId, targetWeightLb: newWeight, isWeightedAddition: mappedId === 'ex-pullup' && equipmentProfileKey !== 'bodyweight_minimal' };
-                        });
-                        return { ...d, location: chosenProfile.location, exercises: adaptedExercises };
-                    })
-                }));
-
-                setSwapModalConfig(null);
-                triggerToast(`Workout Adapted: ${chosenProfile.label}`, 'All movements and target weights matched.');
-            };
-
-            const handleGeneratePlan = () => {
-                const newProgramName = `${planGenConfig.weeks} Week ${planGenConfig.goal} Program`;
-                const newDays = [
-                    { id: 'gen-1', name: 'Upper Strength & Power', emphasis: 'Push · Pull', durationMin: 60, location: planGenConfig.equipment, exercises: [
-                        { exerciseId: 'ex-bench', sets: 4, reps: 5, targetWeightLb: 225, restSeconds: 180, completed: false },
-                        { exerciseId: 'ex-pullup', sets: 4, reps: 6, targetWeightLb: 10, restSeconds: 120, completed: false, isWeightedAddition: true },
-                        { exerciseId: 'ex-row', sets: 3, reps: 8, targetWeightLb: 185, restSeconds: 90, completed: false }
-                    ]},
-                    { id: 'gen-2', name: 'Lower Posterior Chain', emphasis: 'Squat · Hinge', durationMin: 65, location: planGenConfig.equipment, exercises: [
-                        { exerciseId: 'ex-squat', sets: 4, reps: 5, targetWeightLb: 315, restSeconds: 180, completed: false },
-                        { exerciseId: 'ex-rdl', sets: 3, reps: 8, targetWeightLb: 245, restSeconds: 120, completed: false },
-                        { exerciseId: 'ex-leg-raise', sets: 3, reps: 12, targetWeightLb: 0, restSeconds: 60, completed: false }
-                    ]}
-                ];
-
-                setProgram({ name: newProgramName, totalWeeks: Number(planGenConfig.weeks), currentWeek: 1, phase: 'Phase 1 · Accumulation', days: newDays });
-                setSelectedDayId(newDays[0].id);
-                setShowPlanGeneratorModal(false);
-                triggerToast('Program Generated', `Created ${newProgramName} successfully.`);
-            };
-
-            const startWorkoutSession = (workoutTemplate = todaysWorkout) => {
-                const sessionExercises = workoutTemplate.exercises.map(item => {
-                    const setsArr = [];
-                    for (let i = 1; i <= item.sets; i++) {
-                        setsArr.push({
-                            id: `${item.exerciseId}-set-${i}-${Date.now()}`,
-                            setNumber: i,
-                            type: i === 1 && item.targetWeightLb >= 180 ? 'warmup' : 'working',
-                            prescribedReps: item.reps,
-                            prescribedWeightLb: item.targetWeightLb,
-                            actualWeightLb: item.targetWeightLb,
-                            actualReps: item.reps,
-                            rpe: 8.0,
-                            completed: false
-                        });
-                    }
-                    return { exerciseId: item.exerciseId, restSeconds: item.restSeconds || 90, isWeightedAddition: item.isWeightedAddition || false, sets: setsArr };
-                });
-
-                if (activeSession) { setWorkoutOpen(true); triggerToast('Workout already active', 'Resume or discard your current session first.'); return; }
-                setRestEndsAt(null);
-                setActiveSession({ id: `session-${Date.now()}`, dayId: workoutTemplate.id, workoutName: workoutTemplate.name, startTime: Date.now(), exercises: sessionExercises });
-                setWorkoutOpen(true);
-                triggerToast('Workout Started', `Live tracking active for ${workoutTemplate.name}.`);
             };
 
             useEffect(() => {
@@ -909,10 +726,10 @@
                 try {
                     localStorage.setItem(STORE_KEY, JSON.stringify({
                         schemaVersion: SCHEMA_VERSION,
-                        selectedTheme, program, selectedDayId, workoutLogs, userSettings, exercises, activeSession, restEndsAt, library
+                        selectedTheme, workoutLogs, userSettings, activeSession, restEndsAt, library
                     }));
                 } catch (e) { /* storage full or unavailable */ }
-            }, [selectedTheme, program, selectedDayId, workoutLogs, userSettings, exercises, activeSession, restEndsAt, library]);
+            }, [selectedTheme, workoutLogs, userSettings, activeSession, restEndsAt, library]);
 
             useEffect(() => { // iOS: scroll a focused field into view once the keyboard is up
                 const onFocus = (e) => { const t = e.target; if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) setTimeout(() => t.scrollIntoView({ block: 'center', behavior: 'smooth' }), 350); };
@@ -945,32 +762,6 @@
                 reader.readAsText(file);
             };
 
-            const finishActiveWorkout = () => {
-                if (!activeSession) return;
-                if (activeSession.program) return finishProgramWorkout();
-                let totalVol = 0;
-                activeSession.exercises.forEach(ex => {
-                    ex.sets.forEach(s => {
-                        if (s.completed && s.type === 'working') totalVol += (s.actualWeightLb || 0) * (s.actualReps || 0);
-                    });
-                });
-
-                const newLog = {
-                    id: `log-${Date.now()}`,
-                    date: new Date().toISOString().split('T')[0],
-                    workoutName: activeSession.workoutName,
-                    durationMin: Math.max(1, Math.round(elapsedSeconds / 60)),
-                    totalVolumeLb: totalVol,
-                    exercises: activeSession.exercises.map(e => ({ exerciseId: e.exerciseId, name: exerciseMap[e.exerciseId]?.name || 'Exercise', sets: e.sets.map(s => ({ setNumber: s.setNumber, weight: s.actualWeightLb, reps: s.actualReps, rpe: s.rpe })) }))
-                };
-
-                setWorkoutLogs(prev => prev.some(l => l.sessionId === activeSession.id) ? prev : [{ ...newLog, sessionId: activeSession.id }, ...prev]);
-                setActiveSession(null);
-                setWorkoutOpen(false);
-                setRestEndsAt(null);
-                triggerToast('Workout Completed!', `Logged ${newLog.workoutName} with ${totalVol.toLocaleString()} lb volume.`);
-            };
-
             const finishProgramWorkout = () => {
                 const sess = activeSession;
                 const unit = userSettings.unit, toLb = unit === 'kg' ? 2.20462 : 1;
@@ -1001,7 +792,7 @@
                 triggerToast('Workout Completed!', `Logged ${doneSets} set(s) for ${sess.workoutName}.`);
             };
             const requestFinish = () => {
-                if (!activeSession || !activeSession.program) return finishActiveWorkout();
+                if (!activeSession) return;
                 const left = activeSession.exercises.reduce((n, e) => n + e.sets.filter(x => !x.completed && x.type === 'working').length, 0);
                 if (left > 0) setConfirmDialog({ title: 'Finish with sets remaining?', body: `${left} working set(s) are not checked off. They will not be logged, and only the work you completed is saved.`, confirmLabel: 'Finish workout', onConfirm: finishProgramWorkout });
                 else finishProgramWorkout();
@@ -1077,7 +868,7 @@
                             </div>
                             <div>
                                 <h1 className="text-xs font-black tracking-wider text-white">STRONGER</h1>
-                                <p className="text-[10px] text-[#8FA2B8] truncate">Hey, {userSettings.name} 👋</p>
+                                <p className="text-[10px] text-[#8FA2B8] truncate">{userSettings.name ? `Hey, ${userSettings.name} 👋` : 'Welcome 👋'}</p>
                             </div>
                         </div>
 
@@ -1094,7 +885,7 @@
                                 </select>
                             </div>
                             <div onClick={() => setActiveNav('Settings')} className="w-8 h-8 rounded-xl bg-[#1685F8] text-white font-bold flex items-center justify-center text-xs shadow cursor-pointer">
-                                {userSettings.name[0]}
+                                {(userSettings.name || 'S')[0].toUpperCase()}
                             </div>
                         </div>
                     </header>
@@ -1130,71 +921,7 @@
                                 </div>
 
                                 <div className="space-y-4">
-                                    {activeSession.exercises.map((item, exIdx) => {
-                                        if (item.prescribed) return renderProgramExercise(item, exIdx);
-                                        const ex = exerciseMap[item.exerciseId];
-                                        return (
-                                            <div key={item.exerciseId} className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="flex items-center gap-2.5">
-                                                        <img src={ex?.thumbnail} alt={ex?.name} className="w-10 h-10 rounded-lg object-cover border border-[#203147]" />
-                                                        <div>
-                                                            <h3 className="text-sm font-bold text-white">{ex?.name}</h3>
-                                                            <p className="text-[11px] text-[#8FA2B8]">{ex?.primaryMuscle} · {ex?.equipment}</p>
-                                                        </div>
-                                                    </div>
-                                                    <button onClick={() => setSwapModalConfig({ mode: 'exercise', dayId: activeSession.dayId, exerciseId: item.exerciseId, activeExIdx: exIdx })} className="p-1.5 rounded-lg bg-[#142235] text-[#1685F8] text-xs">
-                                                        <Icon name="refresh-cw" className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    {item.sets.map((setObj, setIdx) => (
-                                                        <div key={setObj.id} className={`flex items-center justify-between gap-2 p-2.5 rounded-xl border ${setObj.completed ? 'bg-[#31D583]/10 border-[#31D583]/30' : 'bg-[#080E16] border-[#203147]'}`}>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-xs font-bold text-white w-6">#{setObj.setNumber}</span>
-                                                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-[#1685F8]/20 text-[#1685F8]">{setObj.type}</span>
-                                                            </div>
-                                                            <div className="flex items-center gap-2">
-                                                                <div className="flex items-center gap-1">
-                                                                    <input type="number" value={setObj.actualWeightLb} onChange={e => {
-                                                                        const val = Number(e.target.value);
-                                                                        setActiveSession(prev => {
-                                                                            const updated = [...prev.exercises];
-                                                                            updated[exIdx].sets[setIdx].actualWeightLb = val;
-                                                                            return { ...prev, exercises: updated };
-                                                                        });
-                                                                    }} className="w-16 bg-[#101C2B] border border-[#203147] rounded px-1.5 py-1 text-center text-xs text-white tabular-nums font-bold" />
-                                                                    <span className="text-[10px] text-[#8FA2B8]">{userSettings.unit}</span>
-                                                                </div>
-                                                                <div className="flex items-center gap-1">
-                                                                    <input type="number" value={setObj.actualReps} onChange={e => {
-                                                                        const val = Number(e.target.value);
-                                                                        setActiveSession(prev => {
-                                                                            const updated = [...prev.exercises];
-                                                                            updated[exIdx].sets[setIdx].actualReps = val;
-                                                                            return { ...prev, exercises: updated };
-                                                                        });
-                                                                    }} className="w-12 bg-[#101C2B] border border-[#203147] rounded px-1.5 py-1 text-center text-xs text-white tabular-nums font-bold" />
-                                                                    <span className="text-[10px] text-[#8FA2B8]">reps</span>
-                                                                </div>
-                                                                <button onClick={() => {
-                                                                    setActiveSession(prev => {
-                                                                        const updated = [...prev.exercises];
-                                                                        updated[exIdx].sets[setIdx].completed = !updated[exIdx].sets[setIdx].completed;
-                                                                        return { ...prev, exercises: updated };
-                                                                    });
-                                                                    if (!setObj.completed) startRest(item.restSeconds || 90);
-                                                                }} className={`p-2 rounded-lg cursor-pointer ${setObj.completed ? 'bg-[#31D583] text-[#080E16]' : 'bg-[#142235] text-[#8FA2B8]'}`}>
-                                                                    <Icon name="check" className="w-4 h-4" />
-                                                                </button>
-                                                            </div>
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
+                                    {activeSession.exercises.map((item, exIdx) => renderProgramExercise(item, exIdx))}
                                 </div>
                             </div>
                         </div>
@@ -1251,34 +978,6 @@
                                     </div>
                                 )}
 
-                                {!activeProgram && (<>
-                                {/* HERO WORKOUT CARD (built-in sample) */}
-                                <div className="relative rounded-2xl overflow-hidden border border-[#203147] bg-[#101C2B] shadow-xl">
-                                    <div className="absolute inset-0 z-0">
-                                        <img src={IMAGES.heroDeadlift} alt="Hero athlete" className="w-full h-full object-cover opacity-35" />
-                                        <div className="absolute inset-0 bg-gradient-to-t from-[#080E16] via-[#080E16]/80 to-transparent"></div>
-                                    </div>
-                                    <div className="relative z-10 p-5 space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <span className="px-2.5 py-0.5 rounded-full bg-[#1685F8]/20 text-[#1685F8] border border-[#1685F8]/30 text-[10px] font-extrabold uppercase tracking-widest">Sample workout</span>
-                                            <span className="text-[11px] text-[#8FA2B8] font-medium">{todaysWorkout.durationMin} min</span>
-                                        </div>
-                                        <div>
-                                            <h2 className="text-xl font-black text-white tracking-tight">{todaysWorkout.name}</h2>
-                                            <p className="text-xs text-[#A4B3C5] font-medium mt-0.5">{todaysWorkout.emphasis}</p>
-                                        </div>
-                                        <div className="flex items-center gap-2 pt-1">
-                                            <button onClick={() => startWorkoutSession(todaysWorkout)} className="flex-1 py-3 rounded-xl bg-[#1685F8] hover:bg-[#2992FF] text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-[#1685F8]/30 cursor-pointer">
-                                                <Icon name="play" className="w-4 h-4 fill-white" /><span>Start Workout</span>
-                                            </button>
-                                            <button onClick={() => setSwapModalConfig({ mode: 'day', dayId: todaysWorkout.id })} className="px-3.5 py-3 rounded-xl bg-[#142235] text-[#31D583] border border-[#203147] text-xs font-semibold flex items-center gap-1.5 cursor-pointer">
-                                                <Icon name="refresh-cw" className="w-4 h-4" /><span>Adapt</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                </>)}
                                 {/* SUMMARY METRICS (real data) */}
                                 {activeProgram && (
                                     <div className="grid grid-cols-2 gap-3">
@@ -1295,78 +994,10 @@
                                     </div>
                                 )}
 
-                                {!activeProgram && (<>
-                                {/* EXERCISE STACK */}
-                                <div className="bg-[#101C2B] border border-[#203147] rounded-2xl p-4 space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-2">
-                                            <Icon name="dumbbell" className="w-4 h-4 text-[#1685F8]" />
-                                            <h3 className="text-xs font-bold text-white uppercase tracking-wider">Sample exercises</h3>
-                                        </div>
-                                        <button onClick={() => setShowPlanGeneratorModal(true)} className="text-[11px] font-semibold text-[#1685F8] flex items-center gap-1">
-                                            <Icon name="sparkles" className="w-3 h-3" /><span>New Plan</span>
-                                        </button>
-                                    </div>
-
-                                    <div className="divide-y divide-[#182638]">
-                                        {todaysWorkout.exercises.map(item => {
-                                            const ex = exerciseMap[item.exerciseId];
-                                            if (!ex) return null;
-                                            return (
-                                                <div key={item.exerciseId} className="py-3 first:pt-0 last:pb-0 flex items-center justify-between gap-3">
-                                                    <div className="flex items-center gap-3 min-w-0">
-                                                        <div className="w-12 h-10 rounded-lg overflow-hidden border border-[#203147] shrink-0 bg-[#080E16]">
-                                                            <img src={ex.thumbnail} alt={ex.name} className="w-full h-full object-cover" />
-                                                        </div>
-                                                        <div className="min-w-0">
-                                                            <div className="text-xs font-bold truncate text-white">{ex.name}</div>
-                                                            <div className="text-[10px] text-[#8FA2B8] tabular-nums mt-0.5">
-                                                                {item.sets} sets × {item.reps} reps {item.targetWeightLb > 0 ? `· ${formatWeight(item.targetWeightLb, userSettings.unit, item.isWeightedAddition)}` : ''}
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                    <button onClick={() => setSwapModalConfig({ mode: 'exercise', dayId: todaysWorkout.id, exerciseId: item.exerciseId })} className="p-2 rounded-lg bg-[#142235] text-[#1685F8] shrink-0">
-                                                        <Icon name="refresh-cw" className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                                </>)}
                             </div>
                         )}
 
-                        {activeNav === 'Workouts' && (
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div><h2 className="text-base font-black text-white">Quick workouts</h2><p className="text-[11px] text-[#8FA2B8]">Built-in sample sessions. Your imported programs live in Program.</p></div>
-                                    <button onClick={() => setShowPlanGeneratorModal(true)} className="px-3 py-1.5 rounded-lg bg-[#1685F8] text-white text-xs font-bold">Generate Plan</button>
-                                </div>
-                                <div className="space-y-3">
-                                    {program.days.map(day => (
-                                        <div key={day.id} className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3">
-                                            <div className="flex items-center justify-between">
-                                                <span className="px-2 py-0.5 rounded-full bg-[#1685F8]/15 text-[#1685F8] text-[9px] font-bold uppercase">{day.location}</span>
-                                                <span className="text-[11px] text-[#8FA2B8]">{day.durationMin} min</span>
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm font-bold text-white">{day.name}</h3>
-                                                <p className="text-[11px] text-[#8FA2B8]">{day.emphasis}</p>
-                                            </div>
-                                            <div className="flex items-center gap-2 pt-2 border-t border-[#182638]">
-                                                <button onClick={() => startWorkoutSession(day)} className="flex-1 py-2 rounded-lg bg-[#1685F8] text-white text-xs font-bold flex items-center justify-center gap-1.5">
-                                                    <Icon name="play" className="w-3 h-3 fill-white" /><span>Start Workout</span>
-                                                </button>
-                                                <button onClick={() => setSwapModalConfig({ mode: 'day', dayId: day.id })} className="px-3 py-2 rounded-lg bg-[#142235] text-[#31D583] text-xs font-semibold flex items-center gap-1">
-                                                    <Icon name="refresh-cw" className="w-3 h-3" /><span>Adapt</span>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
+                        {activeNav === 'History' && <HistoryView logs={workoutLogs} unit={userSettings.unit} />}
 
                         {activeNav === 'Program' && openProgramId && library.programs[openProgramId] && (
                             <ProgramDetail program={library.programs[openProgramId]} state={progressOf(openProgramId)} isActive={library.activeProgramId === openProgramId} unit={userSettings.unit}
@@ -1422,22 +1053,6 @@
                                 {Object.values(library.programs).filter(pr => pr.name.toLowerCase().includes(libraryQuery.toLowerCase()) && (libDays === 'all' || pr.metadata.daysPerWeek === libDays) && (libStatus === 'all' || progressOf(pr.id).status === libStatus)).map(pr => (
                                     <ProgramCard key={pr.id} program={pr} state={progressOf(pr.id)} isActive={library.activeProgramId === pr.id} onOpen={() => setOpenProgramId(pr.id)} />
                                 ))}
-                                <h2 className="text-base font-black text-white pt-2">{program.name}</h2>
-                                <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3">
-                                    <div className="text-xs font-bold text-white">Periodized Weeks</div>
-                                    <div className="grid grid-cols-4 gap-2">
-                                        {Array.from({ length: program.totalWeeks }).map((_, i) => {
-                                            const wkNum = i + 1;
-                                            const isCurrent = wkNum === program.currentWeek;
-                                            return (
-                                                <div key={wkNum} onClick={() => setProgram(prev => ({ ...prev, currentWeek: wkNum }))} className={`p-2.5 rounded-lg border text-center cursor-pointer ${isCurrent ? 'bg-[#1685F8] border-[#1685F8] text-white font-extrabold' : 'bg-[#080E16] border-[#203147] text-[#8FA2B8]'}`}>
-                                                    <div className="text-[9px] uppercase">Wk</div>
-                                                    <div className="text-sm font-black">{wkNum}</div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
                             </div>
                         )}
 
@@ -1476,7 +1091,7 @@
                                 <div className="bg-[#101C2B] border border-[#203147] rounded-xl p-4 space-y-3">
                                     <div>
                                         <label className="text-[11px] text-[#8FA2B8] block mb-1">Athlete Name</label>
-                                        <input type="text" value={userSettings.name} onChange={e => setUserSettings({ ...userSettings, name: e.target.value })} className="w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs" />
+                                        <input type="text" value={userSettings.name} placeholder="Your name (optional)" onChange={e => setUserSettings({ ...userSettings, name: e.target.value })} className="w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs" />
                                     </div>
                                     <div>
                                         <label className="text-[11px] text-[#8FA2B8] block mb-1">Weight Unit</label>
@@ -1526,7 +1141,7 @@
                     <nav aria-label="Bottom Navigation" className="bg-[#0D1622]/95 backdrop-blur-xl border-t border-[#203147] px-2 py-1.5 flex items-center justify-around safe-bottom">
                         {[
                             { id: 'Home', label: 'Home', icon: 'home' },
-                            { id: 'Workouts', label: 'Workouts', icon: 'dumbbell' },
+                            { id: 'History', label: 'History', icon: 'history' },
                             { id: 'Program', label: 'Program', icon: 'layers' },
                             { id: 'Calendar', label: 'Calendar', icon: 'calendar' },
                             { id: 'Progress', label: 'Progress', icon: 'bar-chart-3' },
@@ -1581,79 +1196,6 @@
                     )}
 
                     {/* MODALS */}
-                    {swapModalConfig && (
-                        <div className="fixed inset-0 z-50 bg-black/80 flex items-end md:items-center justify-center p-0 md:p-4">
-                            <div className="bg-[#101C2B] border-t md:border border-[#203147] rounded-t-3xl md:rounded-2xl max-w-lg w-full p-5 space-y-4 max-h-[85vh] overflow-y-auto safe-bottom">
-                                <div className="flex items-center justify-between pb-3 border-b border-[#203147]">
-                                    <h3 className="text-sm font-bold text-white">{swapModalConfig.mode === 'day' ? 'Equipment Adapter' : 'Movement Substitution'}</h3>
-                                    <button onClick={() => setSwapModalConfig(null)} className="p-1.5 bg-[#142235] text-[#8FA2B8] rounded-lg"><Icon name="x" className="w-4 h-4" /></button>
-                                </div>
-                                {swapModalConfig.mode === 'day' ? (
-                                    <div className="space-y-2.5">
-                                        {[
-                                            { key: 'dumbbells_only', title: 'Dumbbells & Bench', desc: 'Convert barbell lifts to dumbbells.' },
-                                            { key: 'bodyweight_minimal', title: 'Bodyweight & Pull-Up Bar', desc: 'Convert to calisthenics.' },
-                                            { key: 'barbell_rack', title: 'Barbell & Rack', desc: 'Standard barbell lifts.' }
-                                        ].map(prof => (
-                                            <div key={prof.key} onClick={() => handleAdaptEntireWorkoutByEquipment(swapModalConfig.dayId, prof.key)} className="p-3 rounded-xl bg-[#080E16] border border-[#203147] cursor-pointer flex items-center justify-between">
-                                                <div>
-                                                    <div className="text-xs font-bold text-white">{prof.title}</div>
-                                                    <div className="text-[10px] text-[#8FA2B8]">{prof.desc}</div>
-                                                </div>
-                                                <Icon name="chevron-right" className="w-4 h-4 text-[#8FA2B8]" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2">
-                                        {getSimilarAlternatives(swapModalConfig.exerciseId).map(altEx => (
-                                            <div key={altEx.id} onClick={() => handleReplaceSingleExercise(altEx.id)} className="p-2.5 rounded-xl bg-[#080E16] border border-[#203147] cursor-pointer flex items-center justify-between">
-                                                <div className="flex items-center gap-2.5">
-                                                    <img src={altEx.thumbnail} alt={altEx.name} className="w-10 h-9 rounded-lg object-cover" />
-                                                    <div>
-                                                        <div className="text-xs font-bold text-white">{altEx.name}</div>
-                                                        <div className="text-[10px] text-[#8FA2B8]">{altEx.equipment}</div>
-                                                    </div>
-                                                </div>
-                                                <span className="text-xs font-bold text-[#1685F8]">Select</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {showPlanGeneratorModal && (
-                        <div className="fixed inset-0 z-50 bg-black/80 flex items-end md:items-center justify-center p-0 md:p-4">
-                            <div className="bg-[#101C2B] border-t md:border border-[#203147] rounded-t-3xl md:rounded-2xl max-w-md w-full p-5 space-y-4 safe-bottom">
-                                <div className="flex items-center justify-between pb-3 border-b border-[#203147]">
-                                    <h3 className="text-sm font-bold text-white">Generate Plan</h3>
-                                    <button onClick={() => setShowPlanGeneratorModal(false)} className="p-1.5 bg-[#142235] text-[#8FA2B8] rounded-lg"><Icon name="x" className="w-4 h-4" /></button>
-                                </div>
-                                <div className="space-y-3">
-                                    <div>
-                                        <label className="text-[11px] text-[#8FA2B8] block mb-1">Duration (Weeks)</label>
-                                        <select value={planGenConfig.weeks} onChange={e => setPlanGenConfig({ ...planGenConfig, weeks: Number(e.target.value) })} className="w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs">
-                                            <option value="4">4 Weeks</option>
-                                            <option value="8">8 Weeks</option>
-                                            <option value="12">12 Weeks</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-[11px] text-[#8FA2B8] block mb-1">Training Goal</label>
-                                        <select value={planGenConfig.goal} onChange={e => setPlanGenConfig({ ...planGenConfig, goal: e.target.value })} className="w-full bg-[#080E16] border border-[#203147] rounded-lg px-3 py-2 text-white text-xs">
-                                            <option value="Powerbuilding">Powerbuilding</option>
-                                            <option value="Maximal Strength">Maximal Strength</option>
-                                            <option value="Hypertrophy">Hypertrophy</option>
-                                        </select>
-                                    </div>
-                                    <button onClick={handleGeneratePlan} className="w-full py-3 rounded-xl bg-[#1685F8] text-white text-xs font-bold shadow-lg shadow-[#1685F8]/25 cursor-pointer">Generate & Save Plan</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
                     {toast && (
                         <div className="fixed bottom-20 left-4 right-4 z-50 bg-[#101C2B] border border-[#1685F8] text-white px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3">
                             <div className="w-2 h-2 rounded-full bg-[#1685F8] animate-ping"></div>

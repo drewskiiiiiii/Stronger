@@ -19,6 +19,10 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     // --- fresh install: no demo data ---
     ok('fresh Home asks to import a program', await p.getByText(/Import a program/).isVisible());
     ok('no fake history', (await state()).workoutLogs.length === 0);
+    const body = await p.locator('body').innerText();
+    ok('no sample name, exercises or plan anywhere', !/John|Barbell Bench Press|Sample|Upper Body Strength|Strength Builder/.test(body));
+    await tab('History'); ok('History starts empty', await p.getByText('No workouts logged yet').isVisible());
+    await tab('Home');
     await tab('Nutrition'); ok('nutrition shows no fake intake', !(await p.locator('main').innerText()).includes('1,850'));
 
     // --- import two programs, filters, duplicates ---
@@ -102,6 +106,12 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     await p.waitForTimeout(400);
     ok('reminder disappears after export', !(await p.getByText('Back up your data').isVisible().catch(() => false)));
 
+    // --- history shows the real log ---
+    await tab('History');
+    ok('History lists the finished workout with its sets', await p.getByRole('button', { name: /Upper/ }).first().isVisible());
+    await p.getByRole('button', { name: /Upper/ }).first().click();
+    ok('History expands to the logged sets', await p.getByText('100×8').first().isVisible());
+
     // --- progress + layout ---
     await tab('Progress');
     ok('progress shows program completion', await p.getByText(/1 of 6 workouts completed/).isVisible());
@@ -109,6 +119,24 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     ok('no page errors', errs.length === 0);
     if (errs.length) console.log(errs);
     await browser.close(); srv.close();
+
+    // --- upgrade: a browser that still holds the old sample data gets it wiped, real data is kept ---
+    const srv3 = await startServer();
+    const u = await launch();
+    const up = await u.ctx.newPage();
+    const legacy = { schemaVersion: 2, selectedTheme: 'emerald', selectedDayId: 'day-1', exercises: [{ id: 'ex-bench', name: 'Barbell Bench Press' }],
+        program: { name: '12 Week Strength Builder', phase: 'Phase 2 · Intensification', days: [{ id: 'day-1', name: 'Upper Body Strength', exercises: [] }] },
+        userSettings: { name: 'John', unit: 'kg' },
+        workoutLogs: [{ id: 'log-1', date: '2026-09-20', workoutName: 'Upper Body Strength', exercises: [] }, { id: 'log-real', sessionId: 's1', date: '2026-10-01', workoutName: 'My Real Workout', durationMin: 30, totalVolumeLb: 100, exercises: [] }],
+        activeSession: { id: 'old', workoutName: 'Sample', startTime: 1, exercises: [] } };
+    await up.addInitScript((l) => { if (!localStorage.getItem('stronger.state')) localStorage.setItem('stronger.state', JSON.stringify(l)); }, legacy);
+    await up.goto(srv3.url, { waitUntil: 'domcontentloaded' }); await up.waitForTimeout(1500);
+    const migrated = await up.evaluate(() => JSON.parse(localStorage['stronger.state']));
+    ok('upgrade removes sample name, plan, exercises and demo log', migrated.userSettings.name === '' && !migrated.program && !migrated.exercises && !migrated.workoutLogs.some(l => l.id === 'log-1'));
+    ok('upgrade keeps real data and settings', migrated.workoutLogs.some(l => l.id === 'log-real') && migrated.userSettings.unit === 'kg' && migrated.selectedTheme === 'emerald');
+    ok('upgrade drops a stuck sample workout', migrated.activeSession === null);
+    ok('greeting no longer uses a placeholder name', await up.getByText('Welcome').isVisible() && !(await up.locator('body').innerText()).includes('John'));
+    await u.browser.close(); srv3.close();
 
     // --- offline: service worker serves the app without a network ---
     const srv2 = await startServer();
