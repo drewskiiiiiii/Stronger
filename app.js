@@ -277,9 +277,9 @@ const ProgramDetail = ({
   }, React.createElement("div", {
     className: "flex items-start justify-between gap-2"
   }, React.createElement("div", {
-    className: "text-sm font-bold text-white"
+    className: "text-base font-black text-white leading-snug"
   }, React.createElement("span", {
-    className: "text-th-muted mr-1.5"
+    className: "text-th-accent mr-1.5"
   }, e.order, "."), e.name, e.flags.length > 0 && React.createElement("span", {
     className: "ml-1.5 text-[#F59E0B]"
   }, "\u26A0")), React.createElement("div", {
@@ -774,7 +774,7 @@ const HistoryView = ({
     key: i,
     className: "text-[11px]"
   }, React.createElement("div", {
-    className: "font-semibold text-white"
+    className: "text-sm font-bold text-white"
   }, e.name, e.substituted ? React.createElement("span", {
     className: "text-[#F59E0B]"
   }, " (substitute for ", e.prescribedName, ")") : null), React.createElement("div", {
@@ -1575,9 +1575,9 @@ function App() {
     }, React.createElement("div", {
       className: "min-w-0"
     }, React.createElement("div", {
-      className: "text-[10px] text-th-muted"
+      className: "text-[11px] font-bold uppercase tracking-wider text-th-accent"
     }, "Exercise ", exIdx + 1, " of ", activeSession.exercises.length), React.createElement("h3", {
-      className: "text-sm font-bold text-white"
+      className: "text-xl font-black text-white leading-tight mt-0.5"
     }, display), item.substitution && React.createElement("div", {
       className: "text-[10px] text-[#F59E0B]"
     }, "Your substitution \xB7 prescribed: ", item.name)), React.createElement("button", {

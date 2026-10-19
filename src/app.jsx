@@ -129,7 +129,7 @@
                             {d.exercises.map(e => (
                                 <div key={e.order} className="border-t border-th-line pt-2.5 space-y-1">
                                     <div className="flex items-start justify-between gap-2">
-                                        <div className="text-sm font-bold text-white"><span className="text-th-muted mr-1.5">{e.order}.</span>{e.name}{e.flags.length > 0 && <span className="ml-1.5 text-[#F59E0B]">⚠</span>}</div>
+                                        <div className="text-base font-black text-white leading-snug"><span className="text-th-accent mr-1.5">{e.order}.</span>{e.name}{e.flags.length > 0 && <span className="ml-1.5 text-[#F59E0B]">⚠</span>}</div>
                                         <div className="text-xs font-bold text-white tabular-nums shrink-0">{e.workingSets ?? '?'} × {e.reps ?? '?'}</div>
                                     </div>
                                     <div className="text-[11px] text-th-muted">
@@ -439,7 +439,7 @@
                                 <div className="px-3 pb-3 space-y-2 border-t border-th-line pt-2">
                                     {l.exercises.map((e, i) => (
                                         <div key={i} className="text-[11px]">
-                                            <div className="font-semibold text-white">{e.name}{e.substituted ? <span className="text-[#F59E0B]"> (substitute for {e.prescribedName})</span> : null}</div>
+                                            <div className="text-sm font-bold text-white">{e.name}{e.substituted ? <span className="text-[#F59E0B]"> (substitute for {e.prescribedName})</span> : null}</div>
                                             <div className="text-th-muted tabular-nums">{e.sets.map(x => `${x.type === 'warmup' ? 'W ' : x.type === 'drop' ? 'D ' : x.type === 'myo' ? 'M ' : ''}${x.weight || 0}×${x.reps}`).join(' · ')}</div>
                                         </div>
                                     ))}
@@ -853,8 +853,8 @@
                     <div key={exIdx} className="bg-th-card border border-th-line rounded-xl p-4 space-y-3">
                         <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                                <div className="text-[10px] text-th-muted">Exercise {exIdx + 1} of {activeSession.exercises.length}</div>
-                                <h3 className="text-sm font-bold text-white">{display}</h3>
+                                <div className="text-[11px] font-bold uppercase tracking-wider text-th-accent">Exercise {exIdx + 1} of {activeSession.exercises.length}</div>
+                                <h3 className="text-xl font-black text-white leading-tight mt-0.5">{display}</h3>
                                 {item.substitution && <div className="text-[10px] text-[#F59E0B]">Your substitution · prescribed: {item.name}</div>}
                             </div>
                             <button onClick={() => setSubModalIdx(exIdx)} aria-label="Substitute exercise" className="min-w-[44px] min-h-[44px] rounded-xl bg-th-elevated text-th-muted text-base shrink-0">⇄</button>

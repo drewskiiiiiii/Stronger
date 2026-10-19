@@ -12,6 +12,7 @@ Keep new screens consistent with these sizes (Tailwind classes in `src/app.jsx`;
 | Destructive | Red `#F43F5E` text + border (solid red only inside the confirm dialog). |
 | Card | `bg-th-card border border-th-line rounded-xl p-4`; compact list rows `p-3`; empty states `p-5` dashed. |
 | Input / select | `min-h-[44px]`, `rounded-xl`, `px-3`, inherit the 16px base size (prevents iOS zoom). |
+| Exercise names | Active workout card `text-xl font-black` (with an accent "Exercise n of N" caption); program detail rows `text-base font-black`; history `text-sm font-bold`. |
 | Headings | Page title `h2 text-lg font-black` (uppercase); card title `h3 text-sm font-black`. |
 | Text scale | 10px captions, 11px small, `text-xs` (12px) controls/body, `text-sm` (14px) titles. No 9/12/13px. |
 
