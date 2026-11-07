@@ -12,3 +12,5 @@ Automated tests run in desktop Chromium at iPhone Pro Max size. These need a rea
 8. Rotate or use a smaller iPhone: no sideways scrolling, buttons still reachable.
 9. Settings → Export backup: the file saves/shares; Restore backup brings data back.
 10. Settings shows whether browser storage protection was granted.
+11. In an active workout, scroll down: the bar with the timer, **⌂ Home**, **Finish** and **✕** stays fully visible just below the clock / Dynamic Island (nothing is cut off or hidden behind it).
+12. Tap ⇄ on an exercise and pick a substitute: the technique video link changes to that exercise (or to a YouTube search if the source has none). Restoring the original brings the first link back.

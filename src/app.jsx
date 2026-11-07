@@ -665,7 +665,7 @@
                         for (let i = 1; i <= (e.workingSets || 0); i++) sets.push(mk('working', i));
                         const lib = exercises.find(x => normName(x.name) === normName(e.name));
                         return { exerciseId: lib ? lib.id : null, name: e.name, key: normName(e.name), substitution: null,
-                            prescribed: { warmupText: e.warmupText || null, technique: e.technique || null, ref: e.ref || null, warmupSets: e.warmupSets, workingSets: e.workingSets, reps: e.reps, intensity: e.intensity, rest: e.rest || null, notes: e.notes, page: e.page, flags: e.flags, sourceSubstitutions: e.sourceSubstitutions || [], sourceGuidance: e.sourceGuidance || [], videoUrl: e.videoUrl || null }, sets };
+                            prescribed: { warmupText: e.warmupText || null, technique: e.technique || null, ref: e.ref || null, warmupSets: e.warmupSets, workingSets: e.workingSets, reps: e.reps, intensity: e.intensity, rest: e.rest || null, notes: e.notes, page: e.page, flags: e.flags, sourceSubstitutions: e.sourceSubstitutions || [], sourceGuidance: e.sourceGuidance || [], videoUrl: e.videoUrl || null, substitutionOptions: e.substitutionOptions || (e.sourceSubstitutions || []).map((n, i) => ({ name: n, url: (e.substitutionLinks && e.substitutionLinks.length === e.sourceSubstitutions.length) ? e.substitutionLinks[i] : null })) }, sets };
                     });
                     setRestEndsAt(null);
                     setActiveSession({ id: `session-${Date.now()}`, dayId: null, workoutName: sess.label, startTime: Date.now(), exercises: exs,
@@ -865,7 +865,15 @@
                             {pr.technique && <div className="text-[#F59E0B] font-semibold">Last-set technique: {pr.technique}</div>}
                             {pr.notes && <div className="text-th-ink/80 leading-snug">{pr.notes}</div>}
                             {pr.rest && pr.rest.maxSeconds && <button onClick={() => startRest(pr.rest.maxSeconds)} className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-xs font-bold text-white">⏱ Start prescribed rest ({restLabel(pr.rest)})</button>}
-                            {pr.videoUrl && <a href={pr.videoUrl} target="_blank" rel="noopener noreferrer" className="block text-[11px] font-semibold text-th-accent">▶ Technique video</a>}
+                            {(() => {
+                                // the link always belongs to the exercise you are actually doing (prescribed or substituted)
+                                const subOpt = item.substitution ? (pr.substitutionOptions || []).find(o => normName(o.name) === normName(item.substitution.name)) : null;
+                                const url = item.substitution ? (subOpt && subOpt.url) : pr.videoUrl;
+                                const search = `https://www.youtube.com/results?search_query=${encodeURIComponent(display + ' exercise form')}`;
+                                return url
+                                    ? <a href={url} target="_blank" rel="noopener noreferrer" className="block text-[11px] font-bold text-th-accent min-h-[44px] leading-[44px]">▶ Technique video{item.substitution ? `: ${display}` : ''}</a>
+                                    : <a href={search} target="_blank" rel="noopener noreferrer" className="block text-[11px] font-bold text-th-muted min-h-[44px] leading-[44px]">🔎 Find a video for {display} on YouTube</a>;
+                            })()}
                             {!item.substitution && equipmentFor(item.name) && !ownedEquipment.includes(equipmentFor(item.name)) && <div className="text-[#F59E0B]">⚠ May need {equipmentFor(item.name)} (not in your equipment list) — tap ⇄ to substitute</div>}
                             {pr.flags.length > 0 && <div className="text-[#F59E0B]">⚠ Uncertain extraction — check {pr.page ? `PDF p.${pr.page}` : pr.ref}</div>}
                         </div>
@@ -947,27 +955,30 @@
 
                     {/* ACTIVE WORKOUT OVERLAY (Optimized for gym thumb usage) */}
                     {activeSession && workoutOpen && (
-                        <div className="fixed inset-0 z-50 bg-th-bg/95 backdrop-blur-xl flex flex-col p-4 overflow-y-auto safe-top safe-bottom">
-                            <div className="max-w-xl mx-auto w-full space-y-4">
-                                <div className="bg-th-card border border-th-line rounded-xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl">
-                                    <div>
-                                        <div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Active Workout</div>
-                                        <h2 className="text-lg font-black text-white">{activeSession.workoutName}</h2>
-                                        {activeSession.program && <div className="text-[11px] text-th-muted">{activeSession.program.programName} · Week {activeSession.program.week} · Day {activeSession.program.day}</div>}
-                                        <div className="text-[11px] text-th-muted flex items-center gap-2 mt-0.5">
-                                            <span>Time: <strong className="text-white tabular-nums">{Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s</strong></span>
-                                            <span>·</span>
-                                            <span>Rest: <strong className="text-[#31D583] tabular-nums">{fmtClock(timerSeconds)}</strong></span>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <button onClick={() => { setWorkoutOpen(false); setActiveNav('Home'); }} aria-label="Back to Home, keep workout running" className="min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold">⌂ Home</button>
-                                        <button onClick={requestFinish} className="px-4 min-h-[44px] rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-th-bg text-xs font-black shadow cursor-pointer">
-                                            Finish
-                                        </button>
-                                        <button onClick={() => setConfirmDiscard(true)} aria-label="Discard workout" className="min-w-[44px] min-h-[44px] rounded-xl bg-th-elevated text-[#F43F5E] text-sm font-black">✕</button>
-                                    </div>
+                        <div className="fixed inset-0 z-50 bg-th-bg/95 backdrop-blur-xl overflow-y-auto safe-bottom">
+                            {/* opaque strip so nothing scrolls under the clock / Dynamic Island */}
+                            <div className="fixed top-0 left-0 right-0 z-30 bg-th-bg" style={{ height: 'env(safe-area-inset-top)' }}></div>
+                            <div className="max-w-xl mx-auto w-full px-4 pb-4 space-y-4" style={{ paddingTop: 'max(env(safe-area-inset-top), 12px)' }}>
+                                <div className="px-1">
+                                    <div className="text-[10px] font-bold uppercase tracking-wider text-th-accent">Active Workout</div>
+                                    <h2 className="text-lg font-black text-white">{activeSession.workoutName}</h2>
+                                    {activeSession.program && <div className="text-[11px] text-th-muted">{activeSession.program.programName} · Week {activeSession.program.week} · Day {activeSession.program.day}</div>}
                                 </div>
+                                {(() => {
+                                    const work = activeSession.exercises.flatMap(e => e.sets).filter(x => x.type !== 'warmup');
+                                    const done = work.filter(x => x.completed).length;
+                                    return (
+                                        <div className="sticky z-20 bg-th-card border border-th-line rounded-xl p-2 flex items-center gap-2 shadow-xl" style={{ top: 'max(env(safe-area-inset-top), 12px)' }}>
+                                            <div className="min-w-0 flex-1 pl-1">
+                                                <div className="text-sm font-black text-white tabular-nums">{Math.floor(elapsedSeconds / 60)}m {elapsedSeconds % 60}s</div>
+                                                <div className="text-[11px] text-th-muted tabular-nums truncate">Rest <strong className="text-[#31D583]">{fmtClock(timerSeconds)}</strong> · {done}/{work.length} sets</div>
+                                            </div>
+                                            <button onClick={() => { setWorkoutOpen(false); setActiveNav('Home'); }} aria-label="Back to Home, keep workout running" className="min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold shrink-0">⌂ Home</button>
+                                            <button onClick={requestFinish} className="px-3 min-h-[44px] rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-th-bg text-xs font-black shrink-0">Finish</button>
+                                            <button onClick={() => setConfirmDiscard(true)} aria-label="Discard workout" className="min-w-[44px] min-h-[44px] rounded-xl bg-th-elevated text-[#F43F5E] text-sm font-black shrink-0">✕</button>
+                                        </div>
+                                    );
+                                })()}
 
                                 <div className="flex items-center gap-2 overflow-x-auto pb-1">
                                     <span className="text-[11px] text-th-muted shrink-0">Rest timer</span>

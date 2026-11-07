@@ -37,6 +37,8 @@ async function launch({ serviceWorkers = 'block' } = {}) {
 
 // ---- Synthetic spreadsheet programs (same layout as the author spreadsheets, but made-up exercises) ----
 function makeProgramSheet(XLSX, { title, sheetName, days, weeks }) {
+    const exMeta = {};
+    days.forEach(d => d.exercises.forEach(e => { if (e.video) exMeta[e.name] = e; }));
     const header = ['', '', 'Exercise', 'Last-Set Intensity Technique', 'Warm-up Sets', 'Working Sets', 'Reps', 'Tracking Load and Reps', '', '', '', 'Early Set RPE', 'Last Set RPE', 'Rest', 'Substitution Option 1', 'Substitution Option 2', 'Notes'];
     const rows = [['', title], ['', 'Copyright (synthetic test fixture)'], ['', 'IMPORTANT PROGRAM NOTES\n\n● Synthetic notes for tests.'], [''], ['', 'Foundation Block']];
     for (let w = 1; w <= weeks; w++) {
@@ -49,6 +51,12 @@ function makeProgramSheet(XLSX, { title, sheetName, days, weeks }) {
         rows.push(['', '', '', '', '', '', '', '', '', 'Rest Day']);
     }
     const ws = XLSX.utils.aoa_to_sheet(rows);
+    // video hyperlinks on exercise names (col C) and substitution options (cols O, P), like the author spreadsheets
+    rows.forEach((r, i) => {
+        const put = (c, url) => { const a = XLSX.utils.encode_cell({ r: i, c }); if (ws[a] && url) ws[a].l = { Target: url }; };
+        const ex = exMeta[r[2]];
+        if (ex) { put(2, ex.video); put(14, ex.sub1Video); }
+    });
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, sheetName);
     return wb;
@@ -58,7 +66,7 @@ function writeFixtures() {
     const XLSX = require('xlsx');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'stronger-fixtures-'));
     const a = makeProgramSheet(XLSX, { title: 'Test Program Alpha', sheetName: 'Alpha Program', weeks: 2, days: [
-        { label: 'Upper', exercises: [{ name: 'Test Bench Press', sets: '2', reps: '6-8', rest: '3-5 min', sub1: 'Test DB Press' }, { name: 'Test Row', warm: '2' }] },
+        { label: 'Upper', exercises: [{ name: 'Test Bench Press', sets: '2', reps: '6-8', rest: '3-5 min', sub1: 'Test DB Press', video: 'https://youtu.be/BENCHVID', sub1Video: 'https://youtu.be/DBPRESSVID' }, { name: 'Test Row', warm: '2' }] },
         { label: 'Lower', exercises: [{ name: 'Test Squat' }, { name: 'Test Leg Curl' }] },
         { label: 'Push', exercises: [
             { name: 'Test Bench Press', technique: 'Two Drop Sets (~25% per)' },

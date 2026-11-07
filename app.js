@@ -1159,7 +1159,11 @@ function App() {
             flags: e.flags,
             sourceSubstitutions: e.sourceSubstitutions || [],
             sourceGuidance: e.sourceGuidance || [],
-            videoUrl: e.videoUrl || null
+            videoUrl: e.videoUrl || null,
+            substitutionOptions: e.substitutionOptions || (e.sourceSubstitutions || []).map((n, i) => ({
+              name: n,
+              url: e.substitutionLinks && e.substitutionLinks.length === e.sourceSubstitutions.length ? e.substitutionLinks[i] : null
+            }))
           },
           sets
         };
@@ -1597,12 +1601,22 @@ function App() {
     }, pr.notes), pr.rest && pr.rest.maxSeconds && React.createElement("button", {
       onClick: () => startRest(pr.rest.maxSeconds),
       className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-xs font-bold text-white"
-    }, "\u23F1 Start prescribed rest (", restLabel(pr.rest), ")"), pr.videoUrl && React.createElement("a", {
-      href: pr.videoUrl,
-      target: "_blank",
-      rel: "noopener noreferrer",
-      className: "block text-[11px] font-semibold text-th-accent"
-    }, "\u25B6 Technique video"), !item.substitution && equipmentFor(item.name) && !ownedEquipment.includes(equipmentFor(item.name)) && React.createElement("div", {
+    }, "\u23F1 Start prescribed rest (", restLabel(pr.rest), ")"), (() => {
+      const subOpt = item.substitution ? (pr.substitutionOptions || []).find(o => normName(o.name) === normName(item.substitution.name)) : null;
+      const url = item.substitution ? subOpt && subOpt.url : pr.videoUrl;
+      const search = `https://www.youtube.com/results?search_query=${encodeURIComponent(display + ' exercise form')}`;
+      return url ? React.createElement("a", {
+        href: url,
+        target: "_blank",
+        rel: "noopener noreferrer",
+        className: "block text-[11px] font-bold text-th-accent min-h-[44px] leading-[44px]"
+      }, "\u25B6 Technique video", item.substitution ? `: ${display}` : '') : React.createElement("a", {
+        href: search,
+        target: "_blank",
+        rel: "noopener noreferrer",
+        className: "block text-[11px] font-bold text-th-muted min-h-[44px] leading-[44px]"
+      }, "\uD83D\uDD0E Find a video for ", display, " on YouTube");
+    })(), !item.substitution && equipmentFor(item.name) && !ownedEquipment.includes(equipmentFor(item.name)) && React.createElement("div", {
       className: "text-[#F59E0B]"
     }, "\u26A0 May need ", equipmentFor(item.name), " (not in your equipment list) \u2014 tap \u21C4 to substitute"), pr.flags.length > 0 && React.createElement("div", {
       className: "text-[#F59E0B]"
@@ -1712,40 +1726,57 @@ function App() {
     "aria-label": "Settings",
     className: "w-11 h-11 rounded-xl bg-th-accent text-th-on-accent font-bold flex items-center justify-center text-xs shadow cursor-pointer"
   }, (userSettings.name || 'S')[0].toUpperCase()))), activeSession && workoutOpen && React.createElement("div", {
-    className: "fixed inset-0 z-50 bg-th-bg/95 backdrop-blur-xl flex flex-col p-4 overflow-y-auto safe-top safe-bottom"
+    className: "fixed inset-0 z-50 bg-th-bg/95 backdrop-blur-xl overflow-y-auto safe-bottom"
   }, React.createElement("div", {
-    className: "max-w-xl mx-auto w-full space-y-4"
+    className: "fixed top-0 left-0 right-0 z-30 bg-th-bg",
+    style: {
+      height: 'env(safe-area-inset-top)'
+    }
+  }), React.createElement("div", {
+    className: "max-w-xl mx-auto w-full px-4 pb-4 space-y-4",
+    style: {
+      paddingTop: 'max(env(safe-area-inset-top), 12px)'
+    }
   }, React.createElement("div", {
-    className: "bg-th-card border border-th-line rounded-xl p-4 flex items-center justify-between gap-3 sticky top-0 z-20 shadow-xl"
-  }, React.createElement("div", null, React.createElement("div", {
+    className: "px-1"
+  }, React.createElement("div", {
     className: "text-[10px] font-bold uppercase tracking-wider text-th-accent"
   }, "Active Workout"), React.createElement("h2", {
     className: "text-lg font-black text-white"
   }, activeSession.workoutName), activeSession.program && React.createElement("div", {
     className: "text-[11px] text-th-muted"
-  }, activeSession.program.programName, " \xB7 Week ", activeSession.program.week, " \xB7 Day ", activeSession.program.day), React.createElement("div", {
-    className: "text-[11px] text-th-muted flex items-center gap-2 mt-0.5"
-  }, React.createElement("span", null, "Time: ", React.createElement("strong", {
-    className: "text-white tabular-nums"
-  }, Math.floor(elapsedSeconds / 60), "m ", elapsedSeconds % 60, "s")), React.createElement("span", null, "\xB7"), React.createElement("span", null, "Rest: ", React.createElement("strong", {
-    className: "text-[#31D583] tabular-nums"
-  }, fmtClock(timerSeconds))))), React.createElement("div", {
-    className: "flex items-center gap-2"
-  }, React.createElement("button", {
-    onClick: () => {
-      setWorkoutOpen(false);
-      setActiveNav('Home');
-    },
-    "aria-label": "Back to Home, keep workout running",
-    className: "min-h-[44px] px-4 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold"
-  }, "\u2302 Home"), React.createElement("button", {
-    onClick: requestFinish,
-    className: "px-4 min-h-[44px] rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-th-bg text-xs font-black shadow cursor-pointer"
-  }, "Finish"), React.createElement("button", {
-    onClick: () => setConfirmDiscard(true),
-    "aria-label": "Discard workout",
-    className: "min-w-[44px] min-h-[44px] rounded-xl bg-th-elevated text-[#F43F5E] text-sm font-black"
-  }, "\u2715"))), React.createElement("div", {
+  }, activeSession.program.programName, " \xB7 Week ", activeSession.program.week, " \xB7 Day ", activeSession.program.day)), (() => {
+    const work = activeSession.exercises.flatMap(e => e.sets).filter(x => x.type !== 'warmup');
+    const done = work.filter(x => x.completed).length;
+    return React.createElement("div", {
+      className: "sticky z-20 bg-th-card border border-th-line rounded-xl p-2 flex items-center gap-2 shadow-xl",
+      style: {
+        top: 'max(env(safe-area-inset-top), 12px)'
+      }
+    }, React.createElement("div", {
+      className: "min-w-0 flex-1 pl-1"
+    }, React.createElement("div", {
+      className: "text-sm font-black text-white tabular-nums"
+    }, Math.floor(elapsedSeconds / 60), "m ", elapsedSeconds % 60, "s"), React.createElement("div", {
+      className: "text-[11px] text-th-muted tabular-nums truncate"
+    }, "Rest ", React.createElement("strong", {
+      className: "text-[#31D583]"
+    }, fmtClock(timerSeconds)), " \xB7 ", done, "/", work.length, " sets")), React.createElement("button", {
+      onClick: () => {
+        setWorkoutOpen(false);
+        setActiveNav('Home');
+      },
+      "aria-label": "Back to Home, keep workout running",
+      className: "min-h-[44px] px-3 rounded-xl bg-th-elevated border border-th-line text-white text-xs font-bold shrink-0"
+    }, "\u2302 Home"), React.createElement("button", {
+      onClick: requestFinish,
+      className: "px-3 min-h-[44px] rounded-xl bg-[#31D583] hover:bg-[#25B86F] text-th-bg text-xs font-black shrink-0"
+    }, "Finish"), React.createElement("button", {
+      onClick: () => setConfirmDiscard(true),
+      "aria-label": "Discard workout",
+      className: "min-w-[44px] min-h-[44px] rounded-xl bg-th-elevated text-[#F43F5E] text-sm font-black shrink-0"
+    }, "\u2715"));
+  })(), React.createElement("div", {
     className: "flex items-center gap-2 overflow-x-auto pb-1"
   }, React.createElement("span", {
     className: "text-[11px] text-th-muted shrink-0"

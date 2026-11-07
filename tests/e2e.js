@@ -78,11 +78,24 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     await p.getByLabel('Return to active workout').click();
     s = await state();
     ok('completed set survives reload', s.activeSession.exercises.some(e => e.sets.some(x => x.completed && x.reps === '8')));
+    ok('technique video link is the prescribed exercise\'s', (await p.locator('a:has-text("Technique video")').first().getAttribute('href')) === 'https://youtu.be/BENCHVID');
+    // the overlay controls stay reachable after scrolling the workout
+    await p.locator('div.fixed.inset-0.overflow-y-auto').evaluate(el => { el.scrollTop = 600; });
+    await p.waitForTimeout(200);
+    const finishBox = await p.getByRole('button', { name: 'Finish', exact: true }).boundingBox();
+    const homeBox = await p.getByLabel(/Back to Home/).boundingBox();
+    ok('Home and Finish stay fully on screen while scrolling', finishBox.y >= 0 && homeBox.y >= 0 && finishBox.y + finishBox.height <= 932 && finishBox.x + finishBox.width <= 430);
+    await p.locator('div.fixed.inset-0.overflow-y-auto').evaluate(el => { el.scrollTop = 0; });
     await p.getByLabel('Substitute exercise').first().click();
     await p.getByRole('button', { name: 'Test DB Press' }).first().click();
+    ok('video switches to the substitute\'s own link', (await p.locator('a:has-text("Technique video")').first().getAttribute('href')) === 'https://youtu.be/DBPRESSVID');
     ok('substitution labelled', await p.getByText(/Your substitution · prescribed: Test Bench Press/).isVisible());
     await p.getByLabel('Substitute exercise').first().click(); await p.getByRole('button', { name: /Restore original/ }).click();
     ok('original restored', (await state()).activeSession.exercises[0].substitution === null);
+    ok('video returns to the original after restoring', (await p.locator('a:has-text("Technique video")').first().getAttribute('href')) === 'https://youtu.be/BENCHVID');
+    await p.getByLabel('Substitute exercise').first().click(); await p.getByPlaceholder('Custom exercise name').fill('Made Up Press'); await p.getByRole('button', { name: 'Use', exact: true }).click();
+    ok('substitute without a known video offers a YouTube search for it', /youtube\.com\/results\?search_query=Made%20Up%20Press/.test(await p.locator('a:has-text("Find a video")').first().getAttribute('href')));
+    await p.getByLabel('Substitute exercise').first().click(); await p.getByRole('button', { name: /Restore original/ }).click();
     await p.getByRole('button', { name: 'Finish' }).click();
     if (await p.getByText('Finish with sets remaining?').isVisible()) await p.getByRole('button', { name: 'Finish workout' }).click();
     s = await state(); const log = s.workoutLogs[0];

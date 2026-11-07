@@ -5,7 +5,7 @@
  */
 (function (root) {
     const SCHEMA_VERSION = 1;
-    const PARSER_VERSION = 2;
+    const PARSER_VERSION = 3;
     const norm = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
     const slug = (s) => norm(s).replace(/ /g, '-');
     const titleCase = (s) => s.toLowerCase().replace(/(^|[\s/])([a-z])/g, (m, a, b) => a + b.toUpperCase());
@@ -260,7 +260,10 @@
                 const g = guidanceFor(e.name);
                 if (g.items.length) { e.sourceGuidance = g.items.map(x => ({ name: x.name, text: x.value, format: x.format })); e.guidanceLink = g.linked; if (g.linked === 'partial') partial.add(e.name); }
                 const list = g.items.filter(x => x.format === 'list');
-                if (list.length) e.sourceSubstitutions = list[0].value.split(/,\s*|\s+or\s+/).map(x => x.trim()).filter(Boolean);
+                if (list.length) {
+                    e.sourceSubstitutions = list[0].value.split(/,\s*|\s+or\s+/).map(x => x.trim()).filter(Boolean);
+                    e.substitutionOptions = e.sourceSubstitutions.map(n => ({ name: n, url: vids.get(norm(n)) || null }));
+                }
                 const vid = vids.get(norm(e.name)); if (vid) e.videoUrl = vid;
                 e.flags.forEach(m => pFlags.push({ page: e.page, severity: 'medium', msg: `${d.label} (week ${w.week}), ${e.name || 'row ' + e.order}: ${m}` }));
             })));
@@ -385,14 +388,15 @@
                     rest = m ? { raw: restRaw, minSeconds: Math.round(parseFloat(m[1]) * 60), maxSeconds: Math.round(parseFloat(m[2] || m[1]) * 60) } : { raw: restRaw, minSeconds: null, maxSeconds: null };
                     if (!m) rowFlags.push(`Rest not recognized ("${restRaw}"); shown as written`);
                 }
-                const subs = [na(cell(r, cols.sub1)), na(cell(r, cols.sub2))].filter(x => x && !/^See Notes$/i.test(x));
+                const options = [cols.sub1, cols.sub2].map(c => ({ name: na(cell(r, c)), url: links[`${r},${c}`] || null }))
+                    .filter(o => o.name && !/^See Notes$/i.test(o.name)); // name and video link stay paired
+                const subs = options.map(o => o.name);
                 const videoUrl = links[`${r},${cols.exercise}`] || null;
-                const subLinks = [cols.sub1, cols.sub2].map(c => links[`${r},${c}`]).filter(Boolean);
                 curDay.exercises.push({
                     order: ++order && curDay.exercises.length + 1, name: ex, warmupSets: /^\d+$/.test(warmRaw) ? parseInt(warmRaw, 10) : null, warmupText: na(warmRaw),
                     workingSets: sets, reps: repsRaw || null, intensity, technique: na(cell(r, cols.technique)), rest, restSeconds: null,
                     notes: cell(r, cols.notes), page: null, ref: `${sheet.name}, row ${r + 1}`, flags: rowFlags, sourceSubstitutions: subs,
-                    ...(videoUrl ? { videoUrl } : {}), ...(subLinks.length ? { substitutionLinks: subLinks } : {})
+                    ...(videoUrl ? { videoUrl } : {}), substitutionOptions: options
                 });
             }
             const weekList = [...weeks.values()].sort((a, b) => a.week - b.week).map(w => ({ week: w.week, phase: w.phase, deload: w.deload, note: w.note || null, days: w.days, pattern: w.pattern }));

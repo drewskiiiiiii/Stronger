@@ -74,6 +74,20 @@ test('Spreadsheet: weeks, days, rest, RPE, substitutions and techniques', () => 
     assert.strictEqual(p.weeks[0].days[2].exercises[0].technique, 'Two Drop Sets (~25% per)');
 });
 
+test('Spreadsheet: exercise and substitute video links stay paired with their names', () => {
+    const XLSX = require('xlsx');
+    const files = writeFixtures();
+    const wb = XLSX.readFile(files.alpha);
+    const sheets = wb.SheetNames.map(name => {
+        const ws = wb.Sheets[name]; const start = XLSX.utils.decode_range(ws['!ref']).s; const links = {};
+        Object.keys(ws).forEach(k => { if (k[0] !== '!' && ws[k].l && ws[k].l.Target) { const a = XLSX.utils.decode_cell(k); links[`${a.r - start.r},${a.c - start.c}`] = ws[k].l.Target; } });
+        return { name, rows: XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' }), links };
+    });
+    const bench = parseSpreadsheetProgram(sheets, { fileName: 'alpha.xlsx' }).programs[0].weeks[0].days[0].exercises[0];
+    assert.strictEqual(bench.videoUrl, 'https://youtu.be/BENCHVID');
+    assert.deepStrictEqual(bench.substitutionOptions, [{ name: 'Test DB Press', url: 'https://youtu.be/DBPRESSVID' }, { name: 'DB Press', url: null }]);
+});
+
 test('Spreadsheet: a sheet without a workout table imports nothing', () => {
     const r = parseSpreadsheetProgram([{ name: 'Notes', rows: [['just text']], links: {} }], { fileName: 'n.xlsx' });
     assert.strictEqual(r.programs.length, 0);
