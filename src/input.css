@@ -9,7 +9,7 @@
             --c-accent: 255 77 31; --c-accent-hover: 255 107 61; --c-accent-dark: 140 42 17; --c-ink: 245 245 244; --c-muted: 156 156 164; --c-on-accent: 10 10 11;
         }
         body { 
-            font-family: 'Inter', sans-serif; 
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Inter', sans-serif; 
             -webkit-tap-highlight-color: transparent;
             -webkit-touch-callout: none;
         }
@@ -26,9 +26,11 @@
         }
     }
 
-/* Performance look: bold uppercase headings and primary actions, crisp edges, accent rule under the header */
-h2 { text-transform: uppercase; letter-spacing: 0.06em; }
-/* primary actions only: solid accent buttons without a border (selected chips/tabs keep normal case) */
-button.bg-th-accent:not([class*="border"]) { text-transform: uppercase; letter-spacing: 0.05em; font-weight: 900; }
-header.sticky { position: sticky; }
-header.sticky::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: linear-gradient(90deg, rgb(var(--c-accent)) 0%, rgb(var(--c-accent) / 0.0) 70%); pointer-events: none; }
+/* Fitbod-style look: sentence-case bold headings, pill buttons/chips, soft borderless cards, large check circles */
+h2 { letter-spacing: -0.02em; }
+/* all standard / primary buttons and chips are pills; card-shaped buttons (no min-height) keep the card radius */
+button[class*="min-h-[44px]"], button[class*="min-h-[48px]"] { border-radius: 9999px; }
+button[class*="min-h-[48px]"].bg-th-accent { font-weight: 800; }
+input[class*="min-h-[44px]"], select[class*="min-h-[44px]"] { background-color: rgb(var(--c-elevated)); border-color: transparent; }
+header.sticky { position: sticky; background: rgb(var(--c-bg) / 0.82); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
+nav[aria-label="Bottom Navigation"] { background: rgb(var(--c-bg) / 0.82); }

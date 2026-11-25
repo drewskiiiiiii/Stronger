@@ -38,6 +38,19 @@ const Icon = ({
 });
 const EXERCISE_LIBRARY = [];
 const THEMES = {
+  fitbod: {
+    name: 'Fitbod Black',
+    bg: '#000000',
+    bg2: '#0B0B0D',
+    card: '#1C1C1E',
+    elevated: '#2A2A2D',
+    line: '#27272A',
+    accent: '#2F7BFF',
+    accentHover: '#5A95FF',
+    ink: '#FFFFFF',
+    muted: '#A1A1AA',
+    onAccent: '#FFFFFF'
+  },
   ember: {
     name: 'Stealth Ember',
     bg: '#0A0A0B',
@@ -104,7 +117,7 @@ const THEMES = {
     onAccent: '#140E02'
   }
 };
-const DEFAULT_THEME = 'ember';
+const DEFAULT_THEME = 'fitbod';
 const LEGACY_THEME_KEYS = {
   blue: 'ember',
   emerald: 'steel',
@@ -949,7 +962,15 @@ const STORED = loadStore();
 const fmtClock = sec => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, '0')}`;
 function App() {
   const [activeNav, setActiveNav] = useState('Home');
-  const [selectedTheme, setSelectedTheme] = useState(resolveTheme(STORED.selectedTheme));
+  const [selectedTheme, setSelectedTheme] = useState(() => {
+    let moved = false;
+    try {
+      moved = localStorage.getItem('stronger_skin') === 'fitbod1';
+      localStorage.setItem('stronger_skin', 'fitbod1');
+    } catch (e) {}
+    const t = resolveTheme(STORED.selectedTheme);
+    return !moved && t === 'ember' ? 'fitbod' : t;
+  });
   useEffect(() => {
     applyTheme(selectedTheme);
   }, [selectedTheme]);
@@ -2232,5 +2253,10 @@ function App() {
     className: "text-[10px] text-th-muted"
   }, toast.message))));
 }
-applyTheme(resolveTheme(STORED.selectedTheme));
+applyTheme((() => {
+  try {
+    if (localStorage.getItem('stronger_skin') !== 'fitbod1' && resolveTheme(STORED.selectedTheme) === 'ember') return 'fitbod';
+  } catch (e) {}
+  return resolveTheme(STORED.selectedTheme);
+})());
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App, null));

@@ -150,7 +150,7 @@ const ok = (name, cond) => { cond ? passed++ : failed++; console.log(cond ? 'PAS
     const accentBefore = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim());
     await p.getByRole('radio', { name: 'Titan Gold' }).click();
     const accentAfter = await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim());
-    ok('choosing a theme changes the accent colour variable', accentBefore === '255 77 31' && accentAfter === '224 165 38');
+    ok('choosing a theme changes the accent colour variable', accentBefore === '47 123 255' && accentAfter === '224 165 38');
     ok('themed elements really use it', await p.evaluate(() => { const el = document.querySelector('.bg-th-accent'); return !el || getComputedStyle(el).backgroundColor === 'rgb(224, 165, 38)'; }));
     await p.reload({ waitUntil: 'domcontentloaded' }); await p.waitForTimeout(1200);
     ok('theme persists after reload', await p.evaluate(() => getComputedStyle(document.documentElement).getPropertyValue('--c-accent').trim()) === '224 165 38');

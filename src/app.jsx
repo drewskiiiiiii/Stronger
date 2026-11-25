@@ -24,13 +24,14 @@
 
         // Every colour in the UI comes from these tokens (CSS variables), so a theme changes the whole app.
         const THEMES = {
+            fitbod:   { name: 'Fitbod Black',   bg: '#000000', bg2: '#0B0B0D', card: '#1C1C1E', elevated: '#2A2A2D', line: '#27272A', accent: '#2F7BFF', accentHover: '#5A95FF', ink: '#FFFFFF', muted: '#A1A1AA', onAccent: '#FFFFFF' },
             ember:    { name: 'Stealth Ember',  bg: '#0A0A0B', bg2: '#101012', card: '#161618', elevated: '#1F1F22', line: '#2C2C31', accent: '#FF4D1F', accentHover: '#FF6B3D', ink: '#F5F5F4', muted: '#9C9CA4', onAccent: '#0A0A0B' },
             steel:    { name: 'Steel Blue',     bg: '#090B0E', bg2: '#0F1317', card: '#151A20', elevated: '#1D242C', line: '#2A333D', accent: '#4DB8FF', accentHover: '#7FCBFF', ink: '#F1F5F9', muted: '#94A3B3', onAccent: '#06121C' },
             graphite: { name: 'Graphite',       bg: '#0A0A0A', bg2: '#111111', card: '#171717', elevated: '#212121', line: '#303030', accent: '#E8E8EA', accentHover: '#FFFFFF', ink: '#FAFAFA', muted: '#9E9E9E', onAccent: '#0A0A0A' },
             blood:    { name: 'Blood Red',      bg: '#0B0909', bg2: '#121010', card: '#191515', elevated: '#232020', line: '#352E2E', accent: '#F0343C', accentHover: '#FF5A60', ink: '#FAF5F5', muted: '#A39A9A', onAccent: '#FFFFFF' },
             gold:     { name: 'Titan Gold',     bg: '#0B0A08', bg2: '#12110E', card: '#181612', elevated: '#22201A', line: '#35322A', accent: '#E0A526', accentHover: '#F0BC45', ink: '#FBF8F1', muted: '#A39E92', onAccent: '#140E02' }
         };
-        const DEFAULT_THEME = 'ember';
+        const DEFAULT_THEME = 'fitbod';
         const LEGACY_THEME_KEYS = { blue: 'ember', emerald: 'steel', crimson: 'blood', gold: 'gold', violet: 'graphite' }; // keys from earlier versions
         const resolveTheme = (k) => (THEMES[k] ? k : (LEGACY_THEME_KEYS[k] || DEFAULT_THEME));
         const hexToRgb = (h) => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(' ');
@@ -560,7 +561,12 @@
 
         function App() {
             const [activeNav, setActiveNav] = useState('Home');
-            const [selectedTheme, setSelectedTheme] = useState(resolveTheme(STORED.selectedTheme));
+            // One-time move to the new default look (Stealth Ember was the old default); later choices are kept.
+            const [selectedTheme, setSelectedTheme] = useState(() => {
+                let moved = false; try { moved = localStorage.getItem('stronger_skin') === 'fitbod1'; localStorage.setItem('stronger_skin', 'fitbod1'); } catch (e) { /* ignore */ }
+                const t = resolveTheme(STORED.selectedTheme);
+                return !moved && t === 'ember' ? 'fitbod' : t;
+            });
             useEffect(() => { applyTheme(selectedTheme); }, [selectedTheme]);
 
             const exercises = EXERCISE_LIBRARY;
@@ -1271,6 +1277,6 @@
             );
         }
 
-        applyTheme(resolveTheme(STORED.selectedTheme)); // before first render, so there is no colour flash
+        applyTheme((() => { try { if (localStorage.getItem('stronger_skin') !== 'fitbod1' && resolveTheme(STORED.selectedTheme) === 'ember') return 'fitbod'; } catch (e) { /* ignore */ } return resolveTheme(STORED.selectedTheme); })()); // before first render, so there is no colour flash
         ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     
